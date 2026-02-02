@@ -9,7 +9,6 @@ export default function LogoWrap() {
                 <img src={itechLogo} className='w-10 aspect-auto'></img>
             </div>
             
-
         </>
     )
 }

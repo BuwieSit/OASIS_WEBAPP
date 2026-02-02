@@ -22,6 +22,7 @@ export function AuthProvider({ children }) {
     init();
   }, []);
 
+
   // AUTO LOGOUT ON IDLE (15 MIN)
   useEffect(() => {
     let timeout;

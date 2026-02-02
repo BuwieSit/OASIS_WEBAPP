@@ -8,6 +8,7 @@ export default function AdminScreen({ children }) {
             <div className="absolute inset-0 bg-[url('../assets/ctaBg.png')] bg-center bg-cover opacity-10 pointer-events-none"
             />
                 <Header admin={true}/> 
+                {console.log(<Header/>)}
                     <div className='mt-5'></div>
                         {children}
                 <Footer />

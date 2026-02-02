@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CheckIcon } from "../utilities/animatedIcons";
 
+
 export function ConfirmModal({ time = 2000, onClose }) {
     const [visible, setVisible] = useState(true);
 
@@ -24,3 +25,5 @@ export function ConfirmModal({ time = 2000, onClose }) {
         </div>
     );
 }
+
+

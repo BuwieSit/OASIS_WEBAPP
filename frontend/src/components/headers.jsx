@@ -7,93 +7,157 @@ import clock from "../assets/icons/clock.png";
 import { useState, useEffect } from "react";
 import { CircleUserRound, Bell, BellDot } from "lucide-react";
 import Notifications from "../utilities/notifications";
-import { Settings, UserRound } from "lucide-react";
+import { Settings, UserRound, BellIcon } from "lucide-react";
 import api from "../api/axios";
+import Subtitle from "../utilities/subtitle";
+import UserDropdownSettings from "../utilities/userDropdownSettings";
 
 const API_BASE = api.defaults.baseURL;
 
+
+
 export function Header({ admin = false }) {
     const [bell, setBell] = useState('');
-    const [open, setOpen] = useState(false);
 
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
     const [hasProfile, setHasProfile] = useState(false);
+    const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    async function fetchProfile() {
-      const res = await api.get("/api/student/me");
-      const fetchedProfile = res.data.profile;
-        
-      // ✅ NORMALIZE IMAGE URL ON FETCH
-      fetchedProfile.photo_url = fetchedProfile.photo_path
-        ? `${API_BASE}${fetchedProfile.photo_path}`
-        : null;
+    const [animationClass, setAnimationClass] = useState("");
+    const [openSettings, setOpenSettings] = useState(false);
 
-      setUser(res.data.user);
-      setProfile(fetchedProfile);
-      setHasProfile(true);
-        
+    const handleSettingsClick = () => {
+        if (openSettings) {
+            setAnimationClass("bubble-close");
+            setOpenSettings(false);
+        }
+        else {
+            
+            requestAnimationFrame(() => setAnimate(true));
+            setAnimationClass("bubble-pop");
+            setOpenSettings(true)
+        }
     }
 
-    fetchProfile();
-  }, []);
-
-    
-  console.log("profile", profile);
-
-    if (!user || !profile) return null;
-
-    const handleClick = () => {
-
+    const handleNotifClick = () => {
         requestAnimationFrame(() => setAnimate(true));
         setOpen(prev => !prev);
     }
 
+    useEffect(() => {
+        async function fetchProfile() {
+        const res = await api.get("/api/student/me");
+        const fetchedProfile = res.data.profile;
+            
+        // ✅ NORMALIZE IMAGE URL ON FETCH
+        if (fetchedProfile?.photo_path) {
+            fetchedProfile.photo_url = `${API_BASE}${fetchedProfile.photo_path}`;
+            setHasProfile(true);
+        } else {
+            setHasProfile(false);
+        }
+
+
+        setUser(res.data.user);
+        setProfile(fetchedProfile);
+        setHasProfile(true);
+            
+        }
+
+        fetchProfile();
+    }, []);
+
+
+    if (!admin && (!user || !profile)) return null;
+
+
+
     return (
         <>
+        {admin ? 
             <header className="sticky top-0 w-full h-5 flex flex-row justify-between
-            items-center bg-linear-to-t from-oasis-blue via-oasis-blue to-oasis-dark min-h-15 pl-5 pr-5 shadow-[0_5px_10px_rgba(0,0,0,0.3)] z-50">
+            items-center bg-linear-to-t from-oasis-blue via-oasis-blue to-oasis-dark min-h-15 px-5 shadow-[0_5px_10px_rgba(0,0,0,0.3)] z-50">
+                <LogoWrap />
+                <img src={oasisLogo} className="absolute left-1/2 -translate-x-1/2 w-25 aspect-auto"/>
+                <Subtitle text={"Admin"} color={"text-[#3E8679]"} size={"text-[1rem]"}/> 
+            </header>
+            : 
+            <header className="sticky top-0 w-full h-5 flex flex-row justify-between
+            items-center bg-linear-to-t from-oasis-blue via-oasis-blue to-oasis-dark min-h-15 px-5 shadow-[0_5px_10px_rgba(0,0,0,0.3)] z-50">
                 {/* VINCENT */}
-                <Link to="/"><LogoWrap /></Link>
-                <img src={oasisLogo} className="absolute left-1/2 -translate-x-1/2 w-25 aspect-auto hover:cursor-pointer"></img>
+                <LogoWrap />
+                <img src={oasisLogo} className="absolute left-1/2 -translate-x-1/2 w-25 aspect-auto"/>
                 
                 <div className="flex gap-3 items-center">
                     <HoverLift>
-                        {admin ? null : <a href="#prospectForm" className="font-oasis-text text-oasis-button-dark cursor-pointer ">Submit MOA Prospect</a>}
+                        {!admin && (
+                            <a
+                            href="#prospectForm"
+                            className="font-oasis-text text-oasis-button-dark cursor-pointer"
+                            >
+                            Submit MOA Prospect
+                            </a>
+                        )}
                     </HoverLift>
 
-                    <HoverLift>
-                        {admin ? null : <div onClick={handleClick}><Bell size={28} color="#54A194"/></div>}
+                    <HoverLift onClick={handleNotifClick}>
+                        {!admin && (
+                            <div>
+                            <Bell size={28} color="#54A194" />
+                            </div>
+                        )}
                     </HoverLift>
 
-                    <HoverLift>       
-                        {admin ? 
-                            null 
-                            : 
-                             (hasProfile ? 
-                                (<Link to="/student-profile"><img className="w-8 rounded-full object-contain aspect-square " src={profile.photo_url}/></Link>)
-                                : 
-                                (<Link to="/student-profile"><CircleUserRound color="#54A194" size={28}/></Link>)
-                            )
-                        }              
-                       
-                        
-                        
+                    <HoverLift onClick={handleSettingsClick}>
+                    {!admin && (
+                        hasProfile ? (
+                            <img
+                            className="w-8 rounded-full object-cover aspect-square"
+                            src={profile.photo_url}
+                            alt="Profile"
+                            />
+                        ) : (
+                            <CircleUserRound color="#54A194" size={28}/>
+                        )
+                    )}
                     </HoverLift>
+
                 </div>
             </header>
-            {open && <Notifications open={open}/>}
-            
+        }
+            {openSettings && <UserDropdownSettings
+                    open={openSettings}
+                    className={animationClass}
+                    items={[
+                        { text: "Profile", to: "/student-profile" },
+                        { text: "Settings", to: "/settings" },
+                        { text: "Log out" },
+                    ]}
+                />}
+            {open && <Notifications open={open} />}
         </>
     )
 }
-
 
 export function AdminHeader() {
     const [time, setTime] = useState('');
     const [scrolled, setScrolled] = useState(false);
 
+    const [animationClass, setAnimationClass] = useState("");
+    const [openSettings, setOpenSettings] = useState(false);
+
+    const handleSettingsClick = () => {
+        if (openSettings) {
+            setAnimationClass("bubble-close");
+            setOpenSettings(false);
+        }
+        else {
+            requestAnimationFrame(() => setAnimate(true));
+            setAnimationClass("bubble-pop");
+            setOpenSettings(true)
+        }
+    }
     // Time update
     useEffect(() => {
         const updateTime = () => {
@@ -126,6 +190,7 @@ export function AdminHeader() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
+
     return (
         <div
             className={`
@@ -156,13 +221,24 @@ export function AdminHeader() {
             {/* Icons */}
             <div className="bg-admin-header-bg p-3 rounded-4xl w-fit flex flex-row justify-between items-center gap-5">
                 <HoverLift>
-                    <Settings/>
+                    <BellIcon/>
                 </HoverLift>
-
+                
                 <HoverLift>
-                    <Link to={"/admin-profile"}><UserRound/></Link>
+                    <UserRound onClick={handleSettingsClick}/>
                 </HoverLift>
             </div>
+            {openSettings && 
+                <UserDropdownSettings
+                    open={openSettings}
+                    className={animationClass}
+                    items={[
+                        { text: "Profile", to: "/admin-profile" },
+                        { text: "Settings", to: "/admSettings" },
+                        { text: "Sign out" },
+                    ]}
+                />
+            }
         </div>
     );
 }
