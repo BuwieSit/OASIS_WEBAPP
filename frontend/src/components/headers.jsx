@@ -1,16 +1,48 @@
-import LogoWrap from "../utilities/logoWrap"
-import oasisLogo from "../assets/oasisLogo.png"
-import { Link } from "react-router-dom"
-import NavItem from "./navItem"
-import HoverLift from "./hoverLift"
-import clock from "../assets/icons/clock.png"
-import { useState, useEffect } from "react"
+import LogoWrap from "../utilities/logoWrap";
+import oasisLogo from "../assets/oasisLogo.png";
+import { Link } from "react-router-dom";
+import NavItem from "./navItem";
+import HoverLift from "./hoverLift";
+import clock from "../assets/icons/clock.png";
+import { useState, useEffect } from "react";
 import { CircleUserRound, Bell, BellDot } from "lucide-react";
-import Notifications from "../utilities/notifications"
-import { Settings, UserRound } from "lucide-react"
+import Notifications from "../utilities/notifications";
+import { Settings, UserRound } from "lucide-react";
+import api from "../api/axios";
+
+const API_BASE = api.defaults.baseURL;
+
 export function Header({ admin = false }) {
     const [bell, setBell] = useState('');
     const [open, setOpen] = useState(false);
+
+    const [user, setUser] = useState(null);
+    const [profile, setProfile] = useState(null);
+    const [hasProfile, setHasProfile] = useState(false);
+
+  useEffect(() => {
+    async function fetchProfile() {
+      const res = await api.get("/api/student/me");
+      const fetchedProfile = res.data.profile;
+        
+      // ✅ NORMALIZE IMAGE URL ON FETCH
+      fetchedProfile.photo_url = fetchedProfile.photo_path
+        ? `${API_BASE}${fetchedProfile.photo_path}`
+        : null;
+
+      setUser(res.data.user);
+      setProfile(fetchedProfile);
+      setHasProfile(true);
+        
+    }
+
+    fetchProfile();
+  }, []);
+
+    
+  console.log("profile", profile);
+
+    if (!user || !profile) return null;
 
     const handleClick = () => {
 
@@ -28,15 +60,26 @@ export function Header({ admin = false }) {
                 
                 <div className="flex gap-3 items-center">
                     <HoverLift>
-                        {admin ? "" : <a href="#prospectForm" className="font-oasis-text text-oasis-button-dark cursor-pointer ">Submit MOA Prospect</a>}
+                        {admin ? null : <a href="#prospectForm" className="font-oasis-text text-oasis-button-dark cursor-pointer ">Submit MOA Prospect</a>}
                     </HoverLift>
 
                     <HoverLift>
-                        {admin ? "" : <div onClick={handleClick}><Bell size={28} color="#54A194"/></div>}
+                        {admin ? null : <div onClick={handleClick}><Bell size={28} color="#54A194"/></div>}
                     </HoverLift>
 
-                    <HoverLift>                        
-                        {admin ? "" : <Link to="/student-profile"><CircleUserRound color="#54A194" size={28}/></Link>}
+                    <HoverLift>       
+                        {admin ? 
+                            null 
+                            : 
+                             (hasProfile ? 
+                                (<Link to="/student-profile"><img className="w-8 rounded-full object-contain aspect-square " src={profile.photo_url}/></Link>)
+                                : 
+                                (<Link to="/student-profile"><CircleUserRound color="#54A194" size={28}/></Link>)
+                            )
+                        }              
+                       
+                        
+                        
                     </HoverLift>
                 </div>
             </header>

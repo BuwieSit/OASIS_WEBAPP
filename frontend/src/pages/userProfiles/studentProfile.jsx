@@ -8,7 +8,7 @@ import api from "../../api/axios";
 import { AnnounceButton } from "../../components/button";
 import { FileUploadField, SingleField } from "../../components/fieldComp";
 
-// ✅ ALWAYS RELIABLE BACKEND BASE URL
+// ALWAYS RELIABLE BACKEND BASE URL
 const API_BASE = api.defaults.baseURL;
 
 export default function StudentProfile() {
@@ -142,19 +142,21 @@ export default function StudentProfile() {
           ) : (
             <Title text={fullName || "—"} isAnimated={false} />
           )}
-
-          {isEditing && (
+          <div className="mt-3 flex flex-row justify-center items-center gap-3">
+            {isEditing && (
+              <AnnounceButton
+                btnText={"Save"}
+                className="cursor-pointer"
+                onClick={saveProfile}
+              />
+            )}
             <AnnounceButton
-              btnText={"Save"}
+              btnText={isEditing ? "Cancel" : "Edit Profile"}
               className="cursor-pointer"
-              onClick={saveProfile}
+              onClick={() => setIsEditing(!isEditing)}
             />
-          )}
-          <AnnounceButton
-            btnText={isEditing ? "Cancel" : "Edit Profile"}
-            className="cursor-pointer"
-            onClick={() => setIsEditing(!isEditing)}
-          />
+          </div>
+          
 
 
         </div>
