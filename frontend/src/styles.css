@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Poppins";
+  src: url("../src/assets/fonts/Poppins-Regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Heavitas";
+  src: url("../src/assets/fonts/Heavitas.ttf") format("truetype");
+}
+
+@theme {
+  --color-oasis-aqua: #00D0FF; /* Login Reg*/
+  --color-oasis-dark: #54A194; /* GRADIENT */
+  --color-oasis-blue: #D0FCDC; /* ELEMENTS */
+  --color-oasis-header: #2B6259; /* DARK */
+  --color-oasis-light: #3E8679; /* INTERACTIVE */
+  --color-oasis-icons: #377268;
+  --color-oasis-button-light: #54A194;
+  --color-oasis-button-dark: #2D6259;
+  --color-admin-header-bg: rgba(178,190,181, 0.3);
+  --color-admin-element: #CDE8E3;
+
+  --font-oasis-text: "Poppins";
+  --font-oasis-title: "Heavitas";
+
+  --background-oasis-gradient: linear-gradient(
+    170deg,
+    var(--color-oasis-button-light) 0%,
+    var(--color-oasis-blue) 50%,
+    var(--color-oasis-blue) 50%
+  );
+}
+
+@layer utilities {
+  .bg-oasis-gradient {
+    background-image: var(--background-oasis-gradient);
+  }
+}
+
+/* Bubble pop when opening */
+@keyframes bubble-pop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.bubble-pop {
+  animation: bubble-pop 0.4s ease-out forwards;
+}
+
+/* Bubble shrink when closing */
+@keyframes bubble-close {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+}
+
+.bubble-close {
+  animation: bubble-close 0.4s ease-in forwards;
+}
+
+
+@keyframes fly {
+  0% {
+    transform: translate(0, 0) scale(0.5);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-2rem, -5rem) scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-4rem, -8rem) scale(0);
+    opacity: 0;
+  }
+}
+
+.flying-bubble {
+  @apply w-20 h-20 rounded-full fixed bottom-5 right-5 bg-white z-50 shadow-[0px_0px_20px_rgba(0,0,0,1)];
+  animation: fly 0.8s ease-out forwards;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+body {
+  background: #F4FCF8;
+  
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 7px;
+  
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 50px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 50px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+  /* background: linear-gradient(to right, #C9FDD7, #54A194); */
