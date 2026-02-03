@@ -12,7 +12,7 @@ app = create_app()
 
 with app.app_context():
     hte = HostTrainingEstablishment(
-    company_name="ABC Tech Solutions",
+    company_name="ABC Tech Solutions - Test",
     industry="IT Services",
     address="Quezon City",
     contact_person="Juan Dela Cruz",

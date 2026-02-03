@@ -33,7 +33,7 @@ export default function HteDirectory() {
                     website: hte.website,
                     moaStatus: hte.moa_status,
                     validity: hte.moa_expiry_date,
-                    thumbnail: hte.thumbnail
+                    thumbnail: hte.thumbnail_path
                         ? `${import.meta.env.VITE_API_URL}/${hte.thumbnail}`
                         : fallbackImg,
                     moaFile: hte.moa_file
