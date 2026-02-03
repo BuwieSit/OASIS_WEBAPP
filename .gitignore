@@ -70,9 +70,7 @@ instance/
 ####################################
 # UPLOADED FILES (IMPORTANT)
 ####################################
-backend/uploads/
-backend/static/uploads/
-backend/static/profile_photos/
+
 
 ####################################
 # IDE / EDITORS
