@@ -8,7 +8,7 @@ def create_app() -> Flask:
 
     from app.config import Config
     
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder="static")
     app.config.from_object(Config)
 
     # init extensions
@@ -26,25 +26,25 @@ def create_app() -> Flask:
     from app.routes.admin_routes import admin_bp
     from app.routes.student_profile_routes import student_profile_bp
     from app.routes.admin_profile_routes import admin_profile_bp
-
+    from app.routes.student_dashboard_routes import student_dashboard_bp
+    from app.routes.student_hte_routes import student_hte_bp
+    
     app.register_blueprint(health_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(student_profile_bp)
     app.register_blueprint(admin_profile_bp)
+    app.register_blueprint(student_dashboard_bp)
+    app.register_blueprint(student_hte_bp)
 
     from flask import send_from_directory
-
-    @app.route("/uploads/profile_photos/<filename>")
-    def serve_profile_photo(filename):
-        return send_from_directory(
-            app.config["UPLOAD_FOLDER"],
-            filename
-        )
     
     @app.route("/uploads/<path:filename>")
     def uploaded_files(filename):
-        upload_folder = app.config["UPLOAD_FOLDER"]
-        return send_from_directory(upload_folder, filename)
+        return send_from_directory(
+            app.config["UPLOAD_ROOT"],  # BASE_DIR/uploads
+            filename
+        )
     
     return app
+
