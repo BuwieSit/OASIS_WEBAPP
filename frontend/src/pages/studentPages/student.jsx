@@ -1,5 +1,7 @@
 
 import { Link } from 'react-router-dom'
+import { useEffect, useState } from "react";
+import { getStudentDashboardHTEs } from "../../api/studentDashboard.service";
 import MainScreen from '../../layouts/mainScreen';
 import fallbackImg from "../../assets/fallbackImage.jpg"
 import { UpperWave, LowerWave } from '../../utilities/waves';
@@ -11,29 +13,31 @@ import { Text, StatusView } from '../../utilities/tableUtil';
 
 export default function Student() {
 
-    // MOCK DATA
-    const tableData = [
-        {
-            id: 1,
-            hteName: "PrimaTech",
-            industry: "IT",
-            signedDate: "January 20, 2026",
-            expiryDate: "January 20, 2029",
-            moaStatus: "Rejected"
+    const [tableData, setTableData] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-        },
+    useEffect(() => {
+        getStudentDashboardHTEs()
+            .then((htes) => {
+                const mappedData = htes.map(hte => ({
+                    id: hte.id,
+                    hteName: hte.name,
+                    industry: hte.industry,
+                    signedDate: hte.moa_signed_at || "—",
+                    expiryDate: hte.moa_expiry_date || "—",
+                    moaStatus: hte.moa_status
+                }));
 
-        {
-            id: 2,
-            hteName: "PrimaTech",
-            industry: "IT",
-            signedDate: "January 20, 2026",
-            expiryDate: "January 20, 2029",
-            moaStatus: "Active"
-
-        }
-    ]
-
+                setTableData(mappedData);
+            })
+            .catch((err) => {
+                console.error("Failed to load HTE dashboard data", err);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    }, []);
+    
     const columns = [
         {header: "HTE Name", render: row => <Text text={row.hteName}/>},
         {header: "Industry", render: row => <Text text={row.industry}/>},

@@ -10,45 +10,73 @@ import ReviewRatings from '../../components/reviewRatings'
 import AverageRating from '../../components/averageRating'
 import { AddReviewCard, ReviewCard } from '../../utilities/card'
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
 import { LowerWave, UpperWave } from '../../utilities/waves';
 import { StudentTable } from '../../components/oasisTable';
 import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
+import { useEffect, useState } from "react";
+import { fetchHTEs, downloadMOA } from "../../api/student.service";
 
 export default function HteDirectory() {
     
-    // MOCK DATA
-    const tableData = [
-        {
-            id: 1,
-            hteName: "PrimaTech",
-            industry: "IT",
-            signedDate: "January 20, 2026",
-            expiryDate: "January 20, 2029",
-            moaStatus: "Rejected",
-            moaUrl: "www.facebook.com",
-        },
+    const [htes, setHtes] = useState([]);
+    const [search, setSearch] = useState("");
 
-        {
-            id: 2,
-            hteName: "PrimaTech",
-            industry: "IT",
-            signedDate: "January 20, 2026",
-            expiryDate: "January 20, 2029",
-            moaStatus: "Active",
-            moaUrl: "www.youtube.com",
-
-        }
-    ]
+    useEffect(() => {
+        fetchHTEs()
+            .then((data) => {
+                const mapped = data.map(hte => ({
+                    id: hte.id,
+                    hteName: hte.company_name,
+                    industry: hte.industry,
+                    location: hte.address,
+                    description: hte.description,
+                    website: hte.website,
+                    moaStatus: hte.moa_status,
+                    validity: hte.moa_expiry_date,
+                    thumbnail: hte.thumbnail
+                        ? `${import.meta.env.VITE_API_URL}/${hte.thumbnail}`
+                        : fallbackImg,
+                    moaFile: hte.moa_file
+                        ? `${import.meta.env.VITE_API_URL}/${hte.moa_file}`
+                        : null
+                }));
+                setHtes(mapped);
+            })
+            .catch(err => {
+                console.error("Failed to load HTE directory", err);
+            });
+    }, []);
 
     const columns = [
-        {header: "HTE Name", render: row => <Text text={row.hteName}/>},
-        {header: "Industry", render: row => <Text text={row.industry}/>},
-        {header: "MOA Signed Date", render: row => <Text text={row.signedDate}/>},
-        {header: "MOA Expiration", render: row => <Text text={row.expiryDate}/>},
-        {header: "MOA Status", render: row => <StatusView value={row.moaStatus}/>},
-        {header: "MOA File", render: row => <ViewMoaButton url={row.moaUrl}/>}
-    ]
+        { header: "HTE Name", render: row => <Text text={row.hteName}/> },
+        { header: "Industry", render: row => <Text text={row.industry}/> },
+        { header: "MOA Expiration", render: row => <Text text={row.validity || "—"}/> },
+        { header: "MOA Status", render: row => <StatusView value={row.moaStatus}/> },
+        {
+            header: "MOA File",
+            render: row => (
+                <ViewMoaButton
+                    onClick={() => handleDownloadMOA(row.id)}
+                />
+            )
+        }
+    ];
+
+    const handleDownloadMOA = async (hteId) => {
+        try {
+            const res = await downloadMOA(hteId);
+
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", `HTE_${hteId}_MOA.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (err) {
+            console.error("Failed to download MOA", err);
+        }
+    };
 
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -64,38 +92,12 @@ export default function HteDirectory() {
         setSearchParams({ hte: hteName });
     };
 
-
-
-    // MOCK DATA
     const OPTIONS = { loop: true }
-    const SLIDES = [
-        {
-            thumbnail: fallbackImg,
-            hteName: "ABC Corporation",
-            hteAddress: "Quezon City"
-        },
-        {
-            thumbnail: fallbackImg,
-            hteName: "XYZ Industries",
-            hteAddress: "Makati City"
-        },
-        {
-            thumbnail: fallbackImg,
-            hteName: "TechNova",
-            hteAddress: "Pasig City"
-        },
-        {
-            thumbnail: fallbackImg,
-            hteName: "Google",
-            hteAddress: "BGC"
-        },
-        {
-            thumbnail: fallbackImg,
-            hteName: "IBM",
-            hteAddress: "Navotas City"
-        },
-    ];
-
+    const slides = htes.map(hte => ({
+        thumbnail: hte.thumbnail,
+        hteName: hte.hteName,
+        hteAddress: hte.location
+    }));
 
     return (
         <>
@@ -110,16 +112,14 @@ export default function HteDirectory() {
                     {/* VINCENT - LINK TO HTE PROFILE BAWAT SLIDE ITEM */}
                     <section className="w-full flex flex-col gap-5 justify-center items-center">
                         <Title text={"Overview of Host Training Establishment"}/>
-                        <EmblaCarousel options={OPTIONS} slides={SLIDES} onSelectHte={setHte}/>
+                        <EmblaCarousel options={OPTIONS} slides={slides} onSelectHte={setHte}/>
                     </section>
                     
                     
                     <section className="w-full flex flex-col gap-5 justify-center items-center">
                         <Title text={"List of available HTE with MOA"}/>
                         {/* TABLE HERE */}
-                        <StudentTable columns={columns} data={tableData}>
-
-                        </StudentTable>
+                        <StudentTable columns={columns} data={htes} />
                     </section>
 
 {/* REVIEWS SECTION */}
