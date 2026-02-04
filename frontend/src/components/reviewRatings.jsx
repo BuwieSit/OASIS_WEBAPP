@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useInView } from "../hooks/useInView";
 import star from "../assets/icons/star.png";
 

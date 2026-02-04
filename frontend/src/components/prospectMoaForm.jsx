@@ -34,14 +34,14 @@ export default function ProspectMoaForm() {
                             <Subtitle size={"text-[1rem]"} color={"text-black"} weight={"font-bold"} text={"HTE Information"}/>
 
                                 <SingleField labelText={"HTE / Company Name"} fieldHolder={"Enter Company Name"} fieldId={"hteName"} />
-                                <SingleField labelText={"Industry Category"} fieldHolder={"Enter Industry"} fieldId={"industryCategory"} />
+                                <SingleField labelText={"Nature of Business"} fieldHolder={"Enter nature of business"} fieldId={"natureBusiness"} />
                                 <SingleField labelText={"HTE Address"} fieldHolder={"Enter Address"} fieldId={"hteAddress"} />
-                                <FileUploadField labelText={"Upload Proposed MOA"}/>
+                                <FileUploadField labelText={"Upload filled-up MOA"}/>
 
                             <Subtitle size={"text-[1rem]"} color={"text-black"} weight={"font-bold"} text={"Primary Contact Person"}/>
 
                                 <SingleField labelText={"Contact Person Name"} fieldHolder={"Enter contact name"} fieldId={"contactPersonName"} />
-                                <SingleField labelText={"Position / Role"} fieldHolder={"Enter contact person position"} fieldId={"contactPersonRole"} />
+                                <SingleField labelText={"Position / Designation"} fieldHolder={"Enter contact person position"} fieldId={"contactPersonPosition"} />
                                 <SingleField labelText={"Email Address"} fieldHolder={"Enter contact person email"} fieldId={"contactPersonEmail"} fieldType={"email"}/>
                                 <SingleField labelText={"Contact Number"} fieldHolder={"Enter contact person number"} fieldId={"contactPersonNumber"}/>
 

@@ -1,5 +1,7 @@
+import { Filter } from "../components/adminComps";
 import { AnnounceButton } from "../components/button";
-import Subtitle from "./subtitle"
+import Subtitle from "./subtitle";
+import { useState } from "react";
 
 export function Text({ text }) {
     return(
@@ -52,30 +54,64 @@ export function SignedExpiryDate({ signedDate, mode }) {
     return null;
 }
 
+export function StatusDots({color = "oasis-blue"}) {
+    return (
+        <>  
+        <div className={`rounded-full w-5 aspect-square bg-${color} z-50 cursor-pointer`}/>
+        </>
+    )
+}
 export function StatusDropdown({ value, onChange }) {
-  const statusClasses = {
-    Active: "bg-green-100 text-green-700 border-green-400",
-    Pending: "bg-orange-100 text-orange-700 border-orange-400",
-    Expired: "bg-red-100 text-red-700 border-red-400",
-    Rejected: "bg-gray-200 text-gray-600 border-gray-400",
-  }
+//   const statusClasses = {
+//     Active: "bg-green-100 text-green-700 border-green-400",
+//     Pending: "bg-orange-100 text-orange-700 border-orange-400",
+//     Expired: "bg-red-100 text-red-700 border-red-400",
+//     Rejected: "bg-gray-200 text-gray-600 border-gray-400",
+//   }
 
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange?.(e.target.value)}
-      className={`
-        px-3 py-2 rounded-xl border text-sm
-        focus:outline-none focus:ring-2 focus:ring-offset-1
-        ${statusClasses[value] || "bg-white text-black border-gray-300"}
-      `}
-    >
-      <option value="Active">Active</option>
-      <option value="Pending">Pending</option>
-      <option value="Expired">Expired</option>
-      <option value="Rejected">Rejected</option>
-    </select>
-  )
+//   return (
+//     <select
+//       value={value}
+//       onChange={(e) => onChange?.(e.target.value)}
+//       className={`
+//         px-3 py-2 rounded-xl border text-sm
+//         focus:outline-none focus:ring-2 focus:ring-offset-1
+//         ${statusClasses[value] || "bg-white text-black border-gray-300"}
+//       `}
+//     >
+//       <option value="Active">Active</option>
+//       <option value="Pending">Pending</option>
+//       <option value="Expired">Expired</option>
+//       <option value="Rejected">Rejected</option>
+//     </select>
+//   )
+    
+    return (
+        <>
+            <div id="status" className="relative p-3 bg-oasis-button-dark rounded-3xl w-[80%] m-auto group">
+                <Subtitle text={"Active"} isCenter={true} size="text-[0.8]" color={"text-white"} className={"cursor-pointer"}/>
+                
+                {/* popup */}
+                <div className="absolute top-0 mt-2 left-1/2 -translate-x-1/2 -translate-y-15 p-2 round ed-3xl max-h-10 opacity-0 group-hover:opacity-100 transition duration-200 ease-in-out">
+                    {/* bar wrapper */}
+                    <div className="max-w-100 relative bg-oasis-blue shadow-[0px_2px_10px_rgba(0,0,0,0.5)] px-4 py-2 flex gap-5 items-center rounded-full overflow-hidden flex-row">
+                        {/* dots */}
+                        
+                        <StatusDots color="gray-400"/>
+                        <StatusDots color="oasis-button-dark"/>
+                        <StatusDots color="oasis-button-dark"/>
+                        <StatusDots color="oasis-button-dark"/>
+                        <StatusDots color="oasis-button-dark"/>
+                        <StatusDots color="oasis-button-dark"/>
+                        <StatusDots color="oasis-button-dark"/>
+                        {/* bar */}
+
+                        <div className="absolute left-0 -translate-x-1/2 bg-black p-1 w-[20%] rounded-full transition-[width] duration-700 ease-out"/>
+                    </div>
+                </div>
+            </div>
+        </>
+    )
 }
 
 

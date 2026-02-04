@@ -3,10 +3,9 @@ import AdminScreen from '../../layouts/adminScreen.jsx';
 import { AdminHeader } from '../../components/headers.jsx'
 import Title from "../../utilities/title.jsx";
 import { Container, Filter } from '../../components/adminComps.jsx';
-import { BulletField, FileUploadField, MultiField, SingleField } from '../../components/fieldComp.jsx';
+import { FileUploadField, MultiField, SingleField } from '../../components/fieldComp.jsx';
 import { AnnounceButton } from '../../components/button.jsx';
 import { useState } from "react";
-import { useSearchParams } from 'react-router-dom';
 import { Label } from '../../utilities/label.jsx';
 import { useLocalStorage } from '../../hooks/useLocalStorage.jsx';
 import useQueryParam from '../../hooks/useQueryParams.jsx';

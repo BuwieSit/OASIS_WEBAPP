@@ -2,7 +2,7 @@ import AdminScreen from '../../layouts/adminScreen.jsx';
 import { AdminHeader } from '../../components/headers.jsx'
 import Title from "../../utilities/title.jsx";
 import { AdmCard } from "../../utilities/card.jsx"
-import { UsersRound, ScrollText, Bell, User, Book, BookAlert } from 'lucide-react';
+import { UsersRound, ScrollText, Bell, User, Book, BookAlert, BookPlus, Building2 } from 'lucide-react';
 import { SingleField, MultiField } from '../../components/fieldComp.jsx';
 import { Filter, Dropdown } from '../../components/adminComps.jsx';
 import { Label } from '../../utilities/label.jsx';
@@ -12,13 +12,15 @@ import { useLocalStorage } from '../../hooks/useLocalStorage.jsx';
 import { useState, useEffect } from 'react';
 import { AnnouncementModal } from '../../components/userModal.jsx';
 import { ConfirmModal } from '../../components/popupModal.jsx';
+import { Link } from 'react-router-dom';
 
 export default function Admin() {
      const categories = [
         "HTE Related",
         "Deadlines",
         "Newly Approved HTEs",
-        "Events and Webinars"
+        "Events and Webinars",
+        "Others"
     ];
 
     const [announcements, setAnnouncements] = useLocalStorage("announcements", []);
@@ -93,33 +95,67 @@ export default function Admin() {
                         <Title text={"Admin Dashboard"}/>
                     </div>
 
-                    <section className='p-5 basis-[calc(50%-0.5rem)] flex flex-row justify-between items-center gap-5'>
+                    <section className='p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5'>
                         {/* VINCENT - router per card, total students (if clicked) > Students tab */}
+                        <Link to={"/admStudents"}>
+                            <AdmCard 
+                                cardTitle={"Total Students"}
+                                cardIcon={<UsersRound color='#377268'/>}
+                                cardNumber={"24"}
+                                cardDate={"January 7, 2026"}
+                            />
+                        </Link>
 
-                        <AdmCard 
-                            cardTitle={"Total Students"}
-                            cardIcon={<UsersRound color='#377268'/>}
-                            cardNumber={"24"}
-                            cardDate={"January 7, 2026"}
-                        />
-                        <AdmCard 
-                            cardTitle={"Total Active MOAs"}
-                            cardIcon={<Book color='#377268'/>}
-                            cardNumber={"105"}
-                            cardDate={"January 7, 2026"}
-                        />
-                        <AdmCard 
-                            cardTitle={"Total expired MOAs"}
-                            cardIcon={<BookAlert color='#377268'/>}
-                            cardNumber={"32"}
-                            cardDate={"January 7, 2026"}
-                        />
-                        <AdmCard 
-                            cardTitle={"Total Notifications"}
-                            cardIcon={<Bell color='#377268'/>}
-                            cardNumber={"55"}
-                            cardDate={"January 7, 2026"}
-                        />
+                        <Link to={"/admMoaOverview"}>
+                            <AdmCard 
+                                cardTitle={"Total Active MOAs"}
+                                cardIcon={<Book color='#377268'/>}
+                                cardNumber={"105"}
+                                cardDate={"January 7, 2026"}
+                            />
+                        </Link>
+
+                        <Link to={"/admMoaOverview"}>
+                            <AdmCard 
+                                cardTitle={"Total expired MOAs"}
+                                cardIcon={<BookAlert color='#377268'/>}
+                                cardNumber={"32"}
+                                cardDate={"January 7, 2026"}
+                            />
+                        </Link>
+                        <Link
+                            to="#notifications"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                document
+                                    .getElementById("notifications")
+                                    ?.scrollIntoView();
+                            }}
+                        >
+                            <AdmCard 
+                                cardTitle={"Total Notifications"}
+                                cardIcon={<Bell color='#377268'/>}
+                                cardNumber={"55"}
+                                cardDate={"January 7, 2026"}
+                            />
+                        </Link>
+                        <Link to={"/admMoaOverview"}>
+                            <AdmCard 
+                                cardTitle={"Total MOA submissions"}
+                                cardIcon={<BookPlus color='#377268'/>}
+                                cardNumber={"15"}
+                                cardDate={"January 7, 2026"}
+                            />
+                        </Link>
+
+                        <Link to={"/admOperations"}>
+                            <AdmCard 
+                                cardTitle={"Total Host Training Establishments"}
+                                cardIcon={<Building2 color='#377268'/>}
+                                cardNumber={"137"}
+                                cardDate={"January 7, 2026"}
+                            />
+                        </Link>
                     </section>
                     <div className='flex justify-start items-start w-[90%]'>
                             <Title text={"Post Announcements"}/>
@@ -167,7 +203,7 @@ export default function Admin() {
 
                             <Label labelText={"Filter Announcements"}/>
                             <section className='w-full flex flex-row items-center justify-start gap-5'>
-                                {["All", "HTE Related", "Deadlines", "Newly Approved HTEs", "Events and Webinars"].map(f => (
+                                {["All", "HTE Related", "Deadlines", "Newly Approved HTEs", "Events and Webinars", "Others"].map(f => (
                                     <Filter
                                         key={f}
                                         text={f}
@@ -200,7 +236,7 @@ export default function Admin() {
                         </form>
                        
                         {/* NOTIFICATIONS */}
-                        <div className='w-[25%] min-h-24 p-10 bg-admin-element'>
+                        <div id='notifications' className='w-[25%] min-h-24 p-10 bg-admin-element'>
                             <p className='text-[0.8rem] mb-5 font-black'>Notifications</p>
  
                             <div className='w-full max-h-14 bg-white p-3 rounded-2xl rounded-tl-none text-black border border-oasis-button-dark hover:cursor-pointer hover:bg-oasis-aqua transition ease-in-out duration-300'>

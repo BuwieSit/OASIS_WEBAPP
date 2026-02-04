@@ -23,7 +23,7 @@ export default function UserAccess() {
   return (
     <>
       <LogregScreen>
-        <div className='absolute right-0 top-[50%] right translate-y-[-50%] shadow-[inset_0px_0px_100px] shadow-oasis-blue p-5 h-full w-[40%] flex flex-col justify-center'>
+        <div className='absolute bg-white right-0 top-[50%] right translate-y-[-50%] shadow-[inset_0px_0px_100px] shadow-oasis-blue p-5 h-full w-[40%] flex flex-col justify-center'>
 
           {accessType === ACCESS.LOGIN && (
             <>

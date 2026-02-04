@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom'
-
 import AdminScreen from '../../layouts/adminScreen.jsx';
 import { AdminHeader } from '../../components/headers.jsx'
 import Title from "../../utilities/title.jsx";
@@ -11,8 +9,13 @@ import {
     ActionButtons,
     ViewMoaButton
 } from "../../utilities/tableUtil.jsx";
+import useQueryParam from '../../hooks/useQueryParams.jsx';
+import { useState } from 'react';
+import { Filter } from '../../components/adminComps.jsx';
 
 export default function MoaOverview() {
+
+    const [activeFilter, setFilter] = useQueryParam("tab", "overview");
 
     const currentMoaColumns = [
         { header: "HTE Name", render: row => <Text text={row.hteName} /> },
@@ -64,18 +67,36 @@ export default function MoaOverview() {
         <>
             <AdminScreen>
                 <AdminHeader/>
-                <div className=''>
-                    <Title text={"MOA Overview"}/>
+                <div className='flex flex-row gap-3 w-[80%]'>
+                    <Filter 
+                        text={"MOA Overview"}
+                        onClick={() => setFilter("overview")}
+                        isActive={activeFilter === "overview"}
+                    />
+                    <Filter 
+                        text={"MOA Prospect Submissions"}
+                        onClick={() => setFilter("submissions")}
+                        isActive={activeFilter === "submissions"}
+                    />
                 </div>
+               
+                {activeFilter === "overview" && 
+                    <>
+                        <div className='flex justify-start items-start w-[90%]'>
+                            <Title text={"MOA Overview"}/>
+                        </div>
+                        <OasisTable columns={currentMoaColumns} data={currentMoasData}/>
+                    </>
+                }
+                {activeFilter === "submissions" &&
+                    <>
+                        <div className='flex justify-start items-start w-[90%]'>
+                            <Title text={"MOA Prospects Submissions"}/>
+                        </div>
 
-                <OasisTable columns={currentMoaColumns} data={currentMoasData}/>
-
-                <div className='flex justify-start items-start w-[90%]'>
-                    <Title text={"MOA Prospects Submissions"}/>
-                </div>
-
-                <OasisTable columns={prospectMoaColumns} data={prospectMoaData}/>
-
+                        <OasisTable columns={prospectMoaColumns} data={prospectMoaData}/>
+                    </>
+                }
             </AdminScreen>
         </>
     )

@@ -55,7 +55,7 @@ export default function AdmOperations() {
                 </div>
                 <OasisTable columns={hteOverviewHeaders} data={hteData}></OasisTable>
 
-                <div className="w-[90%] p-5 rounded-3xl bg-admin-element flex flex-col gap-5 shadow-[0px_0px_10px_rgba(0,0,0,0.5)]">
+                <div className="w-[80%] p-5 rounded-3xl bg-admin-element flex flex-col gap-5 shadow-[0px_0px_10px_rgba(0,0,0,0.5)]">
 
                     <form className="w-full flex flex-col gap-5">
 

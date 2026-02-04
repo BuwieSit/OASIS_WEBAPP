@@ -369,6 +369,7 @@ export function UpdatedLogin() {
 export function ForgotPassword() {
   return (
     <>
+    <Title text={"Forgot Password"} />
       <form className="w-full p-5 flex flex-col items-center justify-center gap-5">
 
         <div className="w-full">

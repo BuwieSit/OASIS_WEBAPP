@@ -46,9 +46,6 @@ export default function Student() {
         {header: "MOA Status", render: row => <StatusView value={row.moaStatus}/>}
     ]
 
-
-
-
     return(
         <>
             <MainScreen hasTopMargin={true}>

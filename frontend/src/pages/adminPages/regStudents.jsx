@@ -15,57 +15,46 @@ import {
 
 export default function RegStudents() {
     // MOCK DATA
-    const advisers = [
-        { id: 1, name: "Prof. Maria Santos" },
-        { id: 2, name: "Engr. John Reyes" },
-        { id: 3, name: "Dr. Ana Cruz" },
-        { id: 4, name: "Mr. Carlo Mendoza" }
-    ]
 
-    const [students, setStudents] = useState([
+    const students = [
         {
             id: 1,
             studentName: "Juan Dela Cruz",
+            studentSection: "3-1",
             studentWebmail: "juan@school.edu.ph",
-            studentYear: "2nd Year",
-            studentAdviserId: 1
+            studentProgram: "DIT",
+            studentAdviser: "Prof. Juan Dela Cruz",
         },
         {
             id: 2,
             studentName: "Ana Lim",
+            studentSection: "3-1",
             studentWebmail: "ana@school.edu.ph",
-            studentYear: "3rd Year",
-            studentAdviserId: 1
+            studentProgram: "DIT",
+            studentAdviser: "Prof. Juan Dela Cruz",
         }
-    ])
+    ]
 
-    const handleAdviserChange = (studentId, adviserId) => {
-        setStudents(prev =>
-            prev.map(student =>
-                student.id === studentId
-                    ? { ...student, studentAdviserId: adviserId }
-                    : student
-            )
-        );
+    // const handleAdviserChange = (studentId, adviserId) => {
+    //     setStudents(prev =>
+    //         prev.map(student =>
+    //             student.id === studentId
+    //                 ? { ...student, studentAdviserId: adviserId }
+    //                 : student
+    //         )
+    //     );
 
-        console.log(`Mock assign adviser ${adviserId} to student ${studentId}`);
-    };
+    //     console.log(`Mock assign adviser ${adviserId} to student ${studentId}`);
+    // };
 
 
     const regStudents = [
         
         {header: "Name", render: row => <Text text={row.studentName}/>},
+        {header: "Section", render: row => <Text text={row.studentSection}/>},
         {header: "Student Webmail", render: row => <Text text={row.studentWebmail}/>},
-        {header: "Year", render: row => <Text text={row.studentYear}/>},
-        {header: "OJT Adviser", render: row => (
-                                        <AdviserDropdown 
-                                            value={row.studentAdviserId}
-                                            options={advisers}
-                                            onChange={(adviserId) => {
-                                                handleAdviserChange(row.id, adviserId)
-                                            }}
-                                            />
-                                    )},
+        {header: "Program", render: row => <Text text={row.studentProgram}/>},
+        {header: "OJT Adviser", render: row => <Text text={row.studentAdviser}/>},
         {header: "Actions", render: row => <ActionButtons rowId={row.id}/>},
         
     ]
@@ -79,7 +68,7 @@ export default function RegStudents() {
                 </div>
                 <OasisTable columns={regStudents} data={students}>
                     <Title text={"Filter by year"}/>
-                    <div className="flex flex-row items-center justify-start gap-5">
+                    <div className="flex flex-row items-center justify-start gap-5 mt-5">
                         <Filter text={"All"}/>
                         <Filter text={"2nd year"}/>
                         <Filter text={"3rd year"}/>
