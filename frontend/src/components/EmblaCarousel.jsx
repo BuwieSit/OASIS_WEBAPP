@@ -68,7 +68,7 @@ const EmblaCarousel = (props) => {
                 thumbnail={slide.thumbnail}
                 hteName={slide.hteName}
                 hteAddress={slide.hteAddress}
-                onClick={() => onSelectHte(slide.hteName)}  
+                onClick={() => onSelectHte(slide.id)}  
             />
           ))}
         </div>

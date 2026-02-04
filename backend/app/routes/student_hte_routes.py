@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request, send_file
 from flask_jwt_extended import jwt_required, get_jwt
-
+import os
+from flask import current_app, send_from_directory
 from app.models import HostTrainingEstablishment
 
 student_hte_bp = Blueprint(
@@ -118,15 +119,25 @@ def get_hte_detail(hte_id):
 
     return jsonify({
         "id": hte.id,
+
+        # Company Info
         "company_name": hte.company_name,
         "industry": hte.industry,
         "address": hte.address,
+        "description": hte.description,
+        "website": hte.website,
         "thumbnail": hte.thumbnail_path,
+
+        # Course
         "course": hte.course,
+
+        # Contact Person
         "contact_person": hte.contact_person,
         "contact_position": hte.contact_position,
         "contact_number": hte.contact_number,
         "contact_email": hte.contact_email,
+
+        # MOA Info
         "moa_status": hte.moa_status,
         "moa_signed_at": (
             hte.moa_signed_at.isoformat()
@@ -155,4 +166,18 @@ def download_moa(hte_id):
     if not hte.moa_file_path:
         return jsonify({"error": "MOA not available"}), 404
 
-    return send_file(hte.moa_file_path, as_attachment=True)
+    # hte.moa_file_path example: "uploads/moa/abc_tech.pdf"
+    relative_path = hte.moa_file_path.replace("\\", "/")
+
+    # BASE uploads directory (from Config)
+    upload_root = current_app.config["UPLOAD_ROOT"]
+
+    # Split directory and filename
+    directory = os.path.join(upload_root, os.path.dirname(relative_path))
+    filename = os.path.basename(relative_path)
+
+    return send_from_directory(
+        directory,
+        filename,
+        as_attachment=True
+    )

@@ -9,6 +9,8 @@ class HostTrainingEstablishment(db.Model):
     company_name = db.Column(db.String(255), nullable=False)
     industry = db.Column(db.String(150), nullable=False)
     address = db.Column(db.Text, nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    website = db.Column(db.String(255), nullable=True)
 
     # Contact Person
     contact_person = db.Column(db.String(150), nullable=False)

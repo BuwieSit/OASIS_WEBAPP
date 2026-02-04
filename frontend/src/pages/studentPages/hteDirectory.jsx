@@ -80,20 +80,21 @@ export default function HteDirectory() {
 
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const activeHte = searchParams.get("hte");
+    const activeHteId = searchParams.get("hteId");
 
     useEffect(() => {
-        if (activeHte) {
-            navigate(`/hte-profile?hte=${encodeURIComponent(activeHte)}`)
+        if (activeHteId) {
+            navigate(`/hte-profile?hteId=${activeHteId}`);
         }
-    }, [activeHte, navigate])
+    }, [activeHteId, navigate]);
 
-    const setHte = (hteName) => {
-        setSearchParams({ hte: hteName });
+    const setHte = (hteId) => {
+        setSearchParams({ hteId });
     };
 
     const OPTIONS = { loop: true }
     const slides = htes.map(hte => ({
+        id: hte.id,
         thumbnail: hte.thumbnail,
         hteName: hte.hteName,
         hteAddress: hte.location
