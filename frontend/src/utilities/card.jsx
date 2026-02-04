@@ -45,7 +45,7 @@ export function AdmCard({ cardTitle, cardIcon, cardNumber, cardDate}) {
         <div className="p-3 w-full min-w-70 min-h-42 rounded-2xl font-oasis-text text-[0.8rem] flex flex-col justify-between items-center hover:bg-oasis-gradient bg-oasis-gradient">
 
           <section className="w-full flex flex-row justify-between items-center gap-2">
-              <p className="text-wrap text-[0.9rem]">{cardTitle}</p>
+              <p className="text-wrap text-[0.9rem] font-bold">{cardTitle}</p>
               {cardIcon}
           </section>
 

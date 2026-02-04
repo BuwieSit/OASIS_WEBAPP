@@ -2,7 +2,7 @@ import AdminScreen from '../../layouts/adminScreen.jsx';
 import { AdminHeader } from '../../components/headers.jsx'
 import Title from "../../utilities/title.jsx";
 import { AdmCard } from "../../utilities/card.jsx"
-import { UsersRound, ScrollText, Bell, User, Book, BookAlert, BookPlus, Building2 } from 'lucide-react';
+import { UsersRound, ScrollText, Bell, User, Book, BookAlert, BookPlus, Building2, FileCheck } from 'lucide-react';
 import { SingleField, MultiField } from '../../components/fieldComp.jsx';
 import { Filter, Dropdown } from '../../components/adminComps.jsx';
 import { Label } from '../../utilities/label.jsx';
@@ -123,22 +123,6 @@ export default function Admin() {
                                 cardDate={"January 7, 2026"}
                             />
                         </Link>
-                        <Link
-                            to="#notifications"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                document
-                                    .getElementById("notifications")
-                                    ?.scrollIntoView();
-                            }}
-                        >
-                            <AdmCard 
-                                cardTitle={"Total Notifications"}
-                                cardIcon={<Bell color='#377268'/>}
-                                cardNumber={"55"}
-                                cardDate={"January 7, 2026"}
-                            />
-                        </Link>
                         <Link to={"/admMoaOverview"}>
                             <AdmCard 
                                 cardTitle={"Total MOA submissions"}
@@ -153,6 +137,14 @@ export default function Admin() {
                                 cardTitle={"Total Host Training Establishments"}
                                 cardIcon={<Building2 color='#377268'/>}
                                 cardNumber={"137"}
+                                cardDate={"January 7, 2026"}
+                            />
+                        </Link>
+                        <Link to={"/admUploads"}>
+                            <AdmCard 
+                                cardTitle={"Total Uploaded Documents"}
+                                cardIcon={<FileCheck color='#377268'/>}
+                                cardNumber={"15"}
                                 cardDate={"January 7, 2026"}
                             />
                         </Link>
