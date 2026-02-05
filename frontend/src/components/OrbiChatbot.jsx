@@ -7,11 +7,11 @@ import { useChatbotToggle } from '../hooks/useChatbotToggle';
 
 export default function OrbiChatbot() {
 
-    const { open, animate, onBubble, openChat, closeChat } = useChatbotToggle();
+    const { open, animate, onBubble, closeChat, handleClick } = useChatbotToggle();
 
     return (
         <>
-            <img src={orbi} onClick={openChat} className={`fixed bottom-[0%] right-[0%] z-100 w-35 aspect-square hover:cursor-pointer hover:scale-115 transition ease-in-out duration-200 drop-shadow-[3px_3px_10px_rgba(255,255,255,1)] hover:drop-shadow-[3px_3px_1px_rgba(0,0,0,1)] ${animate ? "animate__animated animate__jello" : ""}`} alt='orbiChatbot'/>
+            <img src={orbi} onClick={handleClick} className={`fixed bottom-[0%] right-[0%] z-100 w-35 aspect-square hover:cursor-pointer hover:scale-115 transition ease-in-out duration-200 drop-shadow-[3px_3px_10px_rgba(255,255,255,1)] hover:drop-shadow-[3px_3px_1px_rgba(0,0,0,1)] ${animate ? "animate__animated animate__jello" : ""}`} alt='orbiChatbot'/>
             
             {open && <FloatingChat open={open} onClose={closeChat}/>}
             {onBubble && <BubbleAnim start={onBubble}/>}
