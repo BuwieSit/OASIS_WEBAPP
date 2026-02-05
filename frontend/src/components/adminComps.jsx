@@ -13,12 +13,11 @@ export function Container({ children, column = true }) {
     );
 }
 
-export function Filter({ text, isActive = false, onClick }) {
+export function Filter({ text, isActive = false, onClick, icon }) {
     return (
         <div
             onClick={onClick}
-            className={`p-3 font-oasis-text font-medium text-[0.7rem] rounded-3xl cursor-pointer
-                transition duration-300 ease-in-out
+            className={`p-3 font-oasis-text font-medium text-[0.7rem] rounded-3xl cursor-pointer transition duration-300 ease-in-out flex flex-row gap-2 items-center justify-center
                 ${
                     isActive
                         ? "bg-oasis-aqua text-black translate-y-[-10%] shadow-[inset_0px_0px_5px_rgba(0,0,0,0.4)]"
@@ -26,6 +25,7 @@ export function Filter({ text, isActive = false, onClick }) {
                 }
             `}
         >
+            {icon}
             {text}
         </div>
     );

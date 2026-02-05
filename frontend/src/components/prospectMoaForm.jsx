@@ -46,7 +46,8 @@ export default function ProspectMoaForm() {
                                 <SingleField labelText={"Contact Number"} fieldHolder={"Enter contact person number"} fieldId={"contactPersonNumber"}/>
 
                         <div className="w-full col-span-2 flex justify-center">
-                                <button className="font-oasis-text text-[0.9rem] text-center py-3 px-5 w-[80%] rounded-3xl transition-all duration-200 hover:cursor-pointer bg-oasis-button-dark hover:bg-oasis-button-light text-white" type="button">Submit MOA Prospect</button>
+                                
+                                <AnnounceButton isFullWidth={true} btnText="Submit MOA Prospect"/>
                         </div>
 
                         </form>

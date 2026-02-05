@@ -57,7 +57,7 @@ export function StudentTable({ columns = [], data = [], children }) {
         <>
             <div className={`w-[90%] ${maxHeight} p-3 rounded-2xl flex flex-col items-center justify-center font-oasis-text`}>
                 {children && 
-                    <div className="w-[95%] flex flex-col justify-center items-start">
+                    <div className="w-full flex flex-col justify-center items-start">
                         {children}
                     </div>
                 }
@@ -66,11 +66,11 @@ export function StudentTable({ columns = [], data = [], children }) {
                     
                     {/* HEADER */}
                     <thead>
-                        <tr className="bg-oasis-gradient rounded-2xl">
+                        <tr className="bg-oasis-button-dark rounded-2xl">
                             {columns.map((col, colIndex) => (
                                 <th
                                     key={colIndex}
-                                    className="p-3 text-[1rem] text-black text-center"
+                                    className="p-3 text-[1rem] text-white text-center"
                                 >
                                     {col.header}
                                 </th>

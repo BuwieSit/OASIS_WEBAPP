@@ -7,12 +7,14 @@ export function SingleField({
   fieldHolder,
   fieldId,
   value,
+  hasBorder,
   onChange
 }) {
   return (
     <div className="w-full">
       <Label fieldId={fieldId} labelText={labelText} />
       <AdminField
+        hasBorder={hasBorder}
         type={fieldType}
         pholder={fieldHolder}
         id={fieldId}

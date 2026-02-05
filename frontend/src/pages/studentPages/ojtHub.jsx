@@ -1,7 +1,3 @@
-
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import MainScreen from '../../layouts/mainScreen';
 import Accordion from '../../components/accordion';
 import Title from '../../utilities/title';
@@ -27,7 +23,7 @@ export default function OjtHub() {
                      <div className='w-[70%] p-2 flex flex-col justify-center items-center gap-20'>
                         {/* RENDER CONTENTS */}
                         {activeFilter === "guidelines" && <Guidelines/>}
-                        {activeFilter === "procedures" && <Procedures/>}
+                        {activeFilter === "ojtjourney" && <OjtJourney/>}
                         {activeFilter === "moaprocess" && <MoaProcess/>}
                         {activeFilter === "keyguidelines" && <KeyGuidelines/>}
                         {activeFilter === "formstemplates" && <FormsTemplates/>}
@@ -45,9 +41,9 @@ export default function OjtHub() {
                                     isActive={activeFilter === "guidelines"}
                                 />
                                 <SideNavText 
-                                    text={"Procedures"} 
-                                    onClick={() => setActiveFilter("procedures")}
-                                    isActive={activeFilter === "procedures"}
+                                    text={"OJT Journey"} 
+                                    onClick={() => setActiveFilter("ojtjourney")}
+                                    isActive={activeFilter === "ojtjourney"}
                                 />
                                 <SideNavText 
                                     text={"MOA Process"} 
@@ -105,11 +101,11 @@ export function Guidelines() {
     )
 }
 
-export function Procedures() {
+export function OjtJourney() {
     return (
         <>
             <section className='w-full flex flex-col items-start justify-center gap-5'>
-                <Title text={"Procedures"} isAnimated={false} id={"procedures"}/>
+                <Title text={"OJT Journey"} isAnimated={false} id={"ojtJourney"}/>
                 <div className='w-full border'></div>
 
                 <Accordion headerText={"Before Internship"}>

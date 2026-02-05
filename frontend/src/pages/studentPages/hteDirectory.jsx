@@ -15,6 +15,7 @@ import { StudentTable } from '../../components/oasisTable';
 import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
 import { useEffect, useState } from "react";
 import { fetchHTEs, downloadMOA } from "../../api/student.service";
+import SearchBar from '../../components/searchBar';
 
 export default function HteDirectory() {
     
@@ -49,7 +50,7 @@ export default function HteDirectory() {
 
     const columns = [
         { header: "HTE Name", render: row => <Text text={row.hteName}/> },
-        { header: "Industry", render: row => <Text text={row.industry}/> },
+        { header: "Nature of Business", render: row => <Text text={row.industry}/> },
         { header: "MOA Expiration", render: row => <Text text={row.validity || "—"}/> },
         { header: "MOA Status", render: row => <StatusView value={row.moaStatus}/> },
         {
@@ -111,10 +112,12 @@ export default function HteDirectory() {
                     </div>
 
                     {/* VINCENT - LINK TO HTE PROFILE BAWAT SLIDE ITEM */}
-                    <section className="w-full flex flex-col gap-5 justify-center items-center">
-                        <Title text={"Overview of Host Training Establishment"}/>
+                    <Title text={"Overview of Host Training Establishment"}/>
+                    <section className="w-[90%] flex flex-col gap-5 justify-center items-center">
+                        <SearchBar/>
                         <EmblaCarousel options={OPTIONS} slides={slides} onSelectHte={setHte}/>
                     </section>
+
                     
                     
                     <section className="w-full flex flex-col gap-5 justify-center items-center">

@@ -9,7 +9,10 @@ import Title from '../../utilities/title';
 import Subtitle from '../../utilities/subtitle';
 import { CustomCard } from '../../utilities/card';
 import { StudentTable } from '../../components/oasisTable';
-import { Text, StatusView } from '../../utilities/tableUtil';
+import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
+import SearchBar from '../../components/searchBar';
+import { Filter } from '../../components/adminComps';
+import { FilterIcon } from 'lucide-react';
 
 export default function Student() {
 
@@ -25,7 +28,8 @@ export default function Student() {
                     industry: hte.industry,
                     signedDate: hte.moa_signed_at || "—",
                     expiryDate: hte.moa_expiry_date || "—",
-                    moaStatus: hte.moa_status
+                    moaStatus: hte.moa_status,
+                    moaFile: hte.moa_file || "—"
                 }));
 
                 setTableData(mappedData);
@@ -40,11 +44,36 @@ export default function Student() {
     
     const columns = [
         {header: "HTE Name", render: row => <Text text={row.hteName}/>},
-        {header: "Industry", render: row => <Text text={row.industry}/>},
+        {header: "Nature of Business", render: row => <Text text={row.industry}/>},
         {header: "MOA Signed Date", render: row => <Text text={row.signedDate}/>},
         {header: "MOA Expiration", render: row => <Text text={row.expiryDate}/>},
-        {header: "MOA Status", render: row => <StatusView value={row.moaStatus}/>}
+        {header: "MOA Status", render: row => <StatusView value={row.moaStatus}/>},
+        {
+            header: "MOA File",
+            render: row => (
+                <ViewMoaButton
+                    onClick={() => handleDownloadMOA(row.id)}
+                />
+            )
+        }
     ]
+
+    
+    const handleDownloadMOA = async (hteId) => {
+        try {
+            const res = await downloadMOA(hteId);
+
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", `HTE_${hteId}_MOA.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (err) {
+            console.error("Failed to download MOA", err);
+        }
+    };
 
     return(
         <>
@@ -73,7 +102,11 @@ export default function Student() {
 
                     {/* TABLE HERE */}
                     <StudentTable columns={columns} data={tableData}>
-
+                        <div className='w-full flex flex-row justify-between items-center'>
+                            <Filter icon={<FilterIcon/>} text={"Filter"}/>
+                            <SearchBar/>
+                        </div>
+                        
                     </StudentTable>
 
                     <section className='w-[50%] flex flex-col gap-2 mt-10'>

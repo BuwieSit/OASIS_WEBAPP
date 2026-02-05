@@ -17,7 +17,7 @@ export function Button({ text, onClick, disabled, width = "w-auto", type = "butt
 }
 
 
-export function AnnounceButton({ type="button", btnText = "Posted", onClick, disabled,  icon}) {
+export function AnnounceButton({ type="button", btnText = "Posted", onClick, disabled,  icon, isFullWidth = false}) {
     const text = btnText.toLowerCase();
 
     const isDanger = ["delete", "reject", "clear all", "clear"].includes(text);
@@ -36,7 +36,7 @@ export function AnnounceButton({ type="button", btnText = "Posted", onClick, dis
         <button
             type={type}
             onClick={onClick}
-            className={`font-oasis-text text-[0.8rem] text-center py-2 px-5 w-auto flex flex-row items-center justify-center gap-3 max-w-70 rounded-3xl transition-all duration-200 hover:cursor-pointer ${buttonStyle} `}
+            className={`font-oasis-text text-[0.8rem] text-center py-2 px-5 ${isFullWidth ? "w-full" : "w-auto"} flex flex-row items-center justify-center gap-3 max-w-70 rounded-3xl transition-all duration-200 hover:cursor-pointer ${buttonStyle} `}
             disabled={disabled}
         >
             {icon}
