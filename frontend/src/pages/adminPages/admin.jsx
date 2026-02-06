@@ -74,7 +74,7 @@ export default function Admin() {
     return(
         <>
             <AdminScreen>
-                <AdminHeader/>
+                
                 
                  <AnnouncementModal 
                     visible={!!selectedAnnouncement} 

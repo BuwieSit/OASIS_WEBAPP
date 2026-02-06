@@ -66,7 +66,6 @@ export default function MoaOverview() {
     return(
         <>
             <AdminScreen>
-                <AdminHeader/>
                 <div className='flex flex-row gap-3 w-[80%]'>
                     <Filter 
                         text={"MOA Overview"}

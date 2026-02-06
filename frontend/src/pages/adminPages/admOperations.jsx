@@ -45,7 +45,6 @@ export default function AdmOperations() {
     return(
         <>
             <AdminScreen>
-                <AdminHeader/>
                  <div className='mb-10'>
                     <Title text={"Admin Operations"}/>
                 </div>

@@ -62,7 +62,6 @@ export default function RegStudents() {
     return(
         <>
             <AdminScreen>
-                <AdminHeader/>
                 <div className=''>
                     <Title text={"Registered Students"}/>
                 </div>

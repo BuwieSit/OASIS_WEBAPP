@@ -10,7 +10,7 @@ import { Link } from "react-router-dom";
 export default function Footer() {
     return (
         <>
-        <footer className="z-100">
+        <footer className="z-90">
             <FooterWave/>
             <div className="mt-[-3px] w-full min-h-50 flex flex-row sticky bottom-0 bg-linear-to-b p-5 from-oasis-blue from-10% via-oasis-blue via-40% to-white">
                 {/* LEFT SIDE */}

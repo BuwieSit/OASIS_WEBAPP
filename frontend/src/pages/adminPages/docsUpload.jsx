@@ -21,8 +21,6 @@ export default function DocsUpload() {
     };
     return (
         <AdminScreen>
-            <AdminHeader />
-
             <div>
                 <Title text={"Documents Upload"} />
             </div>
