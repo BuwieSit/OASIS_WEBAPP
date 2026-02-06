@@ -87,9 +87,9 @@ export default function Student() {
                 <ViewModal 
                     visible={openView}
                     onClose={() => setOpenView(false)}
-                    isDocument={true}
+                    isVideo={true}
                     file={filePdf}
-                    resourceTitle="Buwie Resume"
+                    resourceTitle="How to use OASIS"
                 />
                 <div className="w-[90%] aspect-video rounded-3xl overflow-hidden relative flex flex-col items-center justify-center shadow-[0px_0px_10px_rgba(0,0,0,1)]">
 
