@@ -3,11 +3,25 @@ import Title from "./title";
 import Subtitle from "./subtitle";
 import { Label, RatingLabel } from "./label";
 import { AnnounceButton } from "../components/button";
-import star from "../assets/icons/star.png";
 import goldStar from "../assets/icons/goldStar.png";
 import blackStar from "../assets/icons/blackStar.png"
 import { MultiField, SingleField } from "../components/fieldComp";
+import img from "../assets/fallbackImage.jpg";
 
+export function TutorialCard({title = "Title", desc = "description", thumbnail = img, onClick }) {
+
+  return(
+      <div className="relative bg-oasis-gradient overflow-hidden sm:w-65 md:w-75 lg:w-80 aspect-square cursor-pointer rounded-3xl shadow-[0px_0px_5px_rgba(0,0,0,0.4)] group perspective transition-all duration-150 ease-in-out hover:-translate-y-3 hover:shadow-[0px_5px_5px_rgba(0,0,0,0.5)]" onClick={onClick}>
+
+          <img src={thumbnail} alt="thumbnail" className="w-full h-[70%] object-cover transition-all duration-150 ease-in-out shadow-[inset_0px_0px_10px_#54A194]"/>
+          <section className="h-[30%] w-full z-50 bg-white p-3 flex flex-col justify-start items-start">
+            <Subtitle text={title} size="text-[1.2rem]" weight="font-bold"/>
+            <Subtitle text={desc}/>
+          </section>
+
+      </div>
+  )
+}
 export function CustomCard({ title, desc }) {
   const [showBack, setShowBack] = useState(false);
 

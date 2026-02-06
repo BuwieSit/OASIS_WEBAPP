@@ -68,11 +68,3 @@ export function AddButton({ onClick, type = "button", width = "w-25", height = "
     );
 }
 
-export function CloseButton({ onClick, type = "button"}) {
-    return (
-        <>
-            <button className="w-9 absolute top-1 right-1/15 translate-x-1/2 translate-y-1/2 p-2 bg-oasis-button-dark text-white rounded-full hover:cursor-pointer"
-            onClick={onClose}><img src={close} className="object-contain w-full" /></button>
-        </>
-    )
-}
