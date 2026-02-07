@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import ChatField from '../utilities/chatField';
 import orbi from "../assets/orbi.png";
 import { SingleField } from './fieldComp';
-import { Maximize2, Minus } from 'lucide-react';
+import { ArrowBigRightDash, Maximize2, Minus, Send, SendHorizontal } from 'lucide-react';
 import { useChatbotToggle } from '../hooks/useChatbotToggle';
 
 export default function OrbiChatbot() {
@@ -58,8 +58,9 @@ export function FloatingChat({ open, onClose }) {
                         backdrop-blur-xs rounded-3xl p-2
                         shadow-[2px_2px_5px_rgba(0,0,0,0.9)] relative">
             <div className="w-full border-b px-3 py-2 flex flex-row justify-end items-center gap-3">
-                <Minus size={20} className="cursor-pointer" onClick={onClose}/>
-                <Maximize2 size={20}/>
+                <Maximize2 size={20} className='z-20'/>
+                <Minus size={20} className="cursor-pointer z-20" onClick={onClose}/>
+                
             </div>
             {/* Messages Field */}
             <div className="w-full h-[80%] p-5 overflow-y-auto overflow-hidden">
@@ -76,7 +77,14 @@ export function FloatingChat({ open, onClose }) {
             </div>
 
             <div className="w-full h-[20%] z-20 grid place-items-center">
-                <SingleField hasBorder={true} fieldHolder={"Enter message"} fieldId={"userMessage"}/>
+                <div className='w-full flex items-center gap-3'>
+                    <SingleField hasBorder={true} fieldHolder={"Enter message"} fieldId={"userMessage"}/>
+                    <div className='rounded-full p-2 transition-all duration-150 ease-in-out hover:bg-white group'>
+                        <SendHorizontal size={25} color='#2D6259' className='cursor-pointer group-hover:-rotate-z-40 transition-all duration-150 ease-in-out'/>
+                    </div>
+                   
+                </div>
+
             </div>
         </div>
         </div>

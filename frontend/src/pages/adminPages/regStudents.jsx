@@ -1,16 +1,13 @@
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
 import AdminScreen from '../../layouts/adminScreen.jsx';
-import { AdminHeader } from '../../components/headers.jsx'
 import Title from "../../utilities/title.jsx";
-import OasisTable from "../../components/oasisTable.jsx"
-
-import { Filter } from '../../components/adminComps.jsx';
+import OasisTable from "../../components/oasisTable.jsx";
+import useQueryParam from '../../hooks/useQueryParams.jsx';
 import {
     Text,
     ActionButtons,
     AdviserDropdown
 } from "../../utilities/tableUtil.jsx";
+import Subtitle from '../../utilities/subtitle.jsx';
 
 
 export default function RegStudents() {
@@ -59,6 +56,7 @@ export default function RegStudents() {
         
     ]
 
+    const [activeFilter, setFilter] = useQueryParam("tab", "overview");
     return(
         <>
             <AdminScreen>
@@ -68,10 +66,79 @@ export default function RegStudents() {
                 <OasisTable columns={regStudents} data={students}>
                     <Title text={"Filter by year"}/>
                     <div className="flex flex-row items-center justify-start gap-5 mt-5">
-                        <Filter text={"All"}/>
-                        <Filter text={"2nd year"}/>
-                        <Filter text={"3rd year"}/>
+                        <Subtitle
+                            text={"DIT"}
+                            onClick={() => setFilter("dit")}
+                            isActive={activeFilter === "dit"}
+                            isLink={true}
+                            size='text-[1rem]'
+                        />
+                        <Subtitle text={"|"} size='text-[1rem]'/>
+                        <Subtitle
+                            text={"DLMOT"}
+                            onClick={() => setFilter("dlmot")}
+                            isActive={activeFilter === "dlmot"}
+                            isLink={true}
+                            size='text-[1rem]'
+                        />
+                        <Subtitle text={"|"} size='text-[1rem]'/>
+                        <Subtitle
+                            text={"DEET"}
+                            onClick={() => setFilter("deet")}
+                            isActive={activeFilter === "deet"}
+                            isLink={true}
+                            size='text-[1rem]'
+                        />
+                        <Subtitle text={"|"} size='text-[1rem]'/>
+                        <Subtitle
+                            text={"DMET"}
+                            onClick={() => setFilter("dmet")}
+                            isActive={activeFilter === "dmet"}
+                            isLink={true}
+                            size='text-[1rem]'
+                        />
+                        <Subtitle text={"|"} size='text-[1rem]'/>
+                        <Subtitle
+                            text={"DCVET"}
+                            onClick={() => setFilter("dcvet")}
+                            isActive={activeFilter === "dcvet"}
+                            isLink={true}
+                            size='text-[1rem]'
+                        />
+                        <Subtitle text={"|"} size='text-[1rem]'/>
+                        <Subtitle
+                            text={"DCPET"}
+                            onClick={() => setFilter("dcpet")}
+                            isActive={activeFilter === "dcpet"}
+                            isLink={true}
+                            size='text-[1rem]'
+                        />
+                        <Subtitle text={"|"} size='text-[1rem]'/>
+                        <Subtitle
+                            text={"DRET"}
+                            onClick={() => setFilter("dret")}
+                            isActive={activeFilter === "dret"}
+                            isLink={true}
+                            size='text-[1rem]'
+                        />
+                        <Subtitle text={"|"} size='text-[1rem]'/>
+                        <Subtitle
+                            text={"DECET"}
+                            onClick={() => setFilter("decet")}
+                            isActive={activeFilter === "decet"}
+                            isLink={true}
+                            size='text-[1rem]'
+                        />
                     </div>
+
+                    {/* <CoursesButton text="DIT" />
+                    <CoursesButton text="DLMOT" />
+                    <CoursesButton text="DEET" />
+                    <CoursesButton text="DMET" />
+                    <CoursesButton text="DCvET" />
+                    <CoursesButton text="DCpET" />
+                    <CoursesButton text="DRET" />
+                    <CoursesButton text="DECET" /> */}
                 </OasisTable>
             </AdminScreen>
         </>

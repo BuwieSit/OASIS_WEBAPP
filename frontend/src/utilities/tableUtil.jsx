@@ -44,11 +44,11 @@ export function SignedExpiryDate({ signedDate, mode }) {
         });
 
     if (mode === "signed") {
-        return <Subtitle text={format(signed)} />;
+        return <Subtitle text={format(signed)} size="text-[1rem]"/>;
     }
 
     if (mode === "expiry") {
-        return <Subtitle text={format(expiry)} />;
+        return <Subtitle text={format(expiry)} size="text-[1rem]"/>;
     }
 
     return null;

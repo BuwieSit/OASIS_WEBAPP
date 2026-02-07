@@ -51,7 +51,7 @@ export function CoursesButton({ onClick, text, type = "button"}) {
     return (
         <>
         <HoverLift>
-            <button type={type} onClick={onClick} className='rounded-3xl border bg-white text-black font-bold font-oasis-text text-[0.8rem] px-4 py-2 hover:bg-oasis-aqua hover:cursor-pointer hover:border-transparent hover:drop-shadow-[0px_5px_2px_rgba(0,0,0,0.5)] transition duration-100 ease-out'>{text}</button>
+            <button type={type} onClick={onClick} className='rounded-3xl border bg-white text-black font-bold font-oasis-text text-[0.8rem] px-4 py-2 hover:bg-oasis-aqua hover:cursor-pointer hover:border-transparent hover:drop-shadow-[0px_2px_2px_rgba(0,0,0,0.2)] transition duration-100 ease-out'>{text}</button>
         </HoverLift>
             
         </>

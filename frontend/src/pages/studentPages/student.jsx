@@ -90,9 +90,9 @@ export default function Student() {
                 <ViewModal 
                     visible={openView}
                     onClose={() => setOpenView(false)}
-                    isVideo={true}
+                    isDocument={true}
                     file={filePdf}
-                    resourceTitle="How to use OASIS"
+                    resourceTitle="Buwie Resume"
                 />
                 <div className="w-[90%] aspect-video rounded-3xl overflow-hidden relative flex flex-col items-center justify-center shadow-[0px_0px_10px_rgba(0,0,0,1)]">
 
@@ -109,8 +109,8 @@ export default function Student() {
                    
                 </div>
 
-                <UpperWave/>
-                <div className='w-full min-h-150 h-auto pb-5 pt-5 bg-oasis-blue flex flex-wrap flex-col items-center justify-center gap-10'>
+                {/* <UpperWave/> */}
+                <div className='w-full min-h-150 mt-20 h-auto pb-5 pt-5 flex flex-wrap flex-col items-center justify-center gap-10'>
 
                     <section className='w-[50%] flex flex-col gap-2'>
                         <Title text="HTE Dashboard Updates"/>
@@ -120,7 +120,6 @@ export default function Student() {
                     {/* TABLE HERE */}
                     <StudentTable columns={columns} data={tableData}>
                         <div className='w-full flex flex-row justify-between items-center'>
-                            <Filter icon={<FilterIcon/>} text={"Filter"}/>
                             <SearchBar
                                 value={search}
                                 onChange={setSearch}
@@ -144,7 +143,7 @@ export default function Student() {
                         
                     </div>
                 </div>
-                <LowerWave/>
+                {/* <LowerWave/> */}
 
 
             </MainScreen>          

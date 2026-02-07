@@ -38,17 +38,6 @@ export default function AdminProfile() {
                     </div>  
                  </AdminSect>
 
-                <AdminSect className={"gap-5"}>
-                    <div className={`w-[80%] flex justify-between items-center border-b-oasis-button-dark border-b py-3`}>
-                        <Label labelText={"Address"}/>
-                        <AnnounceButton btnText={"Edit"} icon={<Settings2 size={20}/>}/>
-                    </div>
-                    <div className="w-[80%] grid grid-cols-3 place-items-center justify-items-start gap-5">
-                        <InfoWrapper label={"Country"} value={"Philippines"}/>
-                        <InfoWrapper label={"City"} value={"Manila"}/>
-                        <InfoWrapper label={"Postal Code"} value={"1234"}/>
-                    </div>  
-                </AdminSect>
             </AdminProfileScreen>
            
         </>

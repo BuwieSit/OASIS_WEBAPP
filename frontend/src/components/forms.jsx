@@ -355,7 +355,7 @@ export function UpdatedLogin() {
           />
         </div>
 
-        <Button text="Sign in" type="submit" />
+        <Button text="Login" type="submit" />
       </form>
     </>
   );

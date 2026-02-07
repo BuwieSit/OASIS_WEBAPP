@@ -12,6 +12,7 @@ import {
 import useQueryParam from '../../hooks/useQueryParams.jsx';
 import { useState } from 'react';
 import { Filter } from '../../components/adminComps.jsx';
+import Subtitle from '../../utilities/subtitle.jsx';
 
 export default function MoaOverview() {
 
@@ -43,7 +44,6 @@ export default function MoaOverview() {
         { header: "Industry", render: row => <Text text={row.industry} /> },
         { header: "Location", render: row => <HteLocation address={row.location} /> },
         { header: "Contact Person", render: row => <Text text={row.contactPerson} /> },
-        { header: "Expiry Date", render: row => <Text text={row.expiryDate} /> },
         { header: "Contact Number", render: row => <Text text={row.contactNumber} /> },
         { header: "MOA File", render: row => <ViewMoaButton url={row.moaFile} /> },
         { header: "Actions", render: row => <ActionButtons rowId={row.id} /> }
@@ -56,7 +56,6 @@ export default function MoaOverview() {
             industry: "IT Services",
             location: "Quezon City",
             contactPerson: "Juan Dela Cruz",
-            expiryDate: "Dec 12, 2026",
             contactPerson: "Bogart Rodriguez",
             contactNumber: "09512362344",
             moaFile: "www.youtube.com"
@@ -67,21 +66,27 @@ export default function MoaOverview() {
         <>
             <AdminScreen>
                 <div className='flex flex-row gap-3 w-[80%]'>
-                    <Filter 
+                    
+                    <Subtitle 
                         text={"MOA Overview"}
                         onClick={() => setFilter("overview")}
                         isActive={activeFilter === "overview"}
+                        isLink={true}
+                        size='text-[1rem]'
                     />
-                    <Filter 
+                    <Subtitle text={"|"} size='text-[1rem]'/>
+                    <Subtitle 
                         text={"MOA Prospect Submissions"}
                         onClick={() => setFilter("submissions")}
                         isActive={activeFilter === "submissions"}
+                        isLink={true}
+                        size='text-[1rem]'
                     />
                 </div>
                
                 {activeFilter === "overview" && 
                     <>
-                        <div className='flex justify-start items-start w-[90%]'>
+                        <div className='flex justify-start items-start w-[80%]'>
                             <Title text={"MOA Overview"}/>
                         </div>
                         <OasisTable columns={currentMoaColumns} data={currentMoasData}/>
@@ -89,7 +94,7 @@ export default function MoaOverview() {
                 }
                 {activeFilter === "submissions" &&
                     <>
-                        <div className='flex justify-start items-start w-[90%]'>
+                        <div className='flex justify-start items-start w-[80%]'>
                             <Title text={"MOA Prospects Submissions"}/>
                         </div>
 

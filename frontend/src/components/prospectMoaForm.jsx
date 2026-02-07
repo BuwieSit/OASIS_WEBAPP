@@ -18,7 +18,7 @@ export default function ProspectMoaForm() {
                 </section>
                 <section className="w-full flex items-start justify-center gap-5 z-10">
                     
-                    <div className="bg-oasis-gradient w-80 p-10 flex flex-col justify-center items-start shadow-[3px_3px_2px_rgba(0,0,0,0.8)] rounded-3xl">
+                    <div className="bg-oasis-gradient w-80 p-10 flex flex-col justify-center items-start shadow-[3px_3px_2px_rgba(0,0,0,0.4)] rounded-3xl">
                         <Subtitle size={"text-[1rem]"} color={"text-black"} weight={"font-bold"} text={"Important Notes for Students"}/>
 
                         <ul className="mt-5 w-full aspect-square text-wrap font-oasis-text text-[0.9rem] list-disc flex flex-col gap-2 text-justify">
@@ -30,7 +30,7 @@ export default function ProspectMoaForm() {
                         
                         
                     <div className="w-150">
-                        <form className="bg-oasis-gradient p-10 flex flex-col justify-center items-start shadow-[3px_3px_2px_rgba(0,0,0,0.8)] rounded-3xl gap-3 ">
+                        <form className="bg-oasis-gradient p-10 flex flex-col justify-center items-start shadow-[3px_3px_2px_rgba(0,0,0,0.4)] rounded-3xl gap-3 ">
                             <Subtitle size={"text-[1rem]"} color={"text-black"} weight={"font-bold"} text={"HTE Information"}/>
 
                                 <SingleField labelText={"HTE / Company Name"} fieldHolder={"Enter Company Name"} fieldId={"hteName"} />

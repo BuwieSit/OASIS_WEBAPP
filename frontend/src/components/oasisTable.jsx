@@ -12,10 +12,10 @@ export default function OasisTable({ columns = [], data = [], children }) {
                 }
                 
 
-                <table className="w-full border mt-5">
+                <table className="w-full border mt-5 ">
                     
                     {/* HEADER */}
-                    <thead >
+                    <thead className="rounded-2xl">
                         <tr className="bg-white rounded-2xl border-b bg-oasis-gradient">
                             {columns.map((col, colIndex) => (
                                 <th

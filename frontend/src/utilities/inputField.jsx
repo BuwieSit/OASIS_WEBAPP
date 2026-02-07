@@ -1,15 +1,15 @@
 import 'animate.css';
 
-export function AdminField({ type = 'text', pholder, id, value, onChange, hasBorder }) {
+export function AdminField({ type = 'text', pholder, id, value, onChange, hasBorder}) {
     return (
-        <input
-            type={type}
-            placeholder={pholder}
-            id={id}
-            value={value}
-            onChange={onChange}
-            className={`bg-white w-full px-2 py-2 text-[0.9rem] rounded-2xl text-black ${hasBorder ? "border" : ""}`}
-        />
+      <input
+          type={type}
+          placeholder={pholder}
+          id={id}
+          value={value}
+          onChange={onChange}
+          className={`bg-white w-full px-2 py-2 text-[0.9rem] rounded-2xl text-black ${hasBorder ? "border" : ""}`}
+      />
     );
 }
 

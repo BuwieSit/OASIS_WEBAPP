@@ -125,7 +125,7 @@ export default function Admin() {
                         </Link>
                         <Link to={"/admMoaOverview"}>
                             <AdmCard 
-                                cardTitle={"Total MOA submissions"}
+                                cardTitle={"Total MOA Prospect submissions"}
                                 cardIcon={<BookPlus color='#377268'/>}
                                 cardNumber={"15"}
                                 cardDate={"January 7, 2026"}

@@ -16,6 +16,7 @@ import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
 import { useEffect, useState } from "react";
 import { fetchHTEs, downloadMOA } from "../../api/student.service";
 import SearchBar from '../../components/searchBar';
+import { FilterIcon } from 'lucide-react';
 
 export default function HteDirectory() {
     
@@ -122,10 +123,13 @@ export default function HteDirectory() {
                     {/* VINCENT - LINK TO HTE PROFILE BAWAT SLIDE ITEM */}
                     <Title text={"Overview of Host Training Establishment"}/>
                     <section className="w-[90%] flex flex-col gap-5 justify-center items-center">
-                        <SearchBar
-                            value={search}
-                            onChange={setSearch}
-                        />
+                        <div className='w-full flex flex-row justify-between items-center'>
+
+                            <SearchBar
+                                value={search}
+                                onChange={setSearch}
+                            />
+                        </div>
                         <EmblaCarousel options={OPTIONS} slides={slides} onSelectHte={setHte}/>
                     </section>
 
@@ -134,7 +138,15 @@ export default function HteDirectory() {
                     <section className="w-full flex flex-col gap-5 justify-center items-center">
                         <Title text={"List of available HTE with MOA"}/>
                         {/* TABLE HERE */}
-                        <StudentTable columns={columns} data={htes} />
+                        <StudentTable columns={columns} data={htes}>
+                            <div className='w-full flex flex-row justify-between items-center'>
+                                <Filter icon={<FilterIcon/>} text={"Filter"} size={"text-[1rem]"}/>
+                                <SearchBar
+                                    value={search}
+                                    onChange={setSearch}
+                                />
+                            </div>
+                        </StudentTable>
                     </section>
 
 {/* REVIEWS SECTION */}

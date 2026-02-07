@@ -8,7 +8,8 @@ export function SingleField({
   fieldId,
   value,
   hasBorder,
-  onChange
+  onChange,
+  icon
 }) {
   return (
     <div className="w-full">

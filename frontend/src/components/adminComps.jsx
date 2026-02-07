@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Label } from "../utilities/label";
+import Subtitle from "../utilities/subtitle";
 
 export function Container({ children, column = true }) {
     return (
@@ -13,7 +14,7 @@ export function Container({ children, column = true }) {
     );
 }
 
-export function Filter({ text, isActive = false, onClick, icon }) {
+export function Filter({ text, size, isActive = false, onClick, icon }) {
     return (
         <div
             onClick={onClick}
@@ -26,7 +27,7 @@ export function Filter({ text, isActive = false, onClick, icon }) {
             `}
         >
             {icon}
-            {text}
+            <Subtitle text={text} size={size}/>
         </div>
     );
 }
