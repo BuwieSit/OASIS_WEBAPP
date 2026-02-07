@@ -166,14 +166,15 @@ def download_moa(hte_id):
     if not hte.moa_file_path:
         return jsonify({"error": "MOA not available"}), 404
 
-    # hte.moa_file_path example: "uploads/moa/abc_tech.pdf"
     relative_path = hte.moa_file_path.replace("\\", "/")
 
-    # BASE uploads directory (from Config)
-    upload_root = current_app.config["UPLOAD_ROOT"]
+    if relative_path.startswith("uploads/"):
+        relative_path = relative_path[len("uploads/"):]
 
-    # Split directory and filename
-    directory = os.path.join(upload_root, os.path.dirname(relative_path))
+    directory = os.path.join(
+        current_app.config["UPLOAD_ROOT"],
+        os.path.dirname(relative_path)
+    )
     filename = os.path.basename(relative_path)
 
     return send_from_directory(

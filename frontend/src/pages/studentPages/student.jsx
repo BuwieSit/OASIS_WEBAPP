@@ -21,9 +21,10 @@ export default function Student() {
 
     const [tableData, setTableData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState("");
 
     useEffect(() => {
-        getStudentDashboardHTEs()
+        getStudentDashboardHTEs({ search })
             .then((htes) => {
                 const mappedData = htes.map(hte => ({
                     id: hte.id,
@@ -32,7 +33,9 @@ export default function Student() {
                     signedDate: hte.moa_signed_at || "—",
                     expiryDate: hte.moa_expiry_date || "—",
                     moaStatus: hte.moa_status,
-                    moaFile: hte.moa_file || "—"
+                    moaUrl: hte.moa_file
+                        ? `${import.meta.env.VITE_API_URL}/api/student/htes/${hte.id}/moa`
+                        : null
                 }));
 
                 setTableData(mappedData);
@@ -43,7 +46,7 @@ export default function Student() {
             .finally(() => {
                 setLoading(false);
             });
-    }, []);
+    }, [search]);
     
     const columns = [
         {header: "HTE Name", render: row => <Text text={row.hteName}/>},
@@ -118,7 +121,10 @@ export default function Student() {
                     <StudentTable columns={columns} data={tableData}>
                         <div className='w-full flex flex-row justify-between items-center'>
                             <Filter icon={<FilterIcon/>} text={"Filter"}/>
-                            <SearchBar/>
+                            <SearchBar
+                                value={search}
+                                onChange={setSearch}
+                            />
                         </div>
                         
                     </StudentTable>

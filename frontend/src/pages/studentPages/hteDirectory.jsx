@@ -21,9 +21,17 @@ export default function HteDirectory() {
     
     const [htes, setHtes] = useState([]);
     const [search, setSearch] = useState("");
+    const [industry, setIndustry] = useState("");
+    const [course, setCourse] = useState("");
+    const [location, setLocation] = useState("");
 
     useEffect(() => {
-        fetchHTEs()
+        fetchHTEs({
+            search,
+            industry,
+            course,
+            location
+        })
             .then((data) => {
                 const mapped = data.map(hte => ({
                     id: hte.id,
@@ -35,10 +43,10 @@ export default function HteDirectory() {
                     moaStatus: hte.moa_status,
                     validity: hte.moa_expiry_date,
                     thumbnail: hte.thumbnail_path
-                        ? `${import.meta.env.VITE_API_URL}/${hte.thumbnail}`
+                        ? `${import.meta.env.VITE_API_URL}/${hte.thumbnail_path}`
                         : fallbackImg,
-                    moaFile: hte.moa_file
-                        ? `${import.meta.env.VITE_API_URL}/${hte.moa_file}`
+                    moaUrl: hte.moa_file_path
+                        ? `${import.meta.env.VITE_API_URL}/api/student/htes/${hte.id}/moa`
                         : null
                 }));
                 setHtes(mapped);
@@ -46,7 +54,7 @@ export default function HteDirectory() {
             .catch(err => {
                 console.error("Failed to load HTE directory", err);
             });
-    }, []);
+    }, [search, industry, course, location]);
 
     const columns = [
         { header: "HTE Name", render: row => <Text text={row.hteName}/> },
@@ -114,7 +122,10 @@ export default function HteDirectory() {
                     {/* VINCENT - LINK TO HTE PROFILE BAWAT SLIDE ITEM */}
                     <Title text={"Overview of Host Training Establishment"}/>
                     <section className="w-[90%] flex flex-col gap-5 justify-center items-center">
-                        <SearchBar/>
+                        <SearchBar
+                            value={search}
+                            onChange={setSearch}
+                        />
                         <EmblaCarousel options={OPTIONS} slides={slides} onSelectHte={setHte}/>
                     </section>
 

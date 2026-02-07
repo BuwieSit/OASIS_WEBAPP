@@ -30,23 +30,27 @@ export default function HteProfile() {
       .finally(() => setLoading(false));
   }, [hteId]);
 
-  const handleDownloadMOA = async () => {
-    if (!hte) return;
+    const handleDownloadMOA = async () => {
+      try {
+        const res = await downloadMOA(hte.id);
 
-    try {
-      const res = await downloadMOA(hte.id);
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement("a");
+        link.href = url;
 
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `HTE_${hte.id}_MOA.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error("Failed to download MOA", err);
-    }
-  };
+        const safeName = hte.company_name
+          .replace(/\s+/g, "_")
+          .replace(/[^\w\-]/g, "");
+
+        link.setAttribute("download", `${safeName}_MOA.pdf`);
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } catch (err) {
+        console.error("Failed to download MOA", err);
+      }
+    };
 
   if (loading) {
     return (
