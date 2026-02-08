@@ -43,19 +43,17 @@ export default function Admin() {
         e.preventDefault();
 
         // validate
-    if (!title || !content || !category) {
-        const emptyFields = [];
+        if (!title || !content || !category) {
+            const emptyFields = [];
 
-        if (!title) emptyFields.push("Title");
-        if (!content) emptyFields.push("Content");
-        if (!category) emptyFields.push("Category");
+            if (!title) emptyFields.push("Title");
+            if (!content) emptyFields.push("Content");
+            if (!category) emptyFields.push("Category");
 
-        setModalStatus("failed");
-        setFailedFields(emptyFields); 
-        return;
-    }
-
-   
+            setModalStatus("failed");
+            setFailedFields(emptyFields); 
+            return;
+        }
         const newAnnouncement = {
             id: crypto.randomUUID(),
             title,
@@ -66,7 +64,6 @@ export default function Admin() {
         };
 
         setAnnouncements(prev => [newAnnouncement, ...prev]);
-
         setTitle("");
         setContent("");
         setCategory("");
@@ -77,7 +74,6 @@ export default function Admin() {
         console.log("Deleting ID:", id);
         setAnnouncements(prev => prev.filter(a => a.id !== id));
     };
-
 
     // useEffect(() => {
     //     console.log("Updated announcements:", announcements);
@@ -174,6 +170,9 @@ export default function Admin() {
                             />
                         </Link>
                     </section>
+                    {/* OJT JOURNEY */}
+                        
+
                     <div className='flex justify-start items-start w-[90%]'>
                             <Title text={"Post Announcements"}/>
                     </div>
