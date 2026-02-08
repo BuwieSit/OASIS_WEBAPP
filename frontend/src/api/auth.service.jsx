@@ -1,4 +1,4 @@
-import api from "./axios";
+import api from "./axios.jsx";
 import { setToken, clearToken } from "./token";
 
 /* ================= OTP ================= */
@@ -24,7 +24,7 @@ export async function completeRegistration(email, password, confirm_password) {
   return res.data;
 }
 
-/* ================= LOGIN ================= */
+/* ================= STUDENT LOGIN ================= */
 
 export async function login(identifier, password) {
   const res = await api.post("/api/auth/login", {
@@ -32,10 +32,22 @@ export async function login(identifier, password) {
     password,
   });
 
-  // ✅ STORE BOTH TOKEN AND ROLE
   setToken(res.data.access_token, res.data.role);
 
-  return res.data; // { access_token, role }
+  return res.data;
+}
+
+/* ================= ADMIN LOGIN ================= */
+
+export async function adminLogin(identifier, password) {
+  const res = await api.post("/api/admin/login", {
+    identifier,
+    password,
+  });
+
+  setToken(res.data.access_token, res.data.role);
+
+  return res.data;
 }
 
 /* ================= SESSION ================= */

@@ -4,7 +4,7 @@ import Title from "../../utilities/title";
 import { Info, SquarePen, Activity, BriefcaseBusiness } from "lucide-react";
 import testPfp from "../../assets/testprofile.jpg";
 import { useEffect, useState } from "react";
-import api from "../../api/axios";
+import api from "../../api/axios.jsx";
 import { AnnounceButton } from "../../components/button";
 import { FileUploadField, SingleField } from "../../components/fieldComp";
 
@@ -19,31 +19,58 @@ export default function StudentProfile() {
 
   const [fullName, setFullName] = useState("")
   const [ojtAdviser, setOjtAdviser] = useState("");
-  const [Program, setProgram] = useState("");
+  const [program, setProgram] = useState("");
   const [password, setPassword] = useState("");
 
   const [photoPreview, setPhotoPreview] = useState(null);
+  const normalizeName = (fullName) => {
+    const parts = fullName
+      .trim()
+      .replace(/\s+/g, " ")
+      .split(" ");
 
-  useEffect(() => {
-    async function fetchProfile() {
-      const res = await api.get("/api/student/me");
-      const fetchedProfile = res.data.profile;
-
-      // ✅ NORMALIZE IMAGE URL ON FETCH
-      fetchedProfile.photo_url = fetchedProfile.photo_path
-        ? `${API_BASE}${fetchedProfile.photo_path}`
-        : null;
-
-      setUser(res.data.user);
-      setProfile(fetchedProfile);
-
-      const fetchedFullName = `${fetchedProfile.first_name || ""} ${fetchedProfile.middle_initial || ""} ${fetchedProfile.last_name || ""}`;
-      setFullName(fetchedFullName);
-      setOjtAdviser(fetchedProfile.ojt_adviser || "");
-      setProgram(fetchedProfile._program || "");
+    if (parts.length === 1) {
+      return {
+        first_name: parts[0],
+        middle_initial: "",
+        last_name: "",
+      };
     }
 
-    fetchProfile();
+    if (parts.length === 2) {
+      return {
+        first_name: parts[0],
+        middle_initial: "",
+        last_name: parts[1],
+      };
+    }
+
+    return {
+      first_name: parts[0],
+      middle_initial: parts[1][0].toUpperCase(),
+      last_name: parts.slice(2).join(" "),
+    };
+  };
+
+  const fetchProfile = async () => {
+    const res = await api.get("/api/student/me");
+    const fetchedProfile = res.data.profile;
+
+    fetchedProfile.photo_url = fetchedProfile.photo_path
+      ? `${API_BASE}${fetchedProfile.photo_path}`
+      : null;
+
+    setUser(res.data.user);
+    setProfile(fetchedProfile);
+
+    const fetchedFullName = `${fetchedProfile.first_name || ""} ${fetchedProfile.middle_initial || ""} ${fetchedProfile.last_name || ""}`;
+    setFullName(fetchedFullName.trim());
+    setOjtAdviser(fetchedProfile.ojt_adviser || "");
+    setProgram(fetchedProfile.program || "");
+  };
+
+  useEffect(() => {
+  fetchProfile();
   }, []);
 
   if (!user || !profile) return null;
@@ -52,45 +79,27 @@ export default function StudentProfile() {
 
   const saveProfile = async () => {
   try {
-    const nameParts = fullName.split(" ");
-    const firstName = nameParts[0] || "";
-    const lastName = nameParts[nameParts.length - 1] || "";
-    const middleInitial = nameParts.length > 2 ? nameParts[1] : "";
+    const { first_name, middle_initial, last_name } =
+      normalizeName(fullName);
 
     const profileData = {
-      first_name: firstName,
-      middle_initial: middleInitial,
-      last_name: lastName,
+      first_name,
+      middle_initial,
+      last_name,
       ojt_adviser: ojtAdviser,
-      _program: Program,
+      program,
     };
 
-    if (password && password.trim() !== "") {
-      profileData.password = password;
-    }
+    await api.patch("/api/student/me", profileData);
 
-    console.log("Sending profile data:", profileData); // 🔍 DEBUG
+    await fetchProfile();
+    await fetchProfile();
 
-    const response = await api.patch("/api/student/me", profileData);
-    
-    console.log("Response:", response.data); // 🔍 DEBUG
-
-    setProfile((prev) => ({
-      ...prev,
-      first_name: firstName,
-      middle_initial: middleInitial,
-      last_name: lastName,
-      ojt_adviser: ojtAdviser,
-      _program: Program,
-    }));
-
-    setPassword("");
     setIsEditing(false);
-    
+    fetchProfile();
     alert("Profile updated successfully!");
   } catch (err) {
-    console.error("Full error:", err); // 🔍 DEBUG
-    console.error("Error response:", err?.response?.data); // 🔍 DEBUG
+    console.error(err);
     alert(err?.response?.data?.error || "Failed to update profile");
   }
 };
@@ -216,7 +225,7 @@ export default function StudentProfile() {
               </select>
             ) : (
               <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
-                {ojtAdviser || "Not assigned"}
+                {profile.ojt_adviser || "Not assigned"}
               </div>
             )}  
           </div>
@@ -227,18 +236,21 @@ export default function StudentProfile() {
             {isEditing ? (
               <select 
                 className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg border-none outline-none cursor-pointer"
-                value={Program}
-                onChange={(e) => setProgram(e.target.value)}
-              >
+                value={program}
+                onChange={(e) => setProgram(e.target.value)}>
                 <option value="">Select Program</option>
-                <option value="DIT">Diploma in Information Technology</option>
-                <option value="DEET">Diploma in Electrical Engineering</option>
-                <option value="DLMOT">Diploma in Legal Management Technology</option>
-                <option value="DCVET">Diploma in Civil Engineering</option>
+                <option>DIT</option>
+                <option>DLMOT</option>
+                <option>DEET</option>
+                <option>DMET</option>
+                <option>DCvET</option>
+                <option>DCpET</option>
+                <option>DRET</option>
+                <option>DECET</option>
               </select>
             ) : (
               <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
-                {Program || "Not assigned"}
+                {profile.program || "Not assigned"}
               </div>
             )}
           </div>
@@ -264,6 +276,7 @@ export default function StudentProfile() {
           {!isEditing ? (
             <div className="w-full flex justify-center gap-3 mt-4">
               <button 
+                type="button"
                 className="bg-[#2d5f5d] text-white px-8 py-2 rounded-lg hover:bg-[#234948] transition-colors font-semibold shadow-md"
                 onClick={() => setIsEditing(true)}
               >

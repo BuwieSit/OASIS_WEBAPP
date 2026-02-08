@@ -1,16 +1,23 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from werkzeug.utils import secure_filename
+import os
 
 from app.extensions import db
 from app.models.user import UserRole, User
 from app.models.student_profile import StudentProfile
-import os
-from werkzeug.utils import secure_filename
-from flask import request, jsonify, current_app
 
 
-student_profile_bp = Blueprint("student_profile_bp", __name__, url_prefix="/api/student")
+student_profile_bp = Blueprint(
+    "student_profile_bp",
+    __name__,
+    url_prefix="/api/student"
+)
 
+
+# =========================
+# Helpers
+# =========================
 
 def require_role(expected_role: str):
     claims = get_jwt()
@@ -19,69 +26,6 @@ def require_role(expected_role: str):
         return jsonify({"error": "forbidden"}), 403
     return None
 
-
-@student_profile_bp.get("/me")
-@jwt_required()
-def get_student_me():
-    denied = require_role(UserRole.STUDENT.value)
-    if denied:
-        return denied
-
-    user_id = get_jwt_identity()
-    user = db.session.get(User, int(user_id))
-    if not user:
-        return jsonify({"error": "user not found"}), 404
-
-    profile = StudentProfile.query.filter_by(user_id=user.id).first()
-    if not profile:
-        # Safety net: auto-create if missing
-        profile = StudentProfile(user_id=user.id)
-        db.session.add(profile)
-        db.session.commit()
-
-    return jsonify(
-        {
-            "user": user.to_public_dict(),
-            "profile": profile.to_dict(),
-        }
-    ), 200
-
-
-@student_profile_bp.patch("/me")
-@jwt_required()
-def update_student_me():
-    denied = require_role(UserRole.STUDENT.value)
-    if denied:
-        return denied
-
-    user_id = get_jwt_identity()
-    user = db.session.get(User, int(user_id))
-    if not user:
-        return jsonify({"error": "user not found"}), 404
-
-    profile = StudentProfile.query.filter_by(user_id=user.id).first()
-    if not profile:
-        profile = StudentProfile(user_id=user.id)
-        db.session.add(profile)
-
-    data = request.get_json(silent=True) or {}
-
-    # Allow only these fields
-    if "first_name" in data:
-        profile.first_name = (data["first_name"] or "").strip() or None
-    if "middle_initial" in data:
-        profile.middle_initial = (data["middle_initial"] or "").strip() or None
-    if "last_name" in data:
-        profile.last_name = (data["last_name"] or "").strip() or None
-
-    db.session.commit()
-
-    return jsonify(
-        {
-            "message": "updated",
-            "profile": profile.to_dict(),
-        }
-    ), 200
 
 def allowed_file(filename: str) -> bool:
     allowed = current_app.config.get(
@@ -93,6 +37,97 @@ def allowed_file(filename: str) -> bool:
         and filename.rsplit(".", 1)[1].lower() in allowed
     )
 
+
+# =========================
+# GET PROFILE
+# =========================
+
+@student_profile_bp.get("/me")
+@jwt_required()
+def get_student_me():
+    denied = require_role(UserRole.STUDENT.value)
+    if denied:
+        return denied
+
+    user_id = int(get_jwt_identity())
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "user not found"}), 404
+
+    profile = StudentProfile.query.filter_by(user_id=user.id).first()
+    if not profile:
+        # Safety net
+        profile = StudentProfile(user_id=user.id)
+        db.session.add(profile)
+        db.session.commit()
+
+    return jsonify({
+        "user": user.to_public_dict(),
+        "profile": profile.to_dict(),
+    }), 200
+
+
+# =========================
+# UPDATE PROFILE (NAME, ADVISER, PROGRAM)
+# =========================
+
+@student_profile_bp.patch("/me")
+@jwt_required()
+def update_student_me():
+    denied = require_role(UserRole.STUDENT.value)
+    if denied:
+        return denied
+
+    user_id = int(get_jwt_identity())
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "user not found"}), 404
+
+    profile = StudentProfile.query.filter_by(user_id=user.id).first()
+    if not profile:
+        profile = StudentProfile(user_id=user.id)
+        db.session.add(profile)
+
+    data = request.get_json(silent=True) or {}
+
+    # =========================
+    # NAME FIELDS
+    # =========================
+    if "first_name" in data:
+        profile.first_name = (data.get("first_name") or "").strip() or None
+
+    if "middle_initial" in data:
+        mi = (data.get("middle_initial") or "").strip()
+        profile.middle_initial = mi[:1].upper() if mi else None
+
+    if "last_name" in data:
+        profile.last_name = (data.get("last_name") or "").strip() or None
+
+    # =========================
+    # OJT ADVISER
+    # =========================
+    if "ojt_adviser" in data:
+        profile.ojt_adviser = (data["ojt_adviser"] or "").strip() or None
+
+    # =========================
+    # PROGRAM
+    # =========================
+    if "program" in data:
+        profile.program = (data["program"] or "").strip() or None
+
+        
+    db.session.commit()
+
+    return jsonify({
+        "message": "updated",
+        "profile": profile.to_dict(),
+    }), 200
+
+
+# =========================
+# UPLOAD PROFILE PHOTO
+# =========================
+
 @student_profile_bp.patch("/me/photo")
 @jwt_required()
 def upload_student_photo():
@@ -100,8 +135,8 @@ def upload_student_photo():
     if denied:
         return denied
 
-    user_id = get_jwt_identity()
-    user = db.session.get(User, int(user_id))
+    user_id = int(get_jwt_identity())
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({"error": "user not found"}), 404
 
@@ -116,7 +151,6 @@ def upload_student_photo():
     if not allowed_file(file.filename):
         return jsonify({"error": "invalid file type"}), 400
 
-    # 🔒 Overwrite strategy: always same filename per user
     ext = file.filename.rsplit(".", 1)[1].lower()
     filename = secure_filename(f"user_{user.id}.{ext}")
 
@@ -131,7 +165,6 @@ def upload_student_photo():
         profile = StudentProfile(user_id=user.id)
         db.session.add(profile)
 
-    # Store URL path, not filesystem path
     profile.photo_path = f"/uploads/profile_photos/{filename}"
     db.session.commit()
 

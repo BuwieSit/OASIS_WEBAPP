@@ -8,14 +8,28 @@ import { Filter, Dropdown } from '../../components/adminComps.jsx';
 import { Label } from '../../utilities/label.jsx';
 import SearchBar from '../../components/searchBar.jsx';
 import { AnnounceButton } from '../../components/button.jsx';
-import { useLocalStorage } from '../../hooks/useLocalStorage.jsx';
 import { useState, useEffect } from 'react';
 import { AnnouncementModal } from '../../components/userModal.jsx';
 import { ConfirmModal } from '../../components/popupModal.jsx';
 import { Link } from 'react-router-dom';
+import { AdminAPI } from "../../api/admin.api";
+
 
 export default function Admin() {
-     const categories = [
+    const [dashboard, setDashboard] = useState(null);
+    const [announcements, setAnnouncements] = useState([]);
+    const [alerts, setAlerts] = useState([]);
+
+    const [activeFilter, setActiveFilter] = useState("All");
+    const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+
+    const [title, setTitle] = useState("");
+    const [content, setContent] = useState("");
+    const [category, setCategory] = useState("HTE Related");
+
+    const [showConfirm, setShowConfirm] = useState(false);
+
+    const categories = [
         "HTE Related",
         "Deadlines",
         "Newly Approved HTEs",
@@ -23,53 +37,50 @@ export default function Admin() {
         "Others"
     ];
 
-    const [announcements, setAnnouncements] = useLocalStorage("announcements", []);
-    const [activeFilter, setActiveFilter] = useState("All");
-    const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
-    
-    const filteredAnnouncements =
-        activeFilter === "All"
-            ? announcements
-            : announcements.filter(a => a.category === activeFilter);
-
-    const [title, setTitle] = useState("");
-    const [content, setContent] = useState("");
-    const [category, setCategory] = useState(categories[0]);
-
-    const handlePost = (e) => {
-        e.preventDefault(); 
-        if (!title || !content) return;
-
-        const newAnnouncement = {
-            id: crypto.randomUUID(),
-            title,
-            content,
-            category,
-            date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
-            time: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
-        };
-
-        setAnnouncements(prev => [newAnnouncement, ...prev]);
-        setTitle("");
-        setContent(""); 
-        setCategory("");
-    };
-
-    const handleDelete = (id) => {
-        console.log("Deleting ID:", id);
-
-        setAnnouncements(prev =>
-            prev.filter(a => a.id !== id)
-        );
-    };
-
-
+    useEffect(() => {
+        AdminAPI.getDashboard()
+        .then(res => setDashboard(res.data))
+        .catch(err => console.error("Dashboard error", err));
+    }, []);
 
     useEffect(() => {
-        console.log("Updated announcements:", announcements);
-    }, [announcements]);
+        AdminAPI.getAnnouncements()
+        .then(res => setAnnouncements(res.data))
+        .catch(err => console.error("Announcements error", err));
+    }, []);
 
-    const [showConfirm, setShowConfirm] = useState(false);
+    // ⚠️ TEMPORARY: backend not implemented yet
+    useEffect(() => {
+        AdminAPI.getAdminAlerts()
+        .then(res => setAlerts(res.data))
+        .catch(() => setAlerts([])); 
+    }, []);
+
+
+    const handlePost = async (e) => {
+        e.preventDefault();
+        if (!title || !content) return;
+
+        await AdminAPI.createAnnouncement({ title, content, category });
+
+        setTitle("");
+        setContent("");
+        setShowConfirm(true);
+
+        const res = await AdminAPI.getAnnouncements();
+        setAnnouncements(res.data);
+    };
+
+    const handleDelete = async (id) => {
+        await AdminAPI.deleteAnnouncement(id);
+        setAnnouncements(prev => prev.filter(a => a.id !== id));
+    };
+
+
+    const filteredAnnouncements =
+        activeFilter === "All"
+        ? announcements
+        : announcements.filter(a => a.category === activeFilter);
 
     return(
         <>
@@ -98,54 +109,68 @@ export default function Admin() {
                     <section className='p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10'>
                         {/* VINCENT - router per card, total students (if clicked) > Students tab */}
                         <Link to={"/admStudents"}>
-                            <AdmCard 
-                                cardTitle={"Total Students"}
-                                cardIcon={<UsersRound color='#377268'/>}
-                                cardNumber={"24"}
-                                cardDate={"January 7, 2026"}
+                            <AdmCard
+                            cardTitle="Total Students"
+                            cardIcon={<UsersRound color="#377268" />}
+                            cardNumber={dashboard?.metrics?.total_students ?? "-"}
+                            cardDate={dashboard?.last_updated
+                                ? new Date(dashboard.last_updated).toLocaleDateString()
+                                : "-"}
                             />
                         </Link>
 
                         <Link to={"/admMoaOverview"}>
-                            <AdmCard 
-                                cardTitle={"Total Active MOAs"}
-                                cardIcon={<Book color='#377268'/>}
-                                cardNumber={"105"}
-                                cardDate={"January 7, 2026"}
+                            <AdmCard
+                            cardTitle="Total Active MOAs"
+                            cardIcon={<Book color="#377268" />}
+                            cardNumber={dashboard?.metrics?.total_active_moas ?? "-"}
+                            cardDate={dashboard?.last_updated
+                                ? new Date(dashboard.last_updated).toLocaleDateString()
+                                : "-"}
                             />
                         </Link>
 
                         <Link to={"/admMoaOverview"}>
-                            <AdmCard 
-                                cardTitle={"Total expired MOAs"}
-                                cardIcon={<BookAlert color='#377268'/>}
-                                cardNumber={"32"}
-                                cardDate={"January 7, 2026"}
+                            <AdmCard
+                            cardTitle="Total Expired MOAs"
+                            cardIcon={<BookAlert color="#377268" />}
+                            cardNumber={dashboard?.metrics?.total_expired_moas ?? "-"}
+                            cardDate={dashboard?.last_updated
+                                ? new Date(dashboard.last_updated).toLocaleDateString()
+                                : "-"}
                             />
                         </Link>
+
                         <Link to={"/admMoaOverview"}>
-                            <AdmCard 
-                                cardTitle={"Total MOA Prospect submissions"}
-                                cardIcon={<BookPlus color='#377268'/>}
-                                cardNumber={"15"}
-                                cardDate={"January 7, 2026"}
+                            <AdmCard
+                            cardTitle="Total MOA Prospect Submissions"
+                            cardIcon={<BookPlus color="#377268" />}
+                            cardNumber={dashboard?.metrics?.total_moa_prospects ?? "-"}
+                            cardDate={dashboard?.last_updated
+                                ? new Date(dashboard.last_updated).toLocaleDateString()
+                                : "-"}
                             />
                         </Link>
 
                         <Link to={"/admOperations"}>
-                            <AdmCard 
-                                cardTitle={"Total Host Training Establishments"}
-                                cardIcon={<Building2 color='#377268'/>}
-                                cardNumber={"137"}
-                                cardDate={"January 7, 2026"}
+                            <AdmCard
+                            cardTitle="Total Host Training Establishments"
+                            cardIcon={<Building2 color="#377268" />}
+                            cardNumber={dashboard?.metrics?.total_htes ?? "-"}
+                            cardDate={dashboard?.last_updated
+                                ? new Date(dashboard.last_updated).toLocaleDateString()
+                                : "-"}
                             />
                         </Link>
+
                         <Link to={"/admUploads"}>
-                            <AdmCard 
-                                cardTitle={"Total Uploaded Documents"}
-                                cardIcon={<FileCheck color='#377268'/>}
-                                cardNumber={"15"}
-                                cardDate={"January 7, 2026"}
+                            <AdmCard
+                            cardTitle="Total Uploaded Documents"
+                            cardIcon={<FileCheck color="#377268" />}
+                            cardNumber={dashboard?.metrics?.total_uploaded_documents ?? "-"}
+                            cardDate={dashboard?.last_updated
+                                ? new Date(dashboard.last_updated).toLocaleDateString()
+                                : "-"}
                             />
                         </Link>
                     </section>
@@ -229,14 +254,21 @@ export default function Admin() {
                        
                         {/* NOTIFICATIONS */}
                         <div id='notifications' className='w-[25%] min-h-24 p-10 bg-admin-element'>
-                            <p className='text-[0.8rem] mb-5 font-black'>Notifications</p>
- 
-                            <div className='w-full max-h-14 bg-white p-3 rounded-2xl rounded-tl-none text-black border border-oasis-button-dark hover:cursor-pointer hover:bg-oasis-aqua transition ease-in-out duration-300'>
-                                <h3 className='text-[0.8rem] font-bold'>Notif title</h3>
-                                <p className='text-[0.7rem] font-light'>Notif Description</p>
+                        <p className='text-[0.8rem] mb-5 font-black'>Notifications</p>
+
+                        {alerts.length === 0 && (
+                            <p className="text-[0.7rem] text-gray-500">No alerts</p>
+                        )}
+
+                        {alerts.map(alert => (
+                            <div
+                            key={alert.id}
+                            className='w-full bg-white p-3 mb-3 rounded-2xl rounded-tl-none text-black border border-oasis-button-dark hover:bg-oasis-aqua transition'
+                            >
+                            <h3 className='text-[0.8rem] font-bold'>{alert.title}</h3>
+                            <p className='text-[0.7rem] font-light'>{alert.message}</p>
                             </div>
-
-
+                        ))}
                         </div>
                         
                     </section>

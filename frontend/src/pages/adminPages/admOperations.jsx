@@ -1,6 +1,4 @@
-
 import AdminScreen from '../../layouts/adminScreen.jsx';
-import { AdminHeader } from '../../components/headers.jsx'
 import Title from "../../utilities/title.jsx";
 import OasisTable from '../../components/oasisTable.jsx';
 import { FileUploadField, MultiField, SingleField } from '../../components/fieldComp.jsx';
@@ -8,173 +6,266 @@ import { Dropdown, Filter } from '../../components/adminComps.jsx';
 import { Label, RatingLabel } from '../../utilities/label.jsx';
 import { AnnounceButton, CoursesButton } from '../../components/button.jsx';
 import Subtitle from '../../utilities/subtitle.jsx';
-import { Text, StatusDropdown, HteLocation, SignedExpiryDate } from '../../utilities/tableUtil.jsx';
-
+import { Text } from '../../utilities/tableUtil.jsx';
+import { useEffect, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { AdminAPI } from "../../api/admin.api";
 
 export default function AdmOperations() {
 
-    const hteOverviewHeaders = [
-        {header: "Name", render: row => <Text text={row.hteName}/>},
-        {header: "Industry", render: row => <Text text={row.hteIndustry}/>},
-        {header: "Location", render: row => <HteLocation address={row.hteLocation}/>},
-        {header: "Status", render: row => 
-                                <StatusDropdown 
-                                    value={row.status} 
-                                    onChange={(newStatus) => {
-                                        console.log(`Change HTE ${row.id} status to`, newStatus)
-                                    }}
-                                />},
-        {header: "MOA Validity", render: row => <Text text={row.moaValidity}/>},
-        {header: "Signed Date", render: row => <SignedExpiryDate mode={"signed"} signedDate={row.moaSigned}/>},
-        {header: "Expiry Date", render: row => <SignedExpiryDate mode={"expiry"} signedDate={row.moaSigned}/>},
-    ]
+    const [data, setData] = useState([]);
+    const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
 
-    const hteData = [
-        {
-            id: 1,
-            hteName: "ABC Tech Solutions",
-            hteIndustry: "IT",
-            hteLocation: "Antipolo, Rizal",
-            moaValidity: "3 years",
-            moaSigned: "2023-05-15",
+    const categories = ["ACTIVE", "EXPIRED", "PENDING"];
+    const hteDropdown = data.map(h => h.company_name);
+
+    const status = searchParams.get("status"); // ACTIVE | EXPIRED | null
+
+    // =============================
+    // ADD HTE FORM STATE
+    // =============================
+
+    const [companyName, setCompanyName] = useState("");
+    const [companyAbout, setCompanyAbout] = useState("");
+    const [companyLoc, setCompanyLoc] = useState("");
+    const [statusValue, setStatusValue] = useState("ACTIVE");
+
+    const [eligibleCourses, setEligibleCourses] = useState([]);
+
+    const [logoFile, setLogoFile] = useState(null);
+    const [thumbnailFile, setThumbnailFile] = useState(null);
+    const [moaFile, setMoaFile] = useState(null);
+
+    // =============================
+    // FETCH HTEs
+    // =============================
+    useEffect(() => {
+        AdminAPI.getHTEs(status)
+            .then(res => setData(res.data))
+            .catch(console.error);
+    }, [status]);
+
+    // =============================
+    // HELPERS
+    // =============================
+    const calcValidity = (moa) => {
+        if (!moa?.signed_at || !moa?.expires_at) return "—";
+        const start = new Date(moa.signed_at);
+        const end = new Date(moa.expires_at);
+        const years = Math.floor(
+            (end - start) / (1000 * 60 * 60 * 24 * 365)
+        );
+        return `${years} year${years !== 1 ? "s" : ""}`;
+    };
+
+    const toggleCourse = (course) => {
+    setEligibleCourses(prev =>
+        prev.includes(course)
+        ? prev.filter(c => c !== course)
+        : [...prev, course]
+    );
+    };
+
+    const resetForm = () => {
+    setCompanyName("");
+    setCompanyAbout("");
+    setCompanyLoc("");
+    setStatusValue("ACTIVE");
+    setEligibleCourses([]);
+    setLogoFile(null);
+    setThumbnailFile(null);
+    setMoaFile(null);
+    };
+
+    const formatDate = (d) =>
+        d ? new Date(d).toLocaleDateString() : "—";
+
+    // =============================
+    // TABLE COLUMNS
+    // =============================
+    const columns = [
+        { header: "HTE Name", render: r => <Text text={r.company_name} /> },
+        { header: "Industry", render: r => <Text text={r.industry} /> },
+        { header: "Location", render: r => <Text text={r.address} /> },
+        { header: "Status", render: r => <Text text={r.moa?.status || "NO MOA"} /> },
+        { header: "MOA Validity", render: r => <Text text={calcValidity(r.moa)} /> },
+        { header: "Signed Date", render: r => <Text text={formatDate(r.moa?.signed_at)} /> },
+        { header: "Expiry Date", render: r => <Text text={formatDate(r.moa?.expires_at)} /> },
+    ];
+
+    const handleSaveHTE = async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData();
+        formData.append("company_name", companyName);
+        formData.append("description", companyAbout);
+        formData.append("address", companyLoc);
+        formData.append("status", statusValue);
+        formData.append(
+            "eligible_courses",
+            JSON.stringify(eligibleCourses)
+        );
+
+        if (logoFile) formData.append("logo", logoFile);
+        if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
+        if (moaFile) formData.append("moa_file", moaFile);
+
+        try {
+            await AdminAPI.createHTE(formData);
+
+            alert("HTE saved successfully");
+
+            const res = await AdminAPI.getHTEs(status);
+            setData(res.data);
+
+            resetForm();
+        } catch (err) {
+            console.error(err);
+            alert("Failed to save HTE");
         }
-    ]
-    const categories = ["Active", "Expired", "Pending"];
-    const hteDropdown = ["ABC Corp", "Prima Tech", "AbsoluteTech"];
+    };
 
-    return(
-        <>
-            <AdminScreen>
-                 <div className='mb-10'>
-                    <Title text={"Admin Operations"}/>
+    return (
+        <AdminScreen>
+
+            {/* =============================
+                HEADER
+            ============================== */}
+            <div className='mb-10'>
+                <Title text={"Admin Operations"} />
+            </div>
+
+            <div className='flex justify-start items-start w-[90%]'>
+                <Title text={"HTE Overview"} />
+            </div>
+
+            {/* =============================
+                HTE TABLE
+            ============================== */}
+            <OasisTable columns={columns} data={data}>
+                <div className="flex gap-4 mt-4">
+                    <Subtitle
+                        text="All"
+                        isLink
+                        onClick={() => navigate("/admOperations")}
+                    />
+                    <Subtitle
+                        text="ACTIVE"
+                        isLink
+                        onClick={() => navigate("/admOperations?status=ACTIVE")}
+                    />
+                    <Subtitle
+                        text="EXPIRED"
+                        isLink
+                        onClick={() => navigate("/admOperations?status=EXPIRED")}
+                    />
+                </div>
+            </OasisTable>
+
+            {/* =============================
+                ADD / UPDATE HTE FORM
+            ============================== */}
+            <div className="w-[80%] p-5 rounded-3xl bg-admin-element flex flex-col gap-5 shadow-[0px_0px_10px_rgba(0,0,0,0.5)]">
+            <form
+                className="w-full flex flex-col gap-5"
+                onSubmit={handleSaveHTE}
+            >
+                <div className="w-full flex flex-row justify-evenly p-2 text-oasis-button-dark">
+
+                <div className="w-[20%] p-2 flex flex-col gap-5">
+                    <FileUploadField
+                    labelText="Upload Logo"
+                    fieldId="logoFile"
+                    onChange={e => setLogoFile(e.target.files[0])}
+                    />
+                    <FileUploadField
+                    labelText="Upload HTE Thumbnail"
+                    fieldId="thumbnailFile"
+                    onChange={e => setThumbnailFile(e.target.files[0])}
+                    />
                 </div>
 
-                <div className='flex justify-start items-start w-[90%]'>
-                    <Title text={"HTE Overview"}/>
-                </div>
-                <OasisTable columns={hteOverviewHeaders} data={hteData}></OasisTable>
+                <div className="w-[70%] p-2 flex flex-col gap-3">
+                    <SingleField
+                    labelText="Company Name"
+                    fieldHolder="Enter company name"
+                    fieldId="companyName"
+                    value={companyName}
+                    onChange={e => setCompanyName(e.target.value)}
+                    />
 
-                <div className="w-[80%] p-5 rounded-3xl bg-admin-element flex flex-col gap-5 shadow-[0px_0px_10px_rgba(0,0,0,0.5)]">
+                    <MultiField
+                    labelText="About Company"
+                    fieldHolder="Enter company description"
+                    fieldId="companyAbout"
+                    value={companyAbout}
+                    onChange={e => setCompanyAbout(e.target.value)}
+                    />
 
-                    <form className="w-full flex flex-col gap-5">
+                    <SingleField
+                    labelText="Location"
+                    fieldHolder="Enter company address"
+                    fieldId="companyLoc"
+                    value={companyLoc}
+                    onChange={e => setCompanyLoc(e.target.value)}
+                    />
 
-                        {/* ROW CONTENT */}
-                        <div className="w-full flex flex-row justify-evenly p-2 text-oasis-button-dark">
+                    <Dropdown
+                    labelText="Status"
+                    categories={categories}
+                    value={statusValue}
+                    onChange={setStatusValue}
+                    />
 
-                            <div className="w-[20%] p-2 flex flex-col gap-5">
-                                <FileUploadField labelText="Upload Logo" fieldId="logoFile" />
-                                <FileUploadField labelText="Upload HTE Thumbnail" fieldId="thumbnailFile" />
-                            </div>
-
-                            <div className="w-[70%] p-2 flex flex-col gap-3">
-                                <SingleField labelText="Company Name" fieldHolder="Enter company name" fieldType="text" fieldId="companyName" />
-                                <MultiField labelText="About Company" fieldHolder="Enter company description" fieldId="companyAbout" />
-                                <SingleField labelText="Location" fieldHolder="Enter company address" fieldType="text" fieldId="companyLoc" />
-                                <Dropdown labelText="Status" categories={categories} />
-                                <Label labelText="Eligible Course" />
-
-                                <section className="w-full flex flex-row flex-wrap gap-3">
-                                <CoursesButton text="DIT" />
-                                <CoursesButton text="DLMOT" />
-                                <CoursesButton text="DEET" />
-                                <CoursesButton text="DMET" />
-                                <CoursesButton text="DCvET" />
-                                <CoursesButton text="DCpET" />
-                                <CoursesButton text="DRET" />
-                                <CoursesButton text="DECET" />
-                                </section>
-
-                                <FileUploadField labelText="MOA" fieldId="moaFile" />
-                            </div>
-                        </div>
-
-                        {/* ACTION BUTTONS (NOT PART OF ROW) */}
-                        <div className="w-full flex justify-start gap-5 px-5">
-                            <AnnounceButton btnText="Save HTE" />
-                            <AnnounceButton btnText="Cancel" />
-                        </div>
-
-                    </form>
-                </div>
-
-                <div className='flex justify-start items-start w-[90%]'>
-                    <Title text={"Reviews Moderation"}/>
-                </div>
-
-                {/* PARENT CONTAINER */}
-                <div className='w-[90%] p-5 rounded-3xl bg-admin-element flex flex-col justify-between items-start shadow-[0px_0px_10px_rgba(0,0,0,0.5)]'>
-                    <Subtitle text={"Approve or reject student reviews. Approved reviews will be visible on the public HTE profiles."}/>
-                    
-                    
-                    <section className='w-full flex flex-row justify-evenly items-start font-oasis-text'>
-                        {/* REVIEWS PARENT CONTAINER */}
-                        <div className="w-[70%] py-5 flex flex-wrap gap-4">
-
-                    {/* CARD CONTAINER */}
-                            <div className="basis-[calc(50%-0.5rem)] aspect-video max-h-75 p-5 bg-white rounded-3xl drop-shadow-[0px_2px_5px_rgba(0,0,0,0.5)] transition duration-300 ease-in-out flex flex-col justify-evenly items-start">
-
-                                <sections className='w-full flex flex-row justify-between items-center'>
-                                    <Label labelText={'Maria S.'}/>
-                                    <p className='font-oasis-text text-[0.7rem] italic'>Prima Tech - 22/11/2025, 8:41 PM</p>
-                                    
-                                </sections>
-
-                                <sections className='w-full flex flex-col justify-start items-start'>
-                                    <RatingLabel rating={"5"}/>
-                                    <p className='font-oasis-text text-[0.7rem] text-justify w-full overflow-y-auto'>Prima Tech is such a good company to take an intern job since they have benefits like allowance as well as a healthy environment with supportive and kind employees and mentors! Really had a great time here.</p>
-                                </sections>
-
-                                <sections className='w-full flex flex-row justify-start items-start gap-3'>
-                                    <AnnounceButton btnText='Approve'/>
-                                    <AnnounceButton btnText='Reject'/>
-                                </sections>
-
-                            </div>
-
-                            
-                    
-                        </div>
-
-                        {/* REVIEW FILTERS PARENT */}
-                        <div className='w-[30%] p-3 flex flex-col justify-start items-start'>
-                            <Subtitle text={"Review Criteria"} size={'text-[1rem]'} weight='font-bold'/>
-                            <div className='mt-3 mb-5 w-full flex flex-wrap justify-start items-start gap-1'>
-                                <Filter text={'Learning Experience'}/> 
-                                <Filter text={'Skill Acquisition'}/> 
-                                <Filter text={'Adequate Supervisor Support'}/> 
-                                <Filter text={'Course related'}/> 
-                            </div>
-
-                            <Subtitle text={"Date Posted"} size={'text-[1rem]'} weight='font-bold'/>
-                            <div className='mt-3 mb-5 w-full flex flex-wrap justify-start items-start gap-1'>
-                                <Filter text={'Newest'}/> 
-                                <Filter text={'Oldest'}/> 
-                            </div>
-
-                            <Subtitle text={"Ratings"} size={'text-[1rem]'} weight='font-bold'/>
-                            <div className='mt-3 mb-5 w-full flex flex-wrap justify-start items-start gap-1'>
-                                <Filter text={'5 stars'}/> 
-                                <Filter text={'4 stars'}/> 
-                                <Filter text={'3 stars'}/> 
-                                <Filter text={'2 stars'}/> 
-                                <Filter text={'1 stars'}/> 
-                            </div>
-
-                            <Subtitle text={"HTE"} size={'text-[1rem]'} weight='font-bold'/>
-                            <div className='mt-3 w-full flex flex-wrap justify-start items-start gap-1'>
-                                <Dropdown categories={hteDropdown}/>
-                            </div>
-
-                            <div className='mt-3 w-full flex flex-wrap justify-between items-start gap-1'>
-                                <AnnounceButton btnText='Submit'/>
-                                <AnnounceButton btnText='Clear All'/>
-                            </div>
-
-                        </div>
+                    <Label labelText="Eligible Course" />
+                    <section className="w-full flex flex-row flex-wrap gap-3">
+                    {["DIT","DLMOT","DEET","DMET","DCvET","DCpET","DRET","DECET"].map(c =>
+                        <CoursesButton
+                        key={c}
+                        text={c}
+                        isActive={eligibleCourses.includes(c)}
+                        onClick={() => toggleCourse(c)}
+                        />
+                    )}
                     </section>
 
+                    <FileUploadField
+                    labelText="MOA"
+                    fieldId="moaFile"
+                    onChange={e => setMoaFile(e.target.files[0])}
+                    />
                 </div>
-            </AdminScreen>
-        </>
-    )
+                </div>
+
+                <div className="w-full flex justify-start gap-5 px-5">
+                <AnnounceButton btnText="Save HTE" type="submit" />
+                <AnnounceButton
+                    btnText="Cancel"
+                    type="button"
+                    onClick={resetForm}
+                />
+                </div>
+            </form>
+            </div>
+            {/* =============================
+                REVIEWS (STATIC FOR NOW)
+            ============================== */}
+            <div className='flex justify-start items-start w-[90%]'>
+                <Title text={"Reviews Moderation"} />
+            </div>
+
+            <div className='w-[90%] p-5 rounded-3xl bg-admin-element shadow-[0px_0px_10px_rgba(0,0,0,0.5)]'>
+                <Subtitle text={"Approve or reject student reviews. Approved reviews will be visible on the public HTE profiles."} />
+
+                <section className='w-full flex flex-row justify-between mt-5'>
+                    <div className='w-[30%]'>
+                        <Subtitle text="HTE" weight="font-bold" />
+                        <Dropdown categories={hteDropdown} />
+                    </div>
+                </section>
+            </div>
+
+        </AdminScreen>
+    );
 }
