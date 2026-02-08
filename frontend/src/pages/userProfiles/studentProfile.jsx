@@ -102,7 +102,8 @@ export default function StudentProfile() {
         {/* ========== LEFT COLUMN ========== */}
         <div className="w-full h-auto p-3 flex flex-col gap-5 justify-start items-center">
           {/* Student Account (Read Only) */}
-          <div style={{width: '100%', height: '100%', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#2B6259', fontSize: 24, fontFamily: 'Poppins', fontWeight: '600', wordWrap: 'break-word'}}>Student Account</div>          {/* Profile Picture */}
+          <div className="w-full h-full text-center justify-center flex flex-col text-oasis-header font-oasis-text font-semibold text-2xl wrap-break-word">Student Account</div>          
+          {/* Profile Picture */}
           <div className="relative">
             <img
               src={photoPreview || profile.photo_url || testPfp}
@@ -201,6 +202,7 @@ export default function StudentProfile() {
           <div className="w-full">
             <label className="block mb-2 text-sm font-semibold text-gray-600">OJT Adviser</label>
             {isEditing ? (
+              
               <select 
                 className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg border-none outline-none cursor-pointer"
                 value={ojtAdviser}
@@ -258,7 +260,7 @@ export default function StudentProfile() {
               </div>
             )}
           </div>
-
+          
           {!isEditing ? (
             <div className="w-full flex justify-center gap-3 mt-4">
               <button 
@@ -282,6 +284,7 @@ export default function StudentProfile() {
               >
                 Submit
               </button>
+             
             </div>
           )}
 

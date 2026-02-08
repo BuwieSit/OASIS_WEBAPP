@@ -1,20 +1,16 @@
 import LogoWrap from "../utilities/logoWrap";
 import oasisLogo from "../assets/oasisLogo.png";
-import { Link } from "react-router-dom";
 import NavItem from "./navItem";
 import HoverLift from "./hoverLift";
-import clock from "../assets/icons/clock.png";
 import { useState, useEffect } from "react";
 import { CircleUserRound, Bell, BellDot, LayoutDashboard, ChevronLeft, Cog, FileText, Upload, Users } from "lucide-react";
 import Notifications from "../utilities/notifications";
-import { Settings, UserRound, BellIcon } from "lucide-react";
+import { UserRound, BellIcon } from "lucide-react";
 import api from "../api/axios";
 import Subtitle from "../utilities/subtitle";
 import UserDropdownSettings from "../utilities/userDropdownSettings";
 
 const API_BASE = api.defaults.baseURL;
-
-
 
 export function Header({ admin = false }) {
     const [bell, setBell] = useState('');
@@ -185,11 +181,37 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
                 </div>
                 <ul className="text-black w-full p-3 flex flex-col justify-center items-start gap-5 col-span-2 list-none">
                     {/* VINCENT */}
-                    <NavItem to="/admin" label="Dashboard" iconLeft={<LayoutDashboard />} isOpen={isOpen} />
-                    <NavItem to="/admoperations" label="Operations" iconLeft={<Cog />} isOpen={isOpen} />
-                    <NavItem to="/admMoaOverview" label="MOA Overview" iconLeft={<FileText />} isOpen={isOpen} />
-                    <NavItem to="/admUploads" label="Document Upload" iconLeft={<Upload />} isOpen={isOpen} />
-                    <NavItem to="/admStudents" label="Students" iconLeft={<Users />} isOpen={isOpen} />
+                    <NavItem 
+                        to="/admin" 
+                        label="Dashboard" 
+                        iconLeft={<LayoutDashboard color={"#2B6259"}/>} 
+                        isOpen={isOpen} 
+                    />
+                    <NavItem 
+                        to="/admoperations" 
+                        label="Operations" 
+                        iconLeft={<Cog color={"#2B6259"}/>} 
+                        isOpen={isOpen} 
+                    />
+                    <NavItem 
+                        to="/admMoaOverview" 
+                        label="MOA Overview" 
+                        iconLeft={<FileText color={"#2B6259"}/>} 
+                        isOpen={isOpen} 
+                    />
+                    <NavItem 
+                        to="/admUploads" 
+                        label="Document Upload" 
+                        iconLeft={<Upload color={"#2B6259"}/>} 
+                        isOpen={isOpen} 
+                    />
+
+                    <NavItem 
+                        to="/admStudents" 
+                        label="Students" 
+                        iconLeft={<Users color={"#2B6259"}/>} 
+                        isOpen={isOpen} 
+                    />
 
                 </ul>
 
@@ -217,6 +239,48 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
         </>
     )
 }
+
+
+export function StudentHeader() {
+
+    const [scrolled, setScrolled] = useState(false);
+
+    //Scroll detection
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 0) {
+                setScrolled(true);
+            } else {
+                setScrolled(false);
+            }
+        };
+
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    return (
+        <div
+            className={`
+                fixed top-0 left-0 w-full z-110 translate-y-15
+                transition-all duration-300 
+                ${scrolled ? 'backdrop-blur-md bg-white/30 shadow-lg translate-y-[-15]' : 'bg-white drop-shadow-[0px_10px_5px_rgba(0,0,0,0.3)]'}
+                flex flex-row justify-between items-center px-5 py-3 z-100
+            `}
+        >
+                {/* VINCENT */}
+                <ul className="w-full p-3 flex flex-row justify-center items-center gap-15">
+                    <NavItem to="/home" label="Home" isOpen={true}/>
+                    <NavItem to="/htedirectory" label="HTE Directory" isOpen={true}/>
+                    <NavItem to="/ojthub" label="OJT Hub" isOpen={true}/>
+                    <NavItem to="/announcements" label="Announcement" isOpen={true}/>
+                </ul>
+            
+
+        </div>
+    );
+}
+
 
 
 export function AdminHeader() {
@@ -321,44 +385,3 @@ export function AdminHeader() {
         </div>
     );
 }
-
-export function StudentHeader() {
-
-    const [scrolled, setScrolled] = useState(false);
-
-    //Scroll detection
-    useEffect(() => {
-        const handleScroll = () => {
-            if (window.scrollY > 0) {
-                setScrolled(true);
-            } else {
-                setScrolled(false);
-            }
-        };
-
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
-
-    return (
-        <div
-            className={`
-                fixed top-0 left-0 w-full z-110 translate-y-15
-                transition-all duration-300 
-                ${scrolled ? 'backdrop-blur-md bg-white/30 shadow-lg translate-y-[-15]' : 'bg-white drop-shadow-[0px_10px_5px_rgba(0,0,0,0.3)]'}
-                flex flex-row justify-between items-center px-5 py-3 z-100
-            `}
-        >
-                {/* VINCENT */}
-                <ul className="w-full p-3 flex flex-row justify-center items-center gap-15">
-                    <NavItem to="/home" label="Home" />
-                    <NavItem to="/htedirectory" label="HTE Directory" />
-                    <NavItem to="/ojthub" label="OJT Hub" />
-                    <NavItem to="/announcements" label="Announcement" />
-                </ul>
-            
-
-        </div>
-    );
-}
-
