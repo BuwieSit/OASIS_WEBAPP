@@ -5,7 +5,7 @@ import NavItem from "./navItem";
 import HoverLift from "./hoverLift";
 import clock from "../assets/icons/clock.png";
 import { useState, useEffect } from "react";
-import { CircleUserRound, Bell, BellDot, LayoutDashboard, ChevronLeft } from "lucide-react";
+import { CircleUserRound, Bell, BellDot, LayoutDashboard, ChevronLeft, Cog, FileText, Upload, Users } from "lucide-react";
 import Notifications from "../utilities/notifications";
 import { Settings, UserRound, BellIcon } from "lucide-react";
 import api from "../api/axios";
@@ -138,12 +138,11 @@ export function Header({ admin = false }) {
     )
 }
 
-export function AdminNavigation() {
-
+export function AdminNavigation({ isOpen, setIsOpen}) {
+    
     const [time, setTime] = useState('');
     const [animationClass, setAnimationClass] = useState("");
     const [openSettings, setOpenSettings] = useState(false);
-    const [isOpen, setIsOpen] = useState(false);
 
     const handleSettingsClick = () => {
         if (openSettings) {
@@ -176,7 +175,7 @@ export function AdminNavigation() {
 
     return (
         <>
-            <div className={`fixed left-0 top-0 z-100 h-screen p-3 bg-white grid grid-cols-1 place-items-start shadow-[0px_0px_10px_rgba(0,0,0,0.5)] transition-all duration-150 ease-in-out ${isOpen ? "translate-x-0":"-translate-x-[75%]"}`}>
+            <div className={`fixed left-0 top-0 z-100 h-screen p-3 bg-white grid grid-cols-1 place-items-start shadow-[0px_0px_10px_rgba(0,0,0,0.5)] transition-all duration-150 ease-in-out overflow-hidden ${isOpen ? "lg:w-[260px]":"lg:w-[70px]"} w-[260px]`}>
 
                 <img src={oasisLogo} className="sm:w-20 md:w-30 lg:w-50 object-cover aspect-video place-self-start"/>
                 <div className="cursor-pointer rounded-full p-2 transition-all duration-100 ease-in-out flex justify-center items-center hover:bg-oasis-button-light" onClick={() => setIsOpen(!isOpen)}>
@@ -184,30 +183,24 @@ export function AdminNavigation() {
                     <ChevronLeft size={30} className={`transition-transform duration-300 ease-in-out ${isOpen ? "rotate-180" : "rotate-0"}`}
                     />  
                 </div>
-                <ul className="text-black w-full p-3 flex flex-col justify-center items-start gap-5 col-span-2">
+                <ul className="text-black w-full p-3 flex flex-col justify-center items-start gap-5 col-span-2 list-none">
                     {/* VINCENT */}
-                    <NavItem to="/admin" label="Dashboard"/>
-                    <NavItem to="/admoperations" label="Operations" />
-                    <NavItem to="/admMoaOverview" label="MOA Overview" />
-                    <NavItem to="/admUploads" label="Document Upload" />
-                    <NavItem to="/admStudents" label="Students" />
+                    <NavItem to="/admin" label="Dashboard" iconLeft={<LayoutDashboard />} isOpen={isOpen} />
+                    <NavItem to="/admoperations" label="Operations" iconLeft={<Cog />} isOpen={isOpen} />
+                    <NavItem to="/admMoaOverview" label="MOA Overview" iconLeft={<FileText />} isOpen={isOpen} />
+                    <NavItem to="/admUploads" label="Document Upload" iconLeft={<Upload />} isOpen={isOpen} />
+                    <NavItem to="/admStudents" label="Students" iconLeft={<Users />} isOpen={isOpen} />
+
                 </ul>
 
                 {/* Icons */}
-                <div className="p-3 rounded-4xl w-fit flex flex-col justify-between items-center gap-5 place-self-end justify-self-start">
-                    <HoverLift>
-                        <div className="w-full flex flex-row justify-start items-center gap-3 text-black">
-                            <BellIcon/>
-                            <Subtitle text={"Notifications"}/>
-                        </div>
-                    </HoverLift>
+                <div className="p-3 rounded-4xl w-fit flex flex-col justify-between items-center gap-5 place-self-end justify-self-start list-none">
+
+                    <NavItem isTrigger={true} isOpen={isOpen} label={"Notifications"} iconLeft={<BellIcon/>}/>
+                    {/* PROFILE */}
+                    <NavItem isTrigger={true} onClick={handleSettingsClick} isOpen={isOpen} label={"Buwie Santos"} iconLeft={<UserRound/>}/>
+
                     
-                    <HoverLift>
-                        <div className="w-full flex flex-row justify-start items-center gap-3 text-black" onClick={handleSettingsClick}>
-                            <UserRound/>
-                            <Subtitle text={"Buwie Santos"}/>
-                        </div>
-                    </HoverLift>
                 </div>
                 {openSettings && 
                     <UserDropdownSettings
@@ -224,6 +217,8 @@ export function AdminNavigation() {
         </>
     )
 }
+
+
 export function AdminHeader() {
     const [time, setTime] = useState('');
     const [scrolled, setScrolled] = useState(false);

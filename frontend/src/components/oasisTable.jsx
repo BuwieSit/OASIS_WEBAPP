@@ -12,15 +12,15 @@ export default function OasisTable({ columns = [], data = [], children }) {
                 }
                 
 
-                <table className="w-full border mt-5 ">
+                <table className="w-full mt-5 rounded-3xl overflow-hidden ">
                     
                     {/* HEADER */}
-                    <thead className="rounded-2xl">
-                        <tr className="bg-white rounded-2xl border-b bg-oasis-gradient">
+                    <thead className="rounded-2xl ">
+                        <tr className="bg-white rounded-2xl border-b border-gray-300">
                             {columns.map((col, colIndex) => (
                                 <th
                                     key={colIndex}
-                                    className="p-3 text-[1rem] text-black text-center"
+                                    className="p-3 text-[1rem] font-bold text-oasis-button-dark text-center"
                                 >
                                     {col.header}
                                 </th>

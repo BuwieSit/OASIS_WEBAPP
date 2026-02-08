@@ -95,7 +95,7 @@ export default function Admin() {
                         <Title text={"Admin Dashboard"}/>
                     </div>
 
-                    <section className='p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5'>
+                    <section className='p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10'>
                         {/* VINCENT - router per card, total students (if clicked) > Students tab */}
                         <Link to={"/admStudents"}>
                             <AdmCard 
