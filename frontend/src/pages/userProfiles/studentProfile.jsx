@@ -1,6 +1,5 @@
 import { StudentProfileScreen } from "../../layouts/profileScreen";
 import Subtitle from "../../utilities/subtitle";
-import Title from "../../utilities/title";
 import { Info, SquarePen, Activity, BriefcaseBusiness } from "lucide-react";
 import testPfp from "../../assets/testprofile.jpg";
 import { useEffect, useState } from "react";
@@ -25,23 +24,23 @@ export default function StudentProfile() {
   const [photoPreview, setPhotoPreview] = useState(null);
 
   useEffect(() => {
-    async function fetchProfile() {
-      const res = await api.get("/api/student/me");
-      const fetchedProfile = res.data.profile;
+      async function fetchProfile() {
+        const res = await api.get("/api/student/me");
+        const fetchedProfile = res.data.profile;
 
-      // ✅ NORMALIZE IMAGE URL ON FETCH
-      fetchedProfile.photo_url = fetchedProfile.photo_path
-        ? `${API_BASE}${fetchedProfile.photo_path}`
-        : null;
+        // ✅ NORMALIZE IMAGE URL ON FETCH
+        fetchedProfile.photo_url = fetchedProfile.photo_path
+          ? `${API_BASE}${fetchedProfile.photo_path}`
+          : null;
 
-      setUser(res.data.user);
-      setProfile(fetchedProfile);
+        setUser(res.data.user);
+        setProfile(fetchedProfile);
 
-      const fetchedFullName = `${fetchedProfile.first_name || ""} ${fetchedProfile.middle_initial || ""} ${fetchedProfile.last_name || ""}`;
-      setFullName(fetchedFullName);
-      setOjtAdviser(fetchedProfile.ojt_adviser || "");
-      setProgram(fetchedProfile._program || "");
-    }
+        const fetchedFullName = `${fetchedProfile.first_name || ""} ${fetchedProfile.middle_initial || ""} ${fetchedProfile.last_name || ""}`;
+        setFullName(fetchedFullName);
+        setOjtAdviser(fetchedProfile.ojt_adviser || "");
+        setProgram(fetchedProfile._program || "");
+      }
 
     fetchProfile();
   }, []);
@@ -69,7 +68,7 @@ export default function StudentProfile() {
       profileData.password = password;
     }
 
-    console.log("Sending profile data:", profileData); // 🔍 DEBUG
+    console.log("Sending profile data:", profileData); 
 
     const response = await api.patch("/api/student/me", profileData);
     

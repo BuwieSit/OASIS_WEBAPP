@@ -58,26 +58,30 @@ export default function NavItem({
             <HoverLift>
                 {isTrigger ? (
                     //TRIGGER ITEM (no active state)
-                    <div
-                        className={`
-                            flex items-center w-full cursor-pointer
-                            ${isOpen ? "justify-between gap-2" : "justify-center"}
-                        `}
-                        onClick={onClick}
-                    >
-                        {iconLeft}
-
-                        <span
+                     <NavLink to={to} className="w-full">
+  
+                        <div
                             className={`
-                                font-oasis-text font-bold transition-all duration-200
-                                ${isOpen ? "opacity-100 ml-1" : "opacity-0 w-0 overflow-hidden"}
+                                flex items-center w-full cursor-pointer
+                                ${isOpen ? "justify-between gap-2" : "justify-center"}
                             `}
+                            onClick={onClick}
                         >
-                            {label}
-                        </span>
+                            {iconLeft}
+                                
+                            <span
+                                className={`
+                                    font-oasis-text text-oasis-header font-bold transition-all duration-200
+                                    ${isOpen ? "opacity-100 ml-1" : "opacity-0 w-0 overflow-hidden"}
+                                `}
+                                onClick={onClick}
+                            >
+                                {label}
+                            </span>
 
-                        {isOpen && iconRight}
-                    </div>
+                            {isOpen && iconRight}
+                        </div>
+                     </NavLink>
                 ) : (
                     // ROUTE ITEM
                     <NavLink to={to} className="w-full">
@@ -86,14 +90,14 @@ export default function NavItem({
                                 className={`
                                     flex items-center w-full transition-all duration-200
                                     ${isOpen ? "justify-between gap-2" : "justify-center"}
-                                    ${isActive ? "text-oasis-aqua" : "text-black"}
+                                    ${isActive ? "text-oasis-aqua " : "text-oasis-header"}
                                 `}
                             >
                                 {/* LEFT ICON */}
                                 {iconLeft &&
                                     React.cloneElement(iconLeft, {
                                         className: `
-                                            transition-colors duration-200
+                                            transition-colors duration-200 
                                             ${isActive ? "text-oasis-aqua" : "text-black"}
                                         `,
                                     })}
@@ -102,7 +106,7 @@ export default function NavItem({
                                 <span
                                     className={`
                                         font-oasis-text font-bold transition-all duration-200
-                                        ${isActive ? "scale-110 -translate-y-1 underline underline-offset-4" : ""}
+                                        ${isActive ? "scale-110 -translate-y-1 underline underline-offset-4 " : ""}
                                         ${isOpen ? "opacity-100 ml-1" : "opacity-0 w-0 overflow-hidden"}
                                     `}
                                 >

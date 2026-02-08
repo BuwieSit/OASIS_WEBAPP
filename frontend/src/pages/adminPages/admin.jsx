@@ -2,7 +2,7 @@ import AdminScreen from '../../layouts/adminScreen.jsx';
 import { AdminHeader } from '../../components/headers.jsx'
 import Title from "../../utilities/title.jsx";
 import { AdmCard } from "../../utilities/card.jsx"
-import { UsersRound, ScrollText, Bell, User, Book, BookAlert, BookPlus, Building2, FileCheck } from 'lucide-react';
+import { UsersRound, ScrollText, Bell, User, Book, BookAlert, BookPlus, Building2, FileCheck, CheckCheckIcon, Check, X } from 'lucide-react';
 import { SingleField, MultiField } from '../../components/fieldComp.jsx';
 import { Filter, Dropdown } from '../../components/adminComps.jsx';
 import { Label } from '../../utilities/label.jsx';
@@ -11,7 +11,7 @@ import { AnnounceButton } from '../../components/button.jsx';
 import { useLocalStorage } from '../../hooks/useLocalStorage.jsx';
 import { useState, useEffect } from 'react';
 import { AnnouncementModal } from '../../components/userModal.jsx';
-import { ConfirmModal } from '../../components/popupModal.jsx';
+import { ConfirmModal, GeneralPopupModal } from '../../components/popupModal.jsx';
 import { Link } from 'react-router-dom';
 
 export default function Admin() {
@@ -36,10 +36,26 @@ export default function Admin() {
     const [content, setContent] = useState("");
     const [category, setCategory] = useState(categories[0]);
 
-    const handlePost = (e) => {
-        e.preventDefault(); 
-        if (!title || !content) return;
+    const [modalStatus, setModalStatus] = useState(null); // null | "success" | "failed"
+    const [failedFields, setFailedFields] = useState([]);
 
+    const handlePost = (e) => {
+        e.preventDefault();
+
+        // validate
+    if (!title || !content || !category) {
+        const emptyFields = [];
+
+        if (!title) emptyFields.push("Title");
+        if (!content) emptyFields.push("Content");
+        if (!category) emptyFields.push("Category");
+
+        setModalStatus("failed");
+        setFailedFields(emptyFields); 
+        return;
+    }
+
+   
         const newAnnouncement = {
             id: crypto.randomUUID(),
             title,
@@ -50,42 +66,51 @@ export default function Admin() {
         };
 
         setAnnouncements(prev => [newAnnouncement, ...prev]);
+
         setTitle("");
-        setContent(""); 
+        setContent("");
         setCategory("");
+        setModalStatus("success");
     };
 
     const handleDelete = (id) => {
         console.log("Deleting ID:", id);
-
-        setAnnouncements(prev =>
-            prev.filter(a => a.id !== id)
-        );
+        setAnnouncements(prev => prev.filter(a => a.id !== id));
     };
 
 
-
-    useEffect(() => {
-        console.log("Updated announcements:", announcements);
-    }, [announcements]);
-
-    const [showConfirm, setShowConfirm] = useState(false);
+    // useEffect(() => {
+    //     console.log("Updated announcements:", announcements);
+    // }, [announcements]);
 
     return(
         <>
             <AdminScreen>
-                
-                
                  <AnnouncementModal 
                     visible={!!selectedAnnouncement} 
                     onClose={() => setSelectedAnnouncement(null)}
                     {...selectedAnnouncement}
                 />
 
-                {showConfirm && (
-                    <ConfirmModal
-                        time={1500}
-                        onClose={() => setShowConfirm(false)}
+                
+                {modalStatus === "success" && (
+                    <GeneralPopupModal
+                        icon={<Check size={40}/>}
+                        time={3000}
+                        onClose={() => setModalStatus(null)}
+                        title="Success"
+                        isSuccess={true}
+                    />
+                )}
+
+                {modalStatus === "failed" && (
+                    <GeneralPopupModal
+                        icon={<X size={40}/>}
+                        time={5000}
+                        onClose={() => setModalStatus(null)}
+                        title={"Failed"}
+                        text={`Please fill the following field(s)\n: ${failedFields.join(", ")}`}
+                        isFailed={true}
                     />
                 )}
                 {/* PARENT CONTAINER */}
@@ -155,7 +180,8 @@ export default function Admin() {
                     {/* POST ANNOUNCEMENTS SECTION */}
                     <section className='p-5 w-[90%] flex flex-row justify-between items-start gap-5 font-oasis-text text-oasis-button-dark'>
                         
-                        <form className='w-[70%] min-h-24 p-10 bg-admin-element flex flex-col items-start justify-center gap-5 text-black' onSubmit={(e) => {
+                        <form className='w-[70%] min-h-24 p-10 bg-admin-element flex flex-col items-start justify-center gap-5 text-black' 
+                        onSubmit={(e) => {
                             e.preventDefault();
                             handlePost(e);
                         }}>
@@ -186,7 +212,8 @@ export default function Admin() {
                                 />
 
                                 <section className='flex flex-row items-start justify-start gap-10 mt-10'>
-                                    <AnnounceButton btnText="Post" type="submit" onClick={() => setShowConfirm(true)}/>
+                                    <AnnounceButton btnText="Post" type="submit" />
+
                                 </section>
                             </div>
                             

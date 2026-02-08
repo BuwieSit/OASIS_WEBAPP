@@ -20,7 +20,7 @@ export function ContentField({ pholder, id, maxNum = 'max-h-100', value, onChang
             id={id}
             value={value}
             onChange={onChange}
-            className={`w-full ${maxNum} min-h-12 bg-white px-2 py-2 text-[0.9rem] rounded-2xl rounded-tl-none`}
+            className={`w-full ${maxNum} min-h-12 bg-white px-2 py-2 text-[0.9rem] rounded`}
         />
     );
 }
@@ -28,7 +28,7 @@ export function ContentField({ pholder, id, maxNum = 'max-h-100', value, onChang
 
 export function UploadField( { accept, onChange} ) {
   return (
-    <label className="w-full flex items-center gap-4 p-4 bg-white rounded-2xl cursor-pointer border border-gray-300 hover:border-oasis-button-light transition">
+    <label className="w-full flex items-center gap-4 p-4 bg-white rounded cursor-pointer border border-gray-300 hover:border-oasis-button-light transition">
       
       <input
         type="file"

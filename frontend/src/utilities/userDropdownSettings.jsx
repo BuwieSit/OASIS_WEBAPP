@@ -1,11 +1,8 @@
-import { CircleX, User } from "lucide-react";
 import { useState, useEffect } from "react";
-import NavItem from "../components/navItem";
-import Subtitle from "./subtitle";
+
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import { useNavigate } from "react-router-dom";
-import { logout } from "../api/auth.service";
 
 export default function UserDropdownSettings({ open, className, items }) {
     const { logoutUser } = useAuth();

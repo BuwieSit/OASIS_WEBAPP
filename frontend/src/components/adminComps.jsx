@@ -51,7 +51,7 @@ export function Dropdown({
                 id={fieldId}
                 value={value}
                 onChange={handleChange}
-                className="w-full p-3 bg-white rounded-2xl rounded-tl-none text-[0.8rem] font-oasis-text"
+                className="w-full p-3 bg-white rounded text-[0.8rem] font-oasis-text"
             >
                 <option value="" disabled>
                     Select category

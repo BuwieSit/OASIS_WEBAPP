@@ -23,6 +23,7 @@ export function AnnounceButton({ type="button", btnText = "Posted", onClick, dis
     const isDanger = ["delete", "reject", "clear all", "clear"].includes(text);
     const isNeutral = ["cancel"].includes(text);
     const isPending = ["pending"].includes(text);
+    const isUpload = ["upload file", "upload"].includes(text);
 
     const buttonStyle = isNeutral
         ? "bg-[#D3D3D3] hover:bg-[#A9A9A9] text-black"
@@ -30,6 +31,8 @@ export function AnnounceButton({ type="button", btnText = "Posted", onClick, dis
         ? "bg-red-900 hover:bg-red-700 text-white"
         : isPending 
         ? "bg-amber-500 hover:bg-amber-700 text-black" 
+        : isUpload 
+        ? "bg-white border border-gray-400 hover:bg-gray-100 text-black"
         : "bg-oasis-button-dark hover:bg-oasis-button-light text-white"
 
     return (

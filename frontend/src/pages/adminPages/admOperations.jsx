@@ -9,6 +9,7 @@ import { Label, RatingLabel } from '../../utilities/label.jsx';
 import { AnnounceButton, CoursesButton } from '../../components/button.jsx';
 import Subtitle from '../../utilities/subtitle.jsx';
 import { Text, StatusDropdown, HteLocation, SignedExpiryDate } from '../../utilities/tableUtil.jsx';
+import { ArrowRightFromLine, Download, Upload } from 'lucide-react';
 
 
 export default function AdmOperations() {
@@ -49,11 +50,20 @@ export default function AdmOperations() {
                     <Title text={"Admin Operations"}/>
                 </div>
 
-                <div className='flex justify-start items-start w-[90%]'>
+                <div className='flex justify-start items-start w-[80%]'>
                     <Title text={"HTE Overview"}/>
                 </div>
-                <OasisTable columns={hteOverviewHeaders} data={hteData}></OasisTable>
+                <OasisTable columns={hteOverviewHeaders} data={hteData}>
+                    <div className='w-full flex flex-row justify-end items-center gap-3'>
+                        <AnnounceButton icon={<Upload/>} btnText='Upload'/>
+                        <AnnounceButton icon={<Download/>} btnText='Download'/>
+                    </div>
+                    
+                </OasisTable>
 
+                <div className='flex justify-start items-start w-[80%]'>
+                    <Title text={"Add HTE"}/>
+                </div>
                 <div className="w-[80%] p-5 rounded-3xl bg-admin-element flex flex-col gap-5 shadow-[0px_0px_10px_rgba(0,0,0,0.5)]">
 
                     <form className="w-full flex flex-col gap-5">
@@ -74,14 +84,14 @@ export default function AdmOperations() {
                                 <Label labelText="Eligible Course" />
 
                                 <section className="w-full flex flex-row flex-wrap gap-3">
-                                <CoursesButton text="DIT" />
-                                <CoursesButton text="DLMOT" />
-                                <CoursesButton text="DEET" />
-                                <CoursesButton text="DMET" />
-                                <CoursesButton text="DCvET" />
-                                <CoursesButton text="DCpET" />
-                                <CoursesButton text="DRET" />
-                                <CoursesButton text="DECET" />
+                                    <CoursesButton text="DIT" />
+                                    <CoursesButton text="DLMOT" />
+                                    <CoursesButton text="DEET" />
+                                    <CoursesButton text="DMET" />
+                                    <CoursesButton text="DCvET" />
+                                    <CoursesButton text="DCpET" />
+                                    <CoursesButton text="DRET" />
+                                    <CoursesButton text="DECET" />
                                 </section>
 
                                 <FileUploadField labelText="MOA" fieldId="moaFile" />
@@ -97,12 +107,12 @@ export default function AdmOperations() {
                     </form>
                 </div>
 
-                <div className='flex justify-start items-start w-[90%]'>
+                <div className='flex justify-start items-start w-[80%]'>
                     <Title text={"Reviews Moderation"}/>
                 </div>
 
                 {/* PARENT CONTAINER */}
-                <div className='w-[90%] p-5 rounded-3xl bg-admin-element flex flex-col justify-between items-start shadow-[0px_0px_10px_rgba(0,0,0,0.5)]'>
+                <div className='w-[80%] p-5 rounded-3xl bg-admin-element flex flex-col justify-between items-start shadow-[0px_0px_10px_rgba(0,0,0,0.5)]'>
                     <Subtitle text={"Approve or reject student reviews. Approved reviews will be visible on the public HTE profiles."}/>
                     
                     

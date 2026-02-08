@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
-import { CheckIcon } from "../utilities/animatedIcons";
-import { ArrowUpRight, CircleX, Download, X } from "lucide-react";
+import { ArrowUpRight, Check, CircleX, Download, X } from "lucide-react";
 import { AnnounceButton } from "./button";
 import Subtitle from "../utilities/subtitle";
 import PdfViewer from "../utilities/pdfViewer";
 
-export function ConfirmModal({ time = 2000, onClose }) {
+export function GeneralPopupModal({ 
+    time = 5000, 
+    onClose, 
+    text, 
+    title,
+    icon = <Check/>,
+    isSuccess = true,
+    isFailed,
+}) {
     const [visible, setVisible] = useState(true);
 
     useEffect(() => {
@@ -20,13 +27,33 @@ export function ConfirmModal({ time = 2000, onClose }) {
     if (!visible) return null;
 
     return (
-        <div className="z-120 fixed inset-0 bg-[rgba(0,0,0,0.3)] flex items-center justify-center">
-            <div className="w-100 h-50 p-5 bg-white rounded-3xl drop-shadow-lg flex flex-col items-center justify-center gap-5 font-oasis-text font-bold text-[1.3rem] duration-700 transition ease-in-out">
-                <CheckIcon />
-                <p>Done</p>
-            </div>
+        <div className={`fixed top-0 right-0 translate-y-5 -translate-x-[3%] w-[30%] p-3 backdrop-blur-2xl bg-[rgba(255,255,255,1)] border  
+        ${isSuccess ? "text-oasis-button-dark border-oasis-button-dark" : "text-black border-gray-400"} 
+        ${isFailed ? "text-red-600 border-red-600": "text-black border-gray-400"} 
+        rounded-3xl drop-shadow-lg flex flex-col items-center justify-center gap-5 font-oasis-text font-bold text-[1.3rem] duration-300 transition ease-in-out z-100`}>
+            {icon}
+            <Subtitle text={title} size="text-[1rem]" weight="font-bold"/>
+            <Subtitle text={text} size="text-[0.8rem]"/>
         </div>
+
     );
+}
+
+export function ConfirmModal({ confText = "complete action?", onCancel, onLogOut}) {
+    return (
+        <>
+            <div className="w-full h-screen fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-110 bg-[rgba(0,0,0,0.5)] pointer-events-none">
+            
+                <div className={`fixed top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 w-[30%] aspect-video p-3 backdrop-blur-2xl bg-white border border-gray-300 rounded-3xl drop-shadow-lg flex flex-col items-center justify-center gap-5 font-oasis-text font-bold text-[1.3rem] duration-300 transition ease-in-out pointer-events-auto`}>
+                    <Subtitle text={`Do you want to ${confText}`} size="text-[1rem]" weight="font-bold"/>
+                    <div className="flex flex-row gap-3">
+                        <AnnounceButton btnText="Confirm" onClick={onLogOut}/>
+                        <AnnounceButton btnText="Cancel" onClick={onCancel}/>
+                    </div>
+                </div>
+            </div>
+        </>
+    )
 }
 
 export function ViewModal({ 

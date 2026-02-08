@@ -8,7 +8,10 @@ import {
     AdviserDropdown
 } from "../../utilities/tableUtil.jsx";
 import Subtitle from '../../utilities/subtitle.jsx';
+import { useEffect, useState } from 'react';
+import api from '../../api/axios.jsx';
 
+const API_BASE = api.defaults.baseURL;
 
 export default function RegStudents() {
     // MOCK DATA
@@ -32,19 +35,6 @@ export default function RegStudents() {
         }
     ]
 
-    // const handleAdviserChange = (studentId, adviserId) => {
-    //     setStudents(prev =>
-    //         prev.map(student =>
-    //             student.id === studentId
-    //                 ? { ...student, studentAdviserId: adviserId }
-    //                 : student
-    //         )
-    //     );
-
-    //     console.log(`Mock assign adviser ${adviserId} to student ${studentId}`);
-    // };
-
-
     const regStudents = [
         
         {header: "Name", render: row => <Text text={row.studentName}/>},
@@ -55,7 +45,38 @@ export default function RegStudents() {
         {header: "Actions", render: row => <ActionButtons rowId={row.id}/>},
         
     ]
+    
+    // const [students, setStudents] = useState([]);
+    // const [user, setUser] = useState(null);
+    // const [profile, setProfile] = useState(null);
 
+    // useEffect(() => {
+    //     async function fetchData() {
+    //         try {
+    //             // ---- PROFILE ----
+    //             const res = await api.get("/api/admin/me");
+    //             const fetchedProfile = res.data.profile;
+
+    //             fetchedProfile.photo_url = fetchedProfile.photo_path
+    //                 ? `${API_BASE}${fetchedProfile.photo_path}`
+    //                 : null;
+
+    //             setUser(res.data.user);
+    //             setProfile(fetchedProfile);
+
+    //             // ---- STUDENTS LIST ----
+    //             const studentsRes = await api.get("/api/admin/me");
+    //             setStudents(studentsRes.data); 
+    //         } catch (err) {
+    //             console.error("Failed to fetch data:", err);
+    //         }
+    //     }
+
+    //     fetchData();
+    // }, []);
+
+    // if (!user || !profile) return null;
+    
     const [activeFilter, setFilter] = useQueryParam("tab", "overview");
     return(
         <>
@@ -131,16 +152,11 @@ export default function RegStudents() {
                         />
                     </div>
 
-                    {/* <CoursesButton text="DIT" />
-                    <CoursesButton text="DLMOT" />
-                    <CoursesButton text="DEET" />
-                    <CoursesButton text="DMET" />
-                    <CoursesButton text="DCvET" />
-                    <CoursesButton text="DCpET" />
-                    <CoursesButton text="DRET" />
-                    <CoursesButton text="DECET" /> */}
                 </OasisTable>
             </AdminScreen>
         </>
     )
 }
+
+
+   

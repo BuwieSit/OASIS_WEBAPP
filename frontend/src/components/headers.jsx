@@ -3,18 +3,21 @@ import oasisLogo from "../assets/oasisLogo.png";
 import NavItem from "./navItem";
 import HoverLift from "./hoverLift";
 import { useState, useEffect } from "react";
-import { CircleUserRound, Bell, BellDot, LayoutDashboard, ChevronLeft, Cog, FileText, Upload, Users } from "lucide-react";
+import { CircleUserRound, Bell, BellDot, LayoutDashboard, ChevronLeft, Cog, FileText, Upload, Users, LogOut } from "lucide-react";
 import Notifications from "../utilities/notifications";
 import { UserRound, BellIcon } from "lucide-react";
 import api from "../api/axios";
 import Subtitle from "../utilities/subtitle";
 import UserDropdownSettings from "../utilities/userDropdownSettings";
+import { useAuth } from "../context/authContext";
+import { useNavigate } from "react-router-dom";
+import { logout } from "../api/auth.service";
+import { ConfirmModal } from "./popupModal";
 
 const API_BASE = api.defaults.baseURL;
 
 export function Header({ admin = false }) {
     const [bell, setBell] = useState('');
-
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
     const [hasProfile, setHasProfile] = useState(false);
@@ -35,6 +38,7 @@ export function Header({ admin = false }) {
             setOpenSettings(true)
         }
     }
+
 
     const handleNotifClick = () => {
         requestAnimationFrame(() => setAnimate(true));
@@ -137,20 +141,15 @@ export function Header({ admin = false }) {
 export function AdminNavigation({ isOpen, setIsOpen}) {
     
     const [time, setTime] = useState('');
-    const [animationClass, setAnimationClass] = useState("");
-    const [openSettings, setOpenSettings] = useState(false);
+    const { logoutUser } = useAuth();
+    const navigate = useNavigate();
+    const [confirmation, setConfirmation] = useState(false);
 
-    const handleSettingsClick = () => {
-        if (openSettings) {
-            setAnimationClass("bubble-close");
-            setOpenSettings(false);
-        }
-        else {
-            requestAnimationFrame(() => setAnimate(true));
-            setAnimationClass("bubble-pop");
-            setOpenSettings(true)
-        }
+    const handleLogout = () => {
+        logoutUser();
+        navigate("/access")
     }
+
     // Time update
     useEffect(() => {
         const updateTime = () => {
@@ -171,6 +170,9 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
 
     return (
         <>
+            {confirmation && 
+                <ConfirmModal confText="logout?" onLogOut={handleLogout} onCancel={() => setConfirmation(false)}/>
+            }
             <div className={`fixed left-0 top-0 z-100 h-screen p-3 bg-white grid grid-cols-1 place-items-start shadow-[0px_0px_10px_rgba(0,0,0,0.5)] transition-all duration-150 ease-in-out overflow-hidden ${isOpen ? "lg:w-[260px]":"lg:w-[70px]"} w-[260px]`}>
 
                 <img src={oasisLogo} className="sm:w-20 md:w-30 lg:w-50 object-cover aspect-video place-self-start"/>
@@ -216,25 +218,34 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
                 </ul>
 
                 {/* Icons */}
-                <div className="p-3 rounded-4xl w-fit flex flex-col justify-between items-center gap-5 place-self-end justify-self-start list-none">
+                <div className="p-3 rounded-4xl w-fit flex flex-col justify-between items-start gap-5 list-none">
 
-                    <NavItem isTrigger={true} isOpen={isOpen} label={"Notifications"} iconLeft={<BellIcon/>}/>
+                    <NavItem 
+                        isTrigger={true} 
+                        isOpen={isOpen} 
+                        label={"Notifications"} 
+                        iconLeft={<BellIcon 
+                        color="#2B6259"/>}
+                    />
                     {/* PROFILE */}
-                    <NavItem isTrigger={true} onClick={handleSettingsClick} isOpen={isOpen} label={"Buwie Santos"} iconLeft={<UserRound/>}/>
+                    <NavItem 
+                        to={"/admin-profile"}
+                        isTrigger={true} 
+                        isOpen={isOpen} 
+                        label={"Buwie Santos"} 
+                        iconLeft={<UserRound color="#2B6259"/>}
+                    />
+                    <NavItem 
+                        isTrigger={true} 
+                        isOpen={isOpen} 
+                        label={"Logout"} 
+                        iconLeft={<LogOut color="#2B6259" 
+                        onClick={() => setConfirmation(true)}/>}
+                    />
 
                     
                 </div>
-                {openSettings && 
-                    <UserDropdownSettings
-                        open={openSettings}
-                        className={animationClass}
-                        items={[
-                            { text: "Profile", to: "/admin-profile" },
-                            { text: "Settings", to: "/admSettings" },
-                            { text: "Sign out" },
-                        ]}
-                    />
-                }
+
             </div>
         </>
     )
