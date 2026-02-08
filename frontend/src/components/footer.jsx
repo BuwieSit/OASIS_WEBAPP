@@ -5,6 +5,7 @@ import { MultiField, SingleField } from "./fieldComp.jsx";
 import { AdminField } from "../utilities/inputField.jsx";
 import { Button } from "./button.jsx";
 import oasisLogo from "../assets/oasisLogo.png";
+import komunidevsLogo from "../assets/komunidevs logo-02.png";
 import { Link } from "react-router-dom";
 
 export default function Footer() {
@@ -47,6 +48,18 @@ export default function Footer() {
                         <Button text={"Submit"}/>
                     </form>
                 </section>
+            </div>
+            {/* KOMUNIDEVS FOOTER */}
+            <div className="w-full bg-gray-900 py-6 flex items-center justify-center gap-3">
+                <p className="text-gray-300 text-sm">
+                    This system is developed by 
+                    <span className="font-bold text-white ml-1">Komunidevs</span>
+                </p>
+                <img 
+                    src={komunidevsLogo} 
+                    alt="Komunidevs Logo" 
+                    className="h-12 w-auto object-contain"
+                />
             </div>
         </footer>
             

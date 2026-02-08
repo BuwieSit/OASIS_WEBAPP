@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from "react";
 import { getStudentDashboardHTEs } from "../../api/studentDashboard.service";
@@ -12,16 +11,32 @@ import { StudentTable } from '../../components/oasisTable';
 import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
 import SearchBar from '../../components/searchBar';
 import { Filter } from '../../components/adminComps';
-import { FilterIcon } from 'lucide-react';
+import { FilterIcon, ArrowRight } from 'lucide-react';
 import { ViewModal } from '../../components/popupModal';
 import filePdf from "../../assets/resume.pdf";
 import PdfViewer from '../../utilities/pdfViewer';
+import api from "../../api/axios";
 
 export default function Student() {
 
     const [tableData, setTableData] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
+    const [user, setUser] = useState(null); // ✅ Fixed: Changed from userName to user
+    const [profile, setProfile] = useState(null); // ✅ Added profile state
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchUser() {
+            try {
+                const res = await api.get("/api/student/me");
+                setUser(res.data.user);
+                setProfile(res.data.profile); // ✅ Get profile data too
+            } catch (err) {
+                console.error("Failed to fetch user data", err);
+            }
+        }
+        fetchUser();
+    }, []);
 
     useEffect(() => {
         getStudentDashboardHTEs({ search })
@@ -82,7 +97,10 @@ export default function Student() {
     };
 
     const [openView, setOpenView] = useState(false);
-
+    
+    // ✅ Get user's name properly
+    const userName = profile?.first_name || user?.email?.split('@')[0] || "Student";
+    
     return(
         <>
             <MainScreen hasTopMargin={true}>
@@ -94,21 +112,47 @@ export default function Student() {
                     file={filePdf}
                     resourceTitle="Buwie Resume"
                 />
-                <div className="w-[90%] aspect-video rounded-3xl overflow-hidden relative flex flex-col items-center justify-center shadow-[0px_0px_10px_rgba(0,0,0,1)]">
 
-                    <section className='w-full flex flex-col justify-center items-center'>
-                        <h1 className='sm:text-5xl md:text-6xl lg:text-8xl font-oasis-text font-bold bg-oasis-gradient bg-clip-text text-transparent  text-center z-5 drop-shadow-[5px_5px_5px_rgba(255,255,255,0.5)]'>Welcome to OASIS</h1>
-                   
-                        <p className='sm:text-[0.9rem] md:text-[1rem] lg:text-[1.2rem] italic font-oasis-text font-bold text-white text-shadow-[0px_2px_5px_rgba(255,255,255,0.5)] text-center z-5'>Tulay sa oportunidad, gabay sa kinabukasan</p>
+                <div className="w-full aspect-video overflow-hidden relative flex flex-col items-center justify-center">
+
+                    {/* Background Image */}
+                    <img 
+                        src={fallbackImg} 
+                        className='absolute w-full h-full object-cover bg-center bg-no-repeat opacity-45'
+                        alt="Background"
+                    />
+
+                    {/* Badge */}
+                    <div className="mb-6 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-white/50 z-10">
+                        <span className="text-sm font-style: italic text-[#2d5f5d]">👋 Welcome, {userName}!</span>
+                    </div>
+
+                    {/* Main Headline */}
+                    <section className='w-full flex flex-col justify-center items-center px-10 z-10'>
+                        <h1 className='text-5xl md:text-6xl lg:text-7xl font-oasis-text font-bold text-white text-center leading-tight drop-shadow-[3px_3px_8px_rgba(0,0,0,0.8)]'>
+                            Streamline Your OJT with
+                        </h1>
+                        <h1 className='text-5xl md:text-6xl lg:text-9xl font-oasis-text font-bold text-center leading-tight mt-2 drop-shadow-[3px_3px_8px_rgba(255,255,255,0.9)]'>
+                            <span className="text-oasis-header ">OASIS.</span>
+                        </h1>
+                        
+                        <p className='text-lg md:text-xl text-white text-center mt-6 front font-oasis-text drop-shadow-[2px_2px_6px_rgba(0,0,0,0.8)]'>
+                            Submit MOA prospects, consult ORBI for OJT inquiries, and access the centralized MOA database.
+                            <br />
+                            <span className>Tulay sa oportunidad, gabay sa kinabukasan.</span>
+                        </p>
                     </section>
                      
-                     
-                     <button className='sm:w-50 md:w-60 lg:w-70 px-10 absolute top-[75%] left-1/2 -translate-x-1/2 -translate-y-1/2 py-4 rounded-2xl text-center bg-linear-to-b from-oasis-button-light to-oasis-blue to-110% z-5 text-oasis-button-dark font-bold font-oasis-text cursor-pointer shadow-[2px_2px_2px_rgba(0,0,0,0.5)] duration-100 transition ease-in-out hover:scale-115 hover:from-oasis-button-light hover:to-oasis-button-light hover:text-white'><a href="#prospectForm">Submit MOA Prospect</a></button>
+                    {/* CTA Button */}
+                    <a href="#prospectForm" className="z-10">
+                        <button className='mt-8 px-8 py-4 rounded-xl text-center bg-[#2d5f5d] text-white font-bold font-oasis-text cursor-pointer shadow-[0_0_20px_rgba(0,0,0,0.5)] duration-200 transition ease-in-out hover:scale-105 hover:bg-[#234948] text-base md:text-lg flex items-center gap-2'>
+                            Submit MOA Prospect
+                            <ArrowRight size={20} />
+                        </button>
+                    </a>
 
-                    <img src={fallbackImg} className='absolute w-full h-full mt-[-20] object-cover bg-center bg-no-repeat bg-cover opacity-70'/>
-                   
                 </div>
-
+                   
                 {/* <UpperWave/> */}
                 <div className='w-full min-h-150 mt-20 h-auto pb-5 pt-5 flex flex-wrap flex-col items-center justify-center gap-10'>
 
