@@ -51,6 +51,7 @@ export default function NavItem({
     iconRight,
     isOpen,
     isTrigger,
+    isNotLink,
     onClick
 }) {
     return (
@@ -58,14 +59,14 @@ export default function NavItem({
             <HoverLift>
                 {isTrigger ? (
                     //TRIGGER ITEM (no active state)
-                     <NavLink to={to} className="w-full">
+                     <NavLink to={to} className="w-full" onClick={onClick}>
   
                         <div
                             className={`
                                 flex items-center w-full cursor-pointer
                                 ${isOpen ? "justify-between gap-2" : "justify-center"}
                             `}
-                            onClick={onClick}
+
                         >
                             {iconLeft}
                                 
@@ -74,7 +75,7 @@ export default function NavItem({
                                     font-oasis-text text-oasis-header font-bold transition-all duration-200
                                     ${isOpen ? "opacity-100 ml-1" : "opacity-0 w-0 overflow-hidden"}
                                 `}
-                                onClick={onClick}
+                                
                             >
                                 {label}
                             </span>
@@ -82,7 +83,35 @@ export default function NavItem({
                             {isOpen && iconRight}
                         </div>
                      </NavLink>
-                ) : (
+                ) 
+                : isNotLink ?  
+                    (
+                        <div
+                            className="w-full"
+                            onClick={onClick}
+                        >
+                            <div
+                                className={`
+                                    flex items-center w-full
+                                    ${isOpen ? "justify-between gap-2" : "justify-center"}
+                                `}
+                            >
+                                {iconLeft}
+
+                                <span
+                                    className={`
+                                        font-oasis-text text-oasis-header font-bold transition-all duration-200  cursor-pointer
+                                        ${isOpen ? "opacity-100 ml-1" : "opacity-0 w-0 overflow-hidden"}
+                                    `}
+                                >
+                                    {label}
+                                </span>
+
+                                {isOpen && iconRight}
+                            </div>
+                        </div>
+                    )
+                : (
                     // ROUTE ITEM
                     <NavLink to={to} className="w-full">
                         {({ isActive }) => (

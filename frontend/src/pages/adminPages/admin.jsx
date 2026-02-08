@@ -12,10 +12,12 @@ import { AnnouncementModal } from '../../components/userModal.jsx';
 import { GeneralPopupModal } from '../../components/popupModal.jsx';
 import { Link } from 'react-router-dom';
 import { AdminAPI } from "../../api/admin.api";
-
+import SvgLoader from '../../components/SvgLoader.jsx';
 
 export default function Admin() {
     const [dashboard, setDashboard] = useState(null);
+    const [loadingDashboard, setLoadingDashboard] = useState(true);
+    const [dashboardError, setDashboardError] = useState(null);
     const [announcements, setAnnouncements] = useState([]);
     const [alerts, setAlerts] = useState([]);
 
@@ -25,8 +27,8 @@ export default function Admin() {
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [category, setCategory] = useState("HTE Related");
-
-    const [showConfirm, setShowConfirm] = useState(false);
+    const [modalStatus, setModalStatus] = useState(null); // null | "success" | "failed"
+    const [failedFields, setFailedFields] = useState([]);
 
     const categories = [
         "HTE Related",
@@ -35,14 +37,28 @@ export default function Admin() {
         "Events and Webinars",
         "Others"
     ];
-    const [modalStatus, setModalStatus] = useState(null); // null | "success" | "failed"
-    const [failedFields, setFailedFields] = useState([]);
 
     useEffect(() => {
-        AdminAPI.getDashboard()
-        .then(res => setDashboard(res.data))
-        .catch(err => console.error("Dashboard error", err));
+        const loadDashboard = async () => {
+            try {
+                const res = await AdminAPI.getDashboard();
+                setDashboard(res.data);
+            } catch (err) {
+                console.error("Dashboard error:", err);
+                setDashboardError(err);
+            } finally {
+                setLoadingDashboard(false);
+            }
+        };
+
+        loadDashboard();
     }, []);
+
+    // useEffect(() => {
+    //     AdminAPI.getDashboard()
+    //     .then(res => setDashboard(res.data))
+    //     .catch(err => console.error("Dashboard error", err));
+    // }, []);
 
     useEffect(() => {
         AdminAPI.getAnnouncements()
@@ -79,7 +95,6 @@ export default function Admin() {
         setTitle("");
         setContent("");
         setCategory("");
-        setShowConfirm(true);
         setModalStatus("success");
         
 
@@ -141,7 +156,11 @@ export default function Admin() {
                             <AdmCard
                             cardTitle="Total Students"
                             cardIcon={<UsersRound color="#377268" />}
-                            cardNumber={dashboard?.metrics?.total_students ?? "-"}
+                            cardNumber={
+                                loadingDashboard ? <SvgLoader size={20}/> :
+                                dashboardError ? "-" : 
+                                dashboard?.metrics?.total_students ?? "-"
+                            }
                             cardDate={dashboard?.last_updated
                                 ? new Date(dashboard.last_updated).toLocaleDateString()
                                 : "-"}
@@ -152,7 +171,10 @@ export default function Admin() {
                             <AdmCard
                             cardTitle="Total Active MOAs"
                             cardIcon={<Book color="#377268" />}
-                            cardNumber={dashboard?.metrics?.total_active_moas ?? "-"}
+                            cardNumber={
+                                loadingDashboard ? <SvgLoader size={20}/> :
+                                dashboardError ? "-" : 
+                                dashboard?.metrics?.total_active_moas ?? "-"}
                             cardDate={dashboard?.last_updated
                                 ? new Date(dashboard.last_updated).toLocaleDateString()
                                 : "-"}
@@ -163,7 +185,10 @@ export default function Admin() {
                             <AdmCard
                             cardTitle="Total Expired MOAs"
                             cardIcon={<BookAlert color="#377268" />}
-                            cardNumber={dashboard?.metrics?.total_expired_moas ?? "-"}
+                            cardNumber={
+                                loadingDashboard ? <SvgLoader size={20}/> :
+                                dashboardError ? "-" : 
+                                dashboard?.metrics?.total_expired_moas ?? "-"}
                             cardDate={dashboard?.last_updated
                                 ? new Date(dashboard.last_updated).toLocaleDateString()
                                 : "-"}
@@ -174,7 +199,10 @@ export default function Admin() {
                             <AdmCard
                             cardTitle="Total MOA Prospect Submissions"
                             cardIcon={<BookPlus color="#377268" />}
-                            cardNumber={dashboard?.metrics?.total_moa_prospects ?? "-"}
+                            cardNumber={
+                                loadingDashboard ? <SvgLoader size={20}/> :
+                                dashboardError ? "-" : 
+                                dashboard?.metrics?.total_moa_prospects ?? "-"}
                             cardDate={dashboard?.last_updated
                                 ? new Date(dashboard.last_updated).toLocaleDateString()
                                 : "-"}
@@ -185,7 +213,10 @@ export default function Admin() {
                             <AdmCard
                             cardTitle="Total Host Training Establishments"
                             cardIcon={<Building2 color="#377268" />}
-                            cardNumber={dashboard?.metrics?.total_htes ?? "-"}
+                            cardNumber={
+                                loadingDashboard ? <SvgLoader size={20}/> :
+                                dashboardError ? "-" : 
+                                dashboard?.metrics?.total_htes ?? "-"}
                             cardDate={dashboard?.last_updated
                                 ? new Date(dashboard.last_updated).toLocaleDateString()
                                 : "-"}
@@ -196,7 +227,10 @@ export default function Admin() {
                             <AdmCard
                             cardTitle="Total Uploaded Documents"
                             cardIcon={<FileCheck color="#377268" />}
-                            cardNumber={dashboard?.metrics?.total_uploaded_documents ?? "-"}
+                            cardNumber={
+                                loadingDashboard ? <SvgLoader size={30}/> :
+                                dashboardError ? "-" : 
+                                dashboard?.metrics?.total_uploaded_documents ?? "-"}
                             cardDate={dashboard?.last_updated
                                 ? new Date(dashboard.last_updated).toLocaleDateString()
                                 : "-"}

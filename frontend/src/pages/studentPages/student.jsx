@@ -1,20 +1,16 @@
-import { Link } from 'react-router-dom'
 import { useEffect, useState } from "react";
 import { getStudentDashboardHTEs } from "../../api/studentDashboard.service";
 import MainScreen from '../../layouts/mainScreen';
-import fallbackImg from "../../assets/fallbackImage.jpg"
-import { UpperWave, LowerWave } from '../../utilities/waves';
+import fallbackImg from "../../assets/fallbackImage.jpg";
 import Title from '../../utilities/title';
 import Subtitle from '../../utilities/subtitle';
-import { CustomCard, TutorialCard } from '../../utilities/card';
+import { TutorialCard } from '../../utilities/card';
 import { StudentTable } from '../../components/oasisTable';
 import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
 import SearchBar from '../../components/searchBar';
-import { Filter } from '../../components/adminComps';
-import { FilterIcon, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { ViewModal } from '../../components/popupModal';
 import filePdf from "../../assets/resume.pdf";
-import PdfViewer from '../../utilities/pdfViewer';
 import api from "../../api/axios";
 
 export default function Student() {
@@ -108,9 +104,9 @@ export default function Student() {
                 <ViewModal 
                     visible={openView}
                     onClose={() => setOpenView(false)}
-                    isDocument={true}
+                    isVideo={true}
                     file={filePdf}
-                    resourceTitle="Buwie Resume"
+                    resourceTitle="What is OASIS?"
                 />
 
                 <div className="w-full aspect-video overflow-hidden relative flex flex-col items-center justify-center">
@@ -184,7 +180,8 @@ export default function Student() {
                         <TutorialCard onClick={() => setOpenView(true)}/>
                         <TutorialCard onClick={() => setOpenView(true)}/>
                         <TutorialCard onClick={() => setOpenView(true)}/>
-                        
+                        <TutorialCard onClick={() => setOpenView(true)}/>
+                        <TutorialCard onClick={() => setOpenView(true)}/>
                     </div>
                 </div>
                 {/* <LowerWave/> */}

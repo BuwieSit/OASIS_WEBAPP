@@ -236,11 +236,11 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
                         iconLeft={<UserRound color="#2B6259"/>}
                     />
                     <NavItem 
-                        isTrigger={true} 
+                        isNotLink={true}
                         isOpen={isOpen} 
                         label={"Logout"} 
-                        iconLeft={<LogOut color="#2B6259" 
-                        onClick={() => setConfirmation(true)}/>}
+                        iconLeft={<LogOut color="#2B6259"/>}
+                        onClick={() => setConfirmation(true)}
                     />
 
                     

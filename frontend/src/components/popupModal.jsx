@@ -3,6 +3,7 @@ import { ArrowUpRight, Check, CircleX, Download, X } from "lucide-react";
 import { AnnounceButton } from "./button";
 import Subtitle from "../utilities/subtitle";
 import PdfViewer from "../utilities/pdfViewer";
+import { Link } from "react-router-dom";
 
 export function GeneralPopupModal({ 
     time = 5000, 
@@ -57,7 +58,7 @@ export function ConfirmModal({ confText = "complete action?", onCancel, onLogOut
 }
 
 export function ViewModal({ 
-    videoLink = "https://www.youtube.com/embed/BhNSauna0eo?si=nPWjtw7Her6y6pFv", 
+    videoLink = "https://www.youtube.com/embed/ctyRKH4T_AY?si=Stqm7esXNJ6rKVlp", 
     visible,
     onClose,
     isVideo,
@@ -97,8 +98,11 @@ export function ViewModal({
                         
                     {/* RIGHT */}
                     {isVideo && 
-                        <section className="z-50 w-50 p-2 flex flex-row justify-center items-center gap-5  rounded-4xl">
-                            <AnnounceButton icon={<ArrowUpRight/>} btnText="Go to page" />
+                        <section className="z-50  p-2 flex flex-row justify-center items-center gap-5  rounded-4xl">
+                            <Link to={"/home"}>
+                                <AnnounceButton icon={<ArrowUpRight/>} btnText="Go to page" />
+                            </Link>
+                            
                         </section>
                     }
                     

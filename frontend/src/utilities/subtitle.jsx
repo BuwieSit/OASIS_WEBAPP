@@ -5,7 +5,7 @@ export default function Subtitle({  isCenter = false , text, color, size = ('tex
         <>
         {isLink ? 
             <a href={link} className={`${isAnimated ? "animate__animated animate__fadeInDown" : ""} font-oasis-text ${weight} ${isCenter ? "text-center" : "text-start"} ${size} text-center ${color} ${isActive ? "font-bold underline underline-offset-2":""} transition ease-in-out duration-500 ${isUnderlined ? "underline underline-offset-2": ""} hover:underline underline-offset-2 cursor-pointer`} 
-            onClick={onClick}>
+            onClick={onClick} target="_blank">
                 {text}
             </a> 
         : 

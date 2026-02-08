@@ -7,9 +7,10 @@ import pin from "../../assets/icons/pin.png";
 import linkIcon from "../../assets/icons/link.png";
 import { AnnounceButton } from "../../components/button";
 import { useEffect, useState } from "react";
-import fallbackImg from "../../assets/fallbackImage.jpg";
+import fallbackImg from "../../assets/htePlaceholder.png";
 import { fetchHTEById, downloadMOA } from "../../api/student.service";
 import { StatusView } from "../../utilities/tableUtil";
+import SvgLoader from "../../components/SvgLoader";
 
 export default function HteProfile() {
   const [searchParams] = useSearchParams();
@@ -55,6 +56,7 @@ export default function HteProfile() {
   if (loading) {
     return (
       <MainScreen>
+        <SvgLoader/>
         <p className="p-5">Loading HTE profile...</p>
       </MainScreen>
     );

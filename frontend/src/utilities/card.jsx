@@ -6,9 +6,9 @@ import { AnnounceButton } from "../components/button";
 import goldStar from "../assets/icons/goldStar.png";
 import blackStar from "../assets/icons/blackStar.png"
 import { MultiField, SingleField } from "../components/fieldComp";
-import img from "../assets/fallbackImage.jpg";
+import fallbackImg from "../assets/oasisLogo.png";
 
-export function TutorialCard({title = "Title", desc = "description", thumbnail = img, onClick }) {
+export function TutorialCard({title = "What is OASIS?", desc = "A short video of what OASIS can do.", thumbnail = fallbackImg, onClick }) {
 
   return(
       <div className="relative bg-oasis-gradient overflow-hidden sm:w-65 md:w-75 lg:w-80 aspect-square cursor-pointer rounded-3xl shadow-[0px_0px_5px_rgba(0,0,0,0.4)] group perspective transition-all duration-150 ease-in-out hover:-translate-y-3 hover:shadow-[0px_5px_5px_rgba(0,0,0,0.5)]" onClick={onClick}>
