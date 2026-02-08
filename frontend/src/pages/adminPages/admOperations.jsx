@@ -10,8 +10,7 @@ import { Text } from '../../utilities/tableUtil.jsx';
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { AdminAPI } from "../../api/admin.api";
-
-import { ArrowRightFromLine, Check, Download, Save, Upload, X } from 'lucide-react';
+import { Check, Download, Save, Upload, X } from 'lucide-react';
 
 
 export default function AdmOperations() {
@@ -116,7 +115,9 @@ export default function AdmOperations() {
 
         try {
             await AdminAPI.createHTE(formData);
+
             alert("HTE saved successfully");
+
             const res = await AdminAPI.getHTEs(status);
             setData(res.data);
 
@@ -189,8 +190,6 @@ export default function AdmOperations() {
                 <Title text={"Add HTE"}/>
             </div>
             <div className="w-[80%] p-5 rounded-3xl bg-admin-element flex flex-col gap-5 shadow-[0px_0px_10px_rgba(0,0,0,0.5)]">
-
-
 
                 {/* FORM FOR ADD HTE*/}
                 <form className="w-full flex flex-col gap-5" onSubmit={handleSaveHTE}>

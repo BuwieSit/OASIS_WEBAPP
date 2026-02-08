@@ -80,6 +80,8 @@ export default function Admin() {
         setContent("");
         setCategory("");
         setShowConfirm(true);
+        setModalStatus("success");
+        
 
         const res = await AdminAPI.getAnnouncements();
         setAnnouncements(res.data);
@@ -119,7 +121,7 @@ export default function Admin() {
                 {modalStatus === "failed" && (
                     <GeneralPopupModal
                         icon={<X size={40}/>}
-                        time={5000}
+                        time={3000}
                         onClose={() => setModalStatus(null)}
                         title={"Failed"}
                         text={`Please fill the following field(s)\n: ${failedFields.join(", ")}`}
