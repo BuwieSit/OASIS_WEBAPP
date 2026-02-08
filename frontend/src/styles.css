@@ -94,7 +94,7 @@
 }
 
 .flying-bubble {
-  @apply w-20 h-20 rounded-full fixed bottom-5 right-5 bg-white z-50 shadow-[0px_0px_20px_rgba(0,0,0,1)];
+  @apply w-20 h-20 rounded-full fixed bottom-5 right-5 bg-oasis-aqua z-100 shadow-[0px_0px_20px_rgba(0,0,0,1)];
   animation: fly 0.8s ease-out forwards;
 }
 
