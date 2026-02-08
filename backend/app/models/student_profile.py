@@ -27,6 +27,8 @@ class StudentProfile(db.Model):
     )
 
     user = db.relationship("User", backref=db.backref("student_profile", uselist=False))
+    ojt_adviser = db.Column(db.String(150), nullable=True)
+    program = db.Column(db.String(10), nullable=True)
 
     def to_dict(self) -> dict:
         return {
@@ -35,6 +37,8 @@ class StudentProfile(db.Model):
             "first_name": self.first_name,
             "middle_initial": self.middle_initial,
             "last_name": self.last_name,
+            "program": self.program,
+            "ojt_adviser": self.ojt_adviser,
             "photo_path": self.photo_path,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),

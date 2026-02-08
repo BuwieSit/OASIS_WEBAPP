@@ -1,4 +1,4 @@
-import api from "./axios";
+import api from "./axios.jsx";
 
 export async function fetchHTEs(params = {}) {
   const res = await api.get("/api/student/htes", { params });
@@ -13,5 +13,13 @@ export async function fetchHTEById(hteId) {
 export function downloadMOA(hteId) {
   return api.get(`/api/student/htes/${hteId}/moa`, {
     responseType: "blob",
+  });
+}
+
+export function submitMoaProspect(formData) {
+  return api.post("/api/student/moa-prospects", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
   });
 }

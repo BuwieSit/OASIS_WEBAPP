@@ -40,7 +40,7 @@ export default function AdminScreen({ children }) {
                     flex-1 flex flex-col items-center gap-10 pb-5
                     bg-[url("../assets/ctaBg.png")] bg-blend-multiply bg-center bg-no-repeat bg-cover
                     transition-all duration-300 ease-in-out
-                    ${isOpen ? "lg:ml-[260px]" : "lg:ml-[70px]"}
+                    ${isOpen ? "sm:ml-[180px] md:ml-[200px] lg:ml-[260px]" : "sm:ml-[60px] md:ml-[60px] lg:ml-[70px]"}
                 `}
             >
                 <div className="absolute inset-0 bg-[url('../assets/ctaBg.png')] bg-center bg-cover opacity-10 pointer-events-none" />

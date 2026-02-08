@@ -52,8 +52,11 @@ export function MultiField({
 export function FileUploadField( {labelText, fieldId, accept, onChange} ) {
     return (
         <>
-            <Label fieldId={fieldId} labelText={labelText}/>
-            <UploadField accept={accept} onChange={onChange}/>
+        <div>
+          <Label fieldId={fieldId} labelText={labelText}/>
+          <UploadField accept={accept} onChange={onChange}/>
+        </div>
+         
         </>
     )
 }

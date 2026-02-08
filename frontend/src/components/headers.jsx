@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { CircleUserRound, Bell, BellDot, LayoutDashboard, ChevronLeft, Cog, FileText, Upload, Users, LogOut } from "lucide-react";
 import Notifications from "../utilities/notifications";
 import { UserRound, BellIcon } from "lucide-react";
-import api from "../api/axios";
+import api from "../api/axios.jsx";
 import Subtitle from "../utilities/subtitle";
 import UserDropdownSettings from "../utilities/userDropdownSettings";
 import { useAuth } from "../context/authContext";
@@ -173,7 +173,7 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
             {confirmation && 
                 <ConfirmModal confText="logout?" onLogOut={handleLogout} onCancel={() => setConfirmation(false)}/>
             }
-            <div className={`fixed left-0 top-0 z-100 h-screen p-3 bg-white grid grid-cols-1 place-items-start shadow-[0px_0px_10px_rgba(0,0,0,0.5)] transition-all duration-150 ease-in-out overflow-hidden ${isOpen ? "lg:w-[260px]":"lg:w-[70px]"} w-[260px]`}>
+            <div className={`fixed left-0 top-0 z-100 h-screen p-3 bg-white grid grid-cols-1 place-items-start shadow-[0px_0px_10px_rgba(0,0,0,0.5)] transition-all duration-150 ease-in-out overflow-hidden ${isOpen ? "sm:w-[180px] md:w-[200px] lg:w-[260px]":"sm:w-[60px] md:w-[60px] lg:w-[70px]"} w-[260px]`}>
 
                 <img src={oasisLogo} className="sm:w-20 md:w-30 lg:w-50 object-cover aspect-video place-self-start"/>
                 <div className="cursor-pointer rounded-full p-2 transition-all duration-100 ease-in-out flex justify-center items-center hover:bg-oasis-button-light" onClick={() => setIsOpen(!isOpen)}>
@@ -253,7 +253,6 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
 
 
 export function StudentHeader() {
-
     const [scrolled, setScrolled] = useState(false);
 
     //Scroll detection

@@ -3,6 +3,12 @@ from app.models.student_profile import StudentProfile
 from app.models.admin_profile import AdminProfile
 from .host_training_establishment import HostTrainingEstablishment
 from .memorandum_of_agreement import MemorandumOfAgreement
+from .moa_prospect import MoaProspect
+from .announcement import Announcement
+from .notification import Notification
+from .uploaded_document import UploadedDocument
+
+
 
 
 __all__ = [

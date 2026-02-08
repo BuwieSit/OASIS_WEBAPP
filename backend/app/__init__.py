@@ -28,7 +28,14 @@ def create_app() -> Flask:
     from app.routes.admin_profile_routes import admin_profile_bp
     from app.routes.student_dashboard_routes import student_dashboard_bp
     from app.routes.student_hte_routes import student_hte_bp
-    
+    from app.routes.student_moa_prospect_routes import student_moa_prospect_bp
+    from app.routes.admin_dashboard_routes import admin_dashboard_bp
+    from app.routes.admin_announcement_routes import admin_announcement_bp
+    from app.routes.student_notification_routes import student_notification_bp
+    from app.routes.admin_alert_routes import admin_alert_bp
+    from app.routes.admin_student_routes import admin_student_bp
+    from app.routes.admin_hte_routes import admin_hte_bp
+
     app.register_blueprint(health_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
@@ -36,6 +43,13 @@ def create_app() -> Flask:
     app.register_blueprint(admin_profile_bp)
     app.register_blueprint(student_dashboard_bp)
     app.register_blueprint(student_hte_bp)
+    app.register_blueprint(student_moa_prospect_bp)
+    app.register_blueprint(admin_dashboard_bp)
+    app.register_blueprint(admin_announcement_bp)
+    app.register_blueprint(student_notification_bp)
+    app.register_blueprint(admin_alert_bp)
+    app.register_blueprint(admin_student_bp)
+    app.register_blueprint(admin_hte_bp)
 
     from flask import send_from_directory
     

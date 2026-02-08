@@ -45,24 +45,26 @@ export function Dropdown({
 
     return (
         <>
-            <Label labelText={labelText} fieldId={fieldId} />
-
-            <select
-                id={fieldId}
-                value={value}
-                onChange={handleChange}
-                className="w-full p-3 bg-white rounded text-[0.8rem] font-oasis-text"
-            >
-                <option value="" disabled>
-                    Select category
-                </option>
-
-                {categories.map((option, index) => (
-                    <option key={index} value={option}>
-                        {option}
+            <div>
+                <Label labelText={labelText} fieldId={fieldId} />
+                <select
+                    id={fieldId}
+                    value={value}
+                    onChange={handleChange}
+                    className="w-full p-3 bg-white rounded text-[0.8rem] font-oasis-text"
+                >
+                    <option value="" disabled>
+                        Select category
                     </option>
-                ))}
-            </select>
+
+                    {categories.map((option, index) => (
+                        <option key={index} value={option}>
+                            {option}
+                        </option>
+                    ))}
+                </select>
+            </div>
+            
         </>
     );
 }
