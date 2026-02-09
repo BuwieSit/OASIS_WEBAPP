@@ -276,17 +276,31 @@ export function UpdatedReg() {
   );
 }
 
-
 export function UpdatedLogin() {
   const userRef = useRef();
   const navigate = useNavigate();
   const errRef = useRef();
-
-  const { loginUser } = useAuth(); //IMPORTANT
+  const { loginUser } = useAuth();
 
   const [user, setUser] = useState("");
   const [pwd, setPwd] = useState("");
   const [errMsg, setErrMsg] = useState("");
+
+  const [validName, setValidName] = useState(false);
+  const [validPwd, setValidPwd] = useState(false);
+
+  const [userFocus, setUserFocus] = useState(false);
+  const [pwdFocus, setPwdFocus] = useState(false);
+
+  // webmail validation
+  useEffect(() => {
+    setValidName(USER_REGEX.test(user));
+  }, [user]);
+
+  // password validation
+  useEffect(() => {
+    setValidPwd(PWD_REGEX.test(pwd));
+  }, [pwd]);
 
   useEffect(() => {
     userRef.current?.focus();
@@ -299,15 +313,20 @@ export function UpdatedLogin() {
   const handleLogin = async (e) => {
     e.preventDefault();
 
+    const v1 = USER_REGEX.test(user);
+    const v2 = PWD_REGEX.test(pwd);
+
+    if (!v1 || !v2) {
+      setErrMsg("Invalid Entry");
+      return;
+    }
+
     try {
       const res = await loginUser(user, pwd);
-
       const redirectPath = res.role === "ADMIN" ? "/admin" : "/home";
       navigate(redirectPath, { replace: true });
     } catch (err) {
-      setErrMsg(
-        err?.response?.data?.error || "Invalid credentials"
-      );
+      setErrMsg(err?.response?.data?.error || "Invalid credentials");
     }
   };
 
@@ -328,6 +347,7 @@ export function UpdatedLogin() {
         className="w-full p-5 flex flex-col items-center justify-center gap-5"
         onSubmit={handleLogin}
       >
+        {/* WEBMAIL */}
         <div className="w-full">
           <label className="mb-1 text-oasis-header font-oasis-text">
             PUP Webmail / Admin ID
@@ -338,9 +358,16 @@ export function UpdatedLogin() {
             value={user}
             onChange={(e) => setUser(e.target.value)}
             required
+            aria-invalid={!validName}
+            onFocus={() => setUserFocus(true)}
+            onBlur={() => setUserFocus(false)}
             className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
           />
         </div>
+
+        <p className={userFocus && user && !validName ? "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center" : "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>
+          Must be a valid PUP webmail. <br/> E.g. juanmdelacruz@iskolarngbayan.pup.edu.ph
+        </p>
 
         <div className="w-full">
           <label className="mb-1 text-oasis-header font-oasis-text">
@@ -351,20 +378,134 @@ export function UpdatedLogin() {
             value={pwd}
             onChange={(e) => setPwd(e.target.value)}
             required
+            aria-invalid={!validPwd}
+            onFocus={() => setPwdFocus(true)}
+            onBlur={() => setPwdFocus(false)}
             className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
           />
         </div>
 
-        <Button text="Login" type="submit" />
+        <p className={pwdFocus && pwd && !validPwd ? "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center" : "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>
+          Password must be 8+ chars with uppercase, number, special char.
+        </p>
+
+        <Button text="Login" type="submit" disabled={!validName || !validPwd} />
       </form>
     </>
   );
 }
 
-// Enter webmail
-// Send OTP
-// Verify
-// Enter new and confirm password
+
+// export function UpdatedLogin() {
+//   const userRef = useRef();
+//   const navigate = useNavigate();
+//   const errRef = useRef();
+
+//   const { loginUser } = useAuth(); //IMPORTANT
+
+//   const [user, setUser] = useState("");
+//   const [pwd, setPwd] = useState("");
+//   const [errMsg, setErrMsg] = useState("");
+//   const [validName, setValidName] = useState(false);
+
+//   useEffect(() => {
+//   // webmail validation
+//     const result = USER_REGEX.test(user);
+//     setValidName(result);
+//   }, [user]);
+
+//     useEffect(() => {
+//     // password validation
+//     const result = PWD_REGEX.test(pwd);
+//     setValidPwd(result);
+//   }, [pwd]);
+
+//   useEffect(() => {
+//     userRef.current?.focus();
+//   }, []);
+
+//   useEffect(() => {
+//     setErrMsg("");
+//   }, [user, pwd]);
+
+//     const v1 = USER_REGEX.test(user);
+//     const v2 = PWD_REGEX.test(pwd);
+
+//     if (!v1 || !v2) {
+//       setErrMsg("Invalid Entry");
+//       return;
+//     }
+
+//   const handleLogin = async (e) => {
+//     e.preventDefault();
+
+//     try {
+//       const res = await loginUser(user, pwd);
+
+//       const redirectPath = res.role === "ADMIN" ? "/admin" : "/home";
+//       navigate(redirectPath, { replace: true });
+
+//     } catch (err) {
+//       setErrMsg(
+//         err?.response?.data?.error || "Invalid credentials"
+//       );
+//     }
+//   };
+
+//   return (
+//     <>
+//       <section className="w-full p-1 flex flex-col items-center justify-center gap-1">
+//         <Title text={"Login"} />
+//         <p
+//           ref={errRef}
+//           className={errMsg ? "opacity-1 text-red-600" : "opacity-0"}
+//           aria-live="assertive"
+//         >
+//           {errMsg}
+//         </p>
+//       </section>
+
+//       <form
+//         className="w-full p-5 flex flex-col items-center justify-center gap-5"
+//         onSubmit={handleLogin}
+//       >
+//         <div className="w-full">
+//           <label className="mb-1 text-oasis-header font-oasis-text">
+//             PUP Webmail / Admin ID
+//           </label>
+//           <input
+//             type="text"
+//             ref={userRef}
+//             value={user}
+//             onChange={(e) => setUser(e.target.value)}
+//             required
+//             className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
+//           />
+//         </div>
+
+//         <div className="w-full">
+//           <label className="mb-1 text-oasis-header font-oasis-text">
+//             Password
+//           </label>
+//           <input
+//             type="password"
+//             value={pwd}
+//             onChange={(e) => setPwd(e.target.value)}
+//             required
+//             className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
+//           />
+//         </div>
+
+//         <Button text="Login" type="submit" />
+//       </form>
+//     </>
+//   );
+// }
+
+// // Enter webmail
+// // Send OTP
+// // Verify
+// // Enter new and confirm password
 
 export function ForgotPassword() {
   return (
