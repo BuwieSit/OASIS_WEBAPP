@@ -129,7 +129,6 @@ export function Header({ admin = false }) {
                     className={animationClass}
                     items={[
                         { text: "Profile", to: "/student-profile" },
-                        { text: "Settings", to: "/settings" },
                         { text: "Log out" },
                     ]}
                 />}
@@ -252,7 +251,8 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
 }
 
 
-export function StudentHeader() {
+export function StudentHeader({ showNavigation = true }) {
+
     const [scrolled, setScrolled] = useState(false);
 
     //Scroll detection
