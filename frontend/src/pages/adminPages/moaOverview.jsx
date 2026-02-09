@@ -7,6 +7,8 @@ import {
     ActionButtons,
     ViewMoaButton
 } from "../../utilities/tableUtil.jsx";
+import PdfViewer from "../../utilities/pdfViewer";
+import { ViewModal } from '../../components/popupModal';
 import useQueryParam from '../../hooks/useQueryParams.jsx';
 import { useEffect, useState } from 'react';
 import Subtitle from '../../utilities/subtitle.jsx';
@@ -19,19 +21,20 @@ export default function MoaOverview() {
     const [currentMoas, setCurrentMoas] = useState([]);
     const [prospectMoas, setProspectMoas] = useState([]);
 
+    const [openView, setOpenView] = useState(false);
+    const [filePdf, setFilePdf] = useState(null);
+    const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
     /* ============================
        FETCH DATA
     ============================ */
     useEffect(() => {
         if (activeFilter === "overview") {
             AdminAPI.getMoas()
-                .then(res => setCurrentMoas(res.data))
-                .catch(console.error);
-        }
-
-        if (activeFilter === "submissions") {
-            AdminAPI.getMoaProspects()
-                .then(res => setProspectMoas(res.data))
+                .then(res => {
+                    console.log("RAW MOA RESPONSE:", res.data);
+                    setCurrentMoas(res.data);
+                })
                 .catch(console.error);
         }
     }, [activeFilter]);
@@ -50,9 +53,7 @@ export default function MoaOverview() {
         },
         {
             header: "Location",
-            render: r => (
-                <HteLocation address={r.hte?.address || "—"} />
-            )
+            render: r => <HteLocation address={r.hte?.address || "—"} />
         },
         {
             header: "Contact Person",
@@ -75,8 +76,15 @@ export default function MoaOverview() {
             render: r => <Text text={r.status || "—"} />
         },
         {
-            header: "Action",
-            render: r => <ActionButtons rowId={r.id} />
+            header: "View MOA",
+            render: r =>
+                r.document_path ? (
+                    <ViewMoaButton
+                        url={`${import.meta.env.VITE_API_BASE_URL}/api/files/${r.document_path.replace("uploads/", "")}`}
+                    />
+                ) : (
+                    <Text text="—" />
+                )
         }
     ];
 
@@ -107,9 +115,18 @@ export default function MoaOverview() {
         {
             header: "MOA File",
             render: r =>
-                r.moa_file
-                    ? <ViewMoaButton url={r.moa_file} />
-                    : <Text text="—" />
+                r.moa_file ? (
+                    <ViewMoaButton
+                        onClick={() => {
+                            setFilePdf(
+                                `${import.meta.env.VITE_API_BASE_URL}/api/files/${r.document_path.replace("uploads/", "")}`
+                            );
+                            setOpenView(true);
+                        }}
+                    />
+                ) : (
+                    <Text text="—" />
+                )
         },
         {
             header: "Actions",
@@ -172,6 +189,16 @@ export default function MoaOverview() {
                     />
                 </>
             )}
+
+            {/* ============================
+               VIEW MOA MODAL
+            ============================ */}
+            <ViewModal
+                visible={openView}
+                onClose={() => setOpenView(false)}
+            >
+                <PdfViewer file={filePdf} />
+            </ViewModal>
 
         </AdminScreen>
     );

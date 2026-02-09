@@ -183,14 +183,22 @@ export function AdviserDropdown({ value, options = [], onChange }) {
 // )
 
 
-export function ViewMoaButton({ url, label = "View MOA", disabled = false}) {
+export function ViewMoaButton({ url, onClick, label = "View MOA", disabled = false}) {
     if (!url) {
         return <span className="text-gray-400 text-[0.8rem]">No file found</span>
     }
     return(
         <>
-            {/* A button which when clicked will show a pdf file that can be downloaded */}
-            <AnnounceButton btnText={label} onClick={() => window.open(url, "_blank")}/>
+            <AnnounceButton
+                btnText={label}
+                onClick={() => {
+                    if (onClick) {
+                        onClick();
+                    } else if (url) {
+                        window.open(url, "_blank");
+                    }
+                }}
+            />
         </>      
     )
 }
