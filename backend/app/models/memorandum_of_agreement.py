@@ -23,8 +23,3 @@ class MemorandumOfAgreement(db.Model):
     )
 
     created_at = db.Column(db.DateTime, server_default=db.func.now())
-
-    hte = db.relationship(
-        "HostTrainingEstablishment",
-        backref="moas"
-    )

@@ -19,12 +19,6 @@ class HostTrainingEstablishment(db.Model):
     contact_email = db.Column(db.String(255), nullable=False)
 
     # MOA Info
-    moas = db.relationship(
-            "MemorandumOfAgreement",
-            backref="hte",
-            lazy=True
-        )
-
     moa_status = db.Column(
         db.Enum("ACTIVE", "PENDING", "EXPIRED", name="moa_status_enum"),
         nullable=False,
