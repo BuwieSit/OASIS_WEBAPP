@@ -292,15 +292,15 @@ export function UpdatedLogin() {
   const [userFocus, setUserFocus] = useState(false);
   const [pwdFocus, setPwdFocus] = useState(false);
 
-  // webmail validation
-  useEffect(() => {
-    setValidName(USER_REGEX.test(user));
-  }, [user]);
+  // // webmail validation
+  // useEffect(() => {
+  //   setValidName(USER_REGEX.test(user));
+  // }, [user]);
 
-  // password validation
-  useEffect(() => {
-    setValidPwd(PWD_REGEX.test(pwd));
-  }, [pwd]);
+  // // password validation
+  // useEffect(() => {
+  //   setValidPwd(PWD_REGEX.test(pwd));
+  // }, [pwd]);
 
   useEffect(() => {
     userRef.current?.focus();
@@ -313,13 +313,13 @@ export function UpdatedLogin() {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    const v1 = USER_REGEX.test(user);
-    const v2 = PWD_REGEX.test(pwd);
+    // const v1 = USER_REGEX.test(user);
+    // const v2 = PWD_REGEX.test(pwd);
 
-    if (!v1 || !v2) {
-      setErrMsg("Invalid Entry");
-      return;
-    }
+    // if (!v1 || !v2) {
+    //   setErrMsg("Invalid Entry");
+    //   return;
+    // }
 
     try {
       const res = await loginUser(user, pwd);
@@ -358,16 +358,16 @@ export function UpdatedLogin() {
             value={user}
             onChange={(e) => setUser(e.target.value)}
             required
-            aria-invalid={!validName}
+            // aria-invalid={!validName}
             onFocus={() => setUserFocus(true)}
             onBlur={() => setUserFocus(false)}
             className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
           />
         </div>
 
-        <p className={userFocus && user && !validName ? "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center" : "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>
+        {/* <p className={userFocus && user && !validName ? "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center" : "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>
           Must be a valid PUP webmail. <br/> E.g. juanmdelacruz@iskolarngbayan.pup.edu.ph
-        </p>
+        </p> */}
 
         <div className="w-full">
           <label className="mb-1 text-oasis-header font-oasis-text">
@@ -378,20 +378,21 @@ export function UpdatedLogin() {
             value={pwd}
             onChange={(e) => setPwd(e.target.value)}
             required
-            aria-invalid={!validPwd}
+            // aria-invalid={!validPwd}
             onFocus={() => setPwdFocus(true)}
             onBlur={() => setPwdFocus(false)}
             className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
           />
         </div>
-
+{/* 
         <p className={pwdFocus && pwd && !validPwd ? "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center" : "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>
           Password must be 8+ chars with uppercase, number, special char.
-        </p>
+        </p> */}
 
-        <Button text="Login" type="submit" disabled={!validName || !validPwd} />
+        <Button text="Login" type="submit"/>
       </form>
     </>
+    // disabled={!validName || !validPwd}
   );
 }
 
