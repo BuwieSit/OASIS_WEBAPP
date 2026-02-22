@@ -11,6 +11,7 @@ import {
   login,
   completeRegistration
 } from "../api/auth.service";
+import Subtitle from "../utilities/subtitle";
 
 
 const USER_REGEX = /^[a-z]+[a-z][a-z]+@iskolarngbayan\.pup\.edu\.ph$/;
@@ -334,13 +335,6 @@ export function UpdatedLogin() {
     <>
       <section className="w-full p-1 flex flex-col items-center justify-center gap-1">
         <Title text={"Login"} />
-        <p
-          ref={errRef}
-          className={errMsg ? "opacity-1 text-red-600" : "opacity-0"}
-          aria-live="assertive"
-        >
-          {errMsg}
-        </p>
       </section>
 
       <form
@@ -390,6 +384,7 @@ export function UpdatedLogin() {
         </p> */}
 
         <Button text="Login" type="submit"/>
+        <Subtitle ariaLive={"assertive"} ref={errRef} text={errMsg} color={"text-red-500"} className={"italic"} weight="font-bold"/>
       </form>
     </>
     // disabled={!validName || !validPwd}
