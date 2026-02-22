@@ -11,18 +11,21 @@ import { useLocalStorage } from '../../hooks/useLocalStorage.jsx';
 import useQueryParam from '../../hooks/useQueryParams.jsx';
 import { Delete, Plus } from 'lucide-react';
 import Subtitle from '../../utilities/subtitle.jsx';
+import { ConfirmModal, DocsAddModal, GeneralPopupModal } from '../../components/popupModal.jsx';
 
 export default function DocsUpload() {
     const [uploads, setUploads] = useLocalStorage("uploads", []);
-
-    const [activeFilter, setFilter] = useQueryParam("tab", "procedures")
-
+    const [activeFilter, setFilter] = useQueryParam("tab", "procedures");
+    const [showModal, setShowModal] = useState(false);
 
     const addUpload = (data) => {
         setUploads(prev => [data, ...prev]);
     };
+
     return (
         <AdminScreen>
+            {showModal && <DocsAddModal onClick={() => setShowModal(false)}/>}
+            
             <div>
                 <Title text={"Documents Upload"} />
             </div>
@@ -31,36 +34,91 @@ export default function DocsUpload() {
                 {/* FILTERS */}
                 <section className="w-full flex flex-row justify-start items-center gap-5 mb-10">
                     {/* VINCENT - filtering lng to kung ano nalabas sa forms */}
-                    <Filter
+                    <Subtitle
+                        size='text-[0.9rem]'
+                        isLink={true}
                         text="Procedures"
                         isActive={activeFilter === "procedures"}
                         onClick={() => setFilter("procedures")}
                     />
-                    <Filter
+                    <Subtitle text={"|"} size='text-[0.9rem]'/>
+                    <Subtitle
+                        size='text-[0.9rem]'
+                        isLink={true}
                         text="MOA Process"
                         isActive={activeFilter === "moa"}
                         onClick={() => setFilter("moa")}
                     />
-                    <Filter
+                    <Subtitle text={"|"} size='text-[0.9rem]'/>
+                    <Subtitle
+                        size='text-[0.9rem]'
+                        isLink={true}
                         text="Key Guidelines"
                         isActive={activeFilter === "guidelines"}
                         onClick={() => setFilter("guidelines")}
                     />
-                    <Filter
+                    <Subtitle text={"|"} size='text-[0.9rem]'/>
+                    <Subtitle
+                        size='text-[0.9rem]'
+                        isLink={true}
                         text="Forms & Templates"
                         isActive={activeFilter === "forms"}
                         onClick={() => setFilter("forms")}
                     />
+                    <Subtitle text={"|"} size='text-[0.9rem]'/>
+                    <Subtitle
+                        size='text-[0.9rem]'
+                        isLink={true}
+                        text="Docs General"
+                        isActive={activeFilter === "docs"}
+                        onClick={() => setFilter("docs")}
+                    />
                 </section>
 
+
                 {/* CONTENT */}
+                
+                <div className='w-full flex flex-row p-3 gap-3 justify-evenly items-center'>
+                    
+                    <section className='w-[40%] p-5 sticky top-0 flex flex-wrap gap-2 justify-center items-center transition duration-200 ease-in-out'>
+                        <div onClick={() => setShowModal(true)}>
+                            <AnnounceButton textSize='text-[1rem]' btnText='Add Items' icon={<Plus size={25} />}/>
+                        </div>
+                        
+                    </section>
+
+                    {activeFilter === "docs" && <DocsUploadGeneral/>}
                     {activeFilter === "procedures" && <Procedures onSave={addUpload} />}
                     {activeFilter === "moa" && <MoaProcess onSave={addUpload} />}
                     {activeFilter === "guidelines" && <KeyGuidelines onSave={addUpload} />}
                     {activeFilter === "forms" && <FormsTemplates onSave={addUpload} />}
+                </div>
+                
             </Container>
         </AdminScreen>
     );
+}
+
+export function DocsUploadGeneral() {
+    return (
+        <>
+            <FormLayout>
+                <section className='w-full flex flex-col items-start justify-start'>
+                    <SingleField 
+                        labelText={"Header"} 
+                        fieldHolder={"Enter upload title..."} 
+                        fieldId={"uploadHead"}
+                    />
+                    <MultiField 
+                        labelText={"Description"} 
+                        fieldHolder={"Enter upload description..."}    
+                        fieldId={"uploadDesc"}
+                    />
+                </section>
+
+            </FormLayout>
+        </>
+    )
 }
 
 export function FormLayout({ children }) {
@@ -86,9 +144,7 @@ export function Procedures({ onSave }) {
 
     const handleSubmit = () => {
         if (!header || steps.every(s => !s.value)) return;
-
         const now = new Date();
-
         onSave({
             id: crypto.randomUUID(),
             type: "procedures",
@@ -97,17 +153,14 @@ export function Procedures({ onSave }) {
             date: now.toLocaleDateString(),
             time: now.toLocaleTimeString()
         });
-
         setHeader("");
         setSteps([{ id: crypto.randomUUID(), value: "", sublist: [] }]);
     };
-
 
     const addStep = () => {
         if (steps.length >= MAX_STEPS) return;
         setSteps(prev => [...prev, { id: crypto.randomUUID(), value: "", sublist: [] }]);
     };
-
     const addSubList = (stepId) => {
         setSteps(prev =>
             prev.map(step =>
@@ -123,14 +176,27 @@ export function Procedures({ onSave }) {
         );
     };
 
+
+    const removeSubList = (stepId, subId) => {
+        setSteps(prev =>
+            prev.map(step =>
+            step.id === stepId
+                ? {
+                    ...step,
+                    sublist: step.sublist.filter(sub => sub.id !== subId)
+                }
+                : step
+            )
+        );
+    };
     const removeStep = (id) => {
         setSteps(prev => prev.filter(step => step.id !== id));
     };
 
+
     const handleClear = () => {
         setSteps([{ id: crypto.randomUUID(), value: "", sublist: [] }]);
     };
-
     const updateStep = (id, value) => {
         setSteps(prev =>
             prev.map(step =>
@@ -141,6 +207,7 @@ export function Procedures({ onSave }) {
 
     return (
         <FormLayout>
+            {/* <DocsAddModal /> */}
             <section className="w-full">
                 <SingleField
                     labelText={"Procedure Header"}
@@ -169,6 +236,29 @@ export function Procedures({ onSave }) {
                         <Subtitle text={`Maximum capacity of ${MAX_STEPS} reached.`} color={"text-red-500"}/>
                     )}
                 </section>
+
+                <div 
+                    
+                    className={`relative p-2 aspect-video rounded-full flex justify-center items-center transition-all duration-100 ease-in-out overflow-hidden col-span-2 group cursor-pointer`}
+                >
+                    <Plus  className='z-10 transition-all duration-300 ease-in-out group-hover:rotate-90 group-hover:scale-110 group-hover:invert'/>
+                    <Subtitle text={"Add Sublist"} className={"z-10"}/>
+                    <div className='w-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ease-in-out group-hover:w-full aspect-video bg-green-400'></div>
+                </div>
+                {/* ADD SUBLIST */}
+                {/* {steps.map((step) => (
+                    <div 
+                        onClick={
+                            () => step.sublist.length < MAX_SUBLISTS && addSubList(step.id)
+                        } 
+                        className={`relative p-2 aspect-video rounded-full flex justify-center items-center transition-all duration-100 ease-in-out overflow-hidden col-span-2 group cursor-pointer
+                            `}
+                    >
+                        <Plus  className='z-10 transition-all duration-300 ease-in-out group-hover:rotate-90 group-hover:scale-110 group-hover:invert'/>
+                        <Subtitle text={"Add Sublist"} className={"z-10"}/>
+                        <div className='w-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ease-in-out group-hover:w-full aspect-video bg-green-400'></div>
+                    </div>
+                ))} */}
             </div>
 
             {/* STEPS */}
@@ -183,6 +273,7 @@ export function Procedures({ onSave }) {
                         onChange={(e) => updateStep(step.id, e.target.value)}
                     />
 
+                    {/* REMOVE STEP */}
                     {steps.length > 1 && (
                         <>
                             <div className='flex gap-3 justify-center items-center'>
@@ -192,33 +283,33 @@ export function Procedures({ onSave }) {
                                     <div className='w-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ease-in-out rounded-full group-hover:w-full aspect-square bg-red-400'></div>
                                     
                                 </div>
-                        
                             </div>
                         </>      
                     )}
 
                     {/* ADD SUBLIST */}
-                    <div 
-                        onClick={
-                            () => step.sublist.length < MAX_SUBLISTS && addSubList(step.id)
-                        } 
-                        className={`relative p-2 aspect-video rounded-full flex justify-center items-center transition-all duration-100 ease-in-out overflow-hidden col-span-2 group 
-                            `}
-                    >
-                        <Plus  className='z-10 transition-all duration-300 ease-in-out group-hover:rotate-90 group-hover:scale-110 group-hover:invert'/>
-                        <Subtitle text={"Add Sublist"} className={"z-10"}/>
-                        <div className='w-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ease-in-out group-hover:w-full aspect-video bg-green-400'></div>
-                    </div>
+                    
 
                     {/* SUBLISTS */}
                     {step.sublist.map((sub, i) => (
-                        <div key={sub.id} className="w-full grid grid-cols-1 place-items-center justify-items-center gap-5">
-                            <Dropdown 
-                                labelText={`Sublist ${i + 1}`}
-                                fieldId={`sublist-${step.id}-${i}`}
-                                categories={categories}
-                            />
+                        <div>
+                            <div key={sub.id} className="w-full grid grid-cols-1 place-items-center justify-items-center gap-5">
+                                <Dropdown 
+                                    labelText={`Sublist ${i + 1}`}
+                                    fieldId={`sublist-${step.id}-${i}`}
+                                    categories={categories}
+                                />
+                            </div>
+                            <div className='flex gap-3 justify-center items-center'>
+                                <div className='relative p-2 w-15 aspect-square rounded-full flex justify-center items-center transition-all duration-100 ease-in-out group overflow-hidden cursor-pointer'>
+                                    <Delete onClick={() => removeSubList(step.id, sub.id)} className='z-10 transition-all duration-300 ease-in-out group-hover:scale-110 group-hover:invert'/>
+
+                                    <div className='w-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ease-in-out rounded-full group-hover:w-full aspect-square bg-red-400'></div>
+                                    
+                                </div>
+                            </div>
                         </div>
+
                     ))
                             
                     }
