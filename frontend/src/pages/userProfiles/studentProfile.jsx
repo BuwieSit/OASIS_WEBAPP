@@ -7,20 +7,18 @@ import api from "../../api/axios";
 import { AnnounceButton } from "../../components/button";
 import { FileUploadField, SingleField } from "../../components/fieldComp";
 
-// ALWAYS RELIABLE BACKEND BASE URL
 const API_BASE = api.defaults.baseURL;
 
 export default function StudentProfile() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
-
   const [isEditing, setIsEditing] = useState(false);
-
-  const [fullName, setFullName] = useState("")
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [middleInitial, setMiddleInitial] = useState("");
   const [ojtAdviser, setOjtAdviser] = useState("");
   const [Program, setProgram] = useState("");
   const [password, setPassword] = useState("");
-
   const [photoPreview, setPhotoPreview] = useState(null);
 
   useEffect(() => {
@@ -28,15 +26,17 @@ export default function StudentProfile() {
         const res = await api.get("/api/student/me");
         const fetchedProfile = res.data.profile;
 
-        // ✅ NORMALIZE IMAGE URL ON FETCH
         fetchedProfile.photo_url = fetchedProfile.photo_path
           ? `${API_BASE}${fetchedProfile.photo_path}`
           : null;
 
+        const fetchedFullName = `${fetchedProfile.first_name || ""} ${fetchedProfile.middle_initial || ""} ${fetchedProfile.last_name || ""}`;
+        
         setUser(res.data.user);
         setProfile(fetchedProfile);
-
-        const fetchedFullName = `${fetchedProfile.first_name || ""} ${fetchedProfile.middle_initial || ""} ${fetchedProfile.last_name || ""}`;
+        setFirstName(fetchedProfile.first_name || "");
+        setLastName(fetchedProfile.last_name || "");
+        setMiddleInitial(fetchedProfile.middle_initial || "");
         setFullName(fetchedFullName);
         setOjtAdviser(fetchedProfile.ojt_adviser || "");
         setProgram(fetchedProfile._program || "");
@@ -47,52 +47,37 @@ export default function StudentProfile() {
 
   if (!user || !profile) return null;
 
-  const displayFullname = `${profile.first_name || ""} ${profile.middle_initial || ""} ${profile.last_name || ""}`;
+  const displayFullname = `${profile.first_name || "—"} ${profile.middle_initial || "—"} ${profile.last_name || ""}`;
 
   const saveProfile = async () => {
-  try {
-    const nameParts = fullName.split(" ");
-    const firstName = nameParts[0] || "";
-    const lastName = nameParts[nameParts.length - 1] || "";
-    const middleInitial = nameParts.length > 2 ? nameParts[1] : "";
-
-    const profileData = {
-      first_name: firstName,
-      middle_initial: middleInitial,
-      last_name: lastName,
-      ojt_adviser: ojtAdviser,
-      _program: Program,
+    try {
+      const profileData = {
+        first_name: firstName.trim(),
+        middle_initial: middleInitial.trim().charAt(0).toUpperCase(),
+        last_name: lastName.trim(),
+        ojt_adviser: ojtAdviser,
+        _program: Program,
     };
 
-    if (password && password.trim() !== "") {
-      profileData.password = password;
+      if (password && password.trim() !== "") {
+        profileData.password = password;
+      }
+      const response = await api.patch("/api/student/me", profileData);
+
+       setProfile(prev => ({
+          ...prev,
+          ...response.data.profile   
+      }));
+      setPassword("");
+      setIsEditing(false);
+      
+      alert("Profile updated successfully!");
+    } catch (err) {
+      console.error("Full error:", err); 
+      console.error("Error response:", err?.response?.data); 
+      alert(err?.response?.data?.error || "Failed to update profile");
     }
-
-    console.log("Sending profile data:", profileData); 
-
-    const response = await api.patch("/api/student/me", profileData);
-    
-    console.log("Response:", response.data); // 🔍 DEBUG
-
-    setProfile((prev) => ({
-      ...prev,
-      first_name: firstName,
-      middle_initial: middleInitial,
-      last_name: lastName,
-      ojt_adviser: ojtAdviser,
-      _program: Program,
-    }));
-
-    setPassword("");
-    setIsEditing(false);
-    
-    alert("Profile updated successfully!");
-  } catch (err) {
-    console.error("Full error:", err); // 🔍 DEBUG
-    console.error("Error response:", err?.response?.data); // 🔍 DEBUG
-    alert(err?.response?.data?.error || "Failed to update profile");
-  }
-};
+  };
 
   return (
     <StudentProfileScreen>
@@ -101,7 +86,7 @@ export default function StudentProfile() {
         {/* ========== LEFT COLUMN ========== */}
         <div className="w-full h-auto p-3 flex flex-col gap-5 justify-start items-center">
           {/* Student Account (Read Only) */}
-          <div className="w-full h-full text-center justify-center flex flex-col text-oasis-header font-oasis-text font-semibold text-2xl wrap-break-word">Student Account</div>          
+          <Subtitle text={displayFullname} size="text-[1.5rem]" color={"text-oasis-button-dark"} weight="font-bold"/>          
           {/* Profile Picture */}
           <div className="relative">
             <img
@@ -181,19 +166,48 @@ export default function StudentProfile() {
 
           {/* Fullname na */}
           <div className="w-full">
-            <label className="block mb-2 text-sm font-semibold text-gray-600">Name</label>
+            <div className="grid grid-cols-3 gap-2">
+                <label className="block mb-2 text-sm font-semibold text-gray-600">First name</label>
+                <label className="block mb-2 text-sm font-semibold text-gray-600">Last name</label>
+                <label className="block mb-2 text-sm font-semibold text-gray-600">Middle Initial</label>
+            </div>
+
             {isEditing ? (
-                <input
-                  type="text"
-                  className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg border-none outline-none"                  
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  fieldHolder="Full Name"
-                />
+                <div className="w-full flex gap-5">
+                  <SingleField
+                    hasBorder={true}
+                    fieldHolder={"First name"}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    value={firstName}
+                  />
+                  <SingleField
+                    hasBorder={true}
+                    fieldHolder={"Last name"}
+                    onChange={(e) => setLastName(e.target.value)}
+                    value={lastName}
+                  />
+                  <SingleField
+                    hasBorder={true}
+                    fieldHolder={"Middle Initial"}
+                    onChange={(e) => setMiddleInitial(e.target.value.charAt(0).toUpperCase())}
+                    value={middleInitial}
+                  />
+                </div>
+
+
             ) : (
-              <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
-                {displayFullname || "—"}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
+                    {firstName || "-"}
+                </div>
+                <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
+                    {lastName || "-"}
+                </div>
+                <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
+                    {middleInitial || "-"}
+                </div>
               </div>
+              
             )}
           </div>
 

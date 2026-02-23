@@ -12,6 +12,7 @@ import {
   completeRegistration
 } from "../api/auth.service";
 import Subtitle from "../utilities/subtitle";
+import { Eye, EyeClosed } from "lucide-react";
 
 
 const USER_REGEX = /^[a-z]+[a-z][a-z]+@iskolarngbayan\.pup\.edu\.ph$/;
@@ -292,7 +293,11 @@ export function UpdatedLogin() {
 
   const [userFocus, setUserFocus] = useState(false);
   const [pwdFocus, setPwdFocus] = useState(false);
+  const [showPassword, setShowPassword] = useState("");
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
   // // webmail validation
   // useEffect(() => {
   //   setValidName(USER_REGEX.test(user));
@@ -314,13 +319,12 @@ export function UpdatedLogin() {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // const v1 = USER_REGEX.test(user);
-    // const v2 = PWD_REGEX.test(pwd);
+    const v2 = PWD_REGEX.test(pwd);
 
-    // if (!v1 || !v2) {
-    //   setErrMsg("Invalid Entry");
-    //   return;
-    // }
+    if (!v2) {
+      setErrMsg("Invalid Password");
+      return;
+    }
 
     try {
       const res = await loginUser(user, pwd);
@@ -344,15 +348,16 @@ export function UpdatedLogin() {
         {/* WEBMAIL */}
         <div className="w-full">
           <label className="mb-1 text-oasis-header font-oasis-text">
-            PUP Webmail / Admin ID
+            PUP Webmail
           </label>
           <input
             type="text"
             ref={userRef}
             value={user}
+            placeholder="Please enter webmail"
             onChange={(e) => setUser(e.target.value)}
             required
-            // aria-invalid={!validName}
+            aria-invalid={!validName}
             onFocus={() => setUserFocus(true)}
             onBlur={() => setUserFocus(false)}
             className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
@@ -364,19 +369,26 @@ export function UpdatedLogin() {
         </p> */}
 
         <div className="w-full">
-          <label className="mb-1 text-oasis-header font-oasis-text">
-            Password
-          </label>
-          <input
-            type="password"
-            value={pwd}
-            onChange={(e) => setPwd(e.target.value)}
-            required
-            // aria-invalid={!validPwd}
-            onFocus={() => setPwdFocus(true)}
-            onBlur={() => setPwdFocus(false)}
-            className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
-          />
+          <label className="mb-1 text-oasis-header font-oasis-text">Password</label>
+            <input
+              type={showPassword ? "text" : "password"}
+              value={pwd}
+              placeholder="Please enter password"
+              onChange={(e) => setPwd(e.target.value)}
+              required
+              aria-invalid={!validPwd}
+              onFocus={() => setPwdFocus(true)}
+              onBlur={() => setPwdFocus(false)}
+              onCopy={handleLogin}
+              onCut={handleLogin}
+              onPaste={handleLogin}
+              className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
+            />
+          {showPassword ? 
+            <Eye color="#3E8679" className="absolute top-1/2 right-[10%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/> 
+          : 
+            <EyeClosed color="#3E8679" className="absolute top-1/2 right-[10%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/>}
+          
         </div>
 {/* 
         <p className={pwdFocus && pwd && !validPwd ? "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center" : "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>
@@ -384,7 +396,10 @@ export function UpdatedLogin() {
         </p> */}
 
         <Button text="Login" type="submit"/>
-        <Subtitle ariaLive={"assertive"} ref={errRef} text={errMsg} color={"text-red-500"} className={"italic"} weight="font-bold"/>
+        <div className="w-full flex justify-center items-center h-10">
+            <Subtitle ariaLive={"assertive"} ref={errRef} text={errMsg} color={"text-red-500"} className={"italic"} weight="font-bold"/>
+        </div>
+        
       </form>
     </>
     // disabled={!validName || !validPwd}
