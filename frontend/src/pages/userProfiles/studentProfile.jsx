@@ -47,7 +47,9 @@ export default function StudentProfile() {
 
   if (!user || !profile) return null;
 
-  const displayFullname = `${profile.first_name || "—"} ${profile.middle_initial || "—"} ${profile.last_name || ""}`;
+  const displayFullname = `${profile.first_name || "—"} 
+                          ${profile.middle_initial || ""}
+                          ${profile.last_name || ""}`;
 
   const saveProfile = async () => {
     try {
@@ -164,7 +166,7 @@ export default function StudentProfile() {
         {/* ========== RIGHT COLUMN ========== */}
         <div className="w-full h-auto p-3 flex flex-col gap-5 justify-start items-start border-l pl-8">
 
-          {/* Fullname na */}
+          {/* NAME */}
           <div className="w-full">
             <div className="grid grid-cols-3 gap-2">
                 <label className="block mb-2 text-sm font-semibold text-gray-600">First name</label>
@@ -217,7 +219,7 @@ export default function StudentProfile() {
             {isEditing ? (
               
               <select 
-                className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg border-none outline-none cursor-pointer"
+                className="w-full p-3 bg-white text-black border rounded outline-none cursor-pointer"
                 value={ojtAdviser}
                 onChange={(e) => setOjtAdviser(e.target.value)}
               >
@@ -239,7 +241,7 @@ export default function StudentProfile() {
             <label className="block mb-2 text-sm font-semibold text-gray-600">OJT Program</label>
             {isEditing ? (
               <select 
-                className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg border-none outline-none cursor-pointer"
+                className="w-full p-3 bg-white text-black border rounded outline-none cursor-pointer"
                 value={Program}
                 onChange={(e) => setProgram(e.target.value)}
               >
@@ -262,7 +264,7 @@ export default function StudentProfile() {
             {isEditing ? (
               <input
                 type="password"
-                className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg border-none outline-none"
+                className="w-full p-3 bg-white text-black border rounded outline-none"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter new password"
