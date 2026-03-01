@@ -1,11 +1,10 @@
 import { StudentProfileScreen } from "../../layouts/profileScreen";
 import Subtitle from "../../utilities/subtitle";
-import { Info, SquarePen, Activity, BriefcaseBusiness } from "lucide-react";
-import testPfp from "../../assets/testprofile.jpg";
+import { SquarePen, Activity} from "lucide-react";
+import testPfp from "../../assets/testprofile.png";
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
-import { AnnounceButton } from "../../components/button";
-import { FileUploadField, SingleField } from "../../components/fieldComp";
+import { SingleField } from "../../components/fieldComp";
 
 const API_BASE = api.defaults.baseURL;
 

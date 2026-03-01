@@ -14,166 +14,83 @@ import {
 import Subtitle from "../utilities/subtitle";
 import { Eye, EyeClosed } from "lucide-react";
 import { Label } from "../utilities/label";
-
-const USER_REGEX = /^[a-z]+[a-z][a-z]+@iskolarngbayan\.pup\.edu\.ph$/;
-const PWD_REGEX = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-const ADMIN_REGEX = /^[admin]+[0-9][0-9][0-9]$/;
-const OTP_REGEX = /^\d{6}$/;
-
-export function ValidatedInputField({ 
-  type, 
-  id,
-  value,
-  placeholder, 
-  ref,
-  autoComplete, 
-  required, 
-  onChange,
-  ariaInvalid,
-  ariaDescribedBy,
-  onFocus,
-  onBlur,
-  onCopy,
-  onCut,
-  onPaste,
-
-}) {
-  return (
-    <>
-      <input
-          type={type}
-          id={id}
-          placeholder={placeholder}
-          ref={ref}
-          autoComplete={autoComplete}
-          required={required}
-          onChange={onChange}
-          aria-invalid={ariaInvalid}
-          aria-describedby={ariaDescribedBy}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          value={value}
-          onCopy={onCopy}
-          onCut={onCut}
-          onPaste={onPaste}
-
-          className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
-      />
-    </>
-  )
-}
+import useRegisterFlow from "../utils/RegisterFlow";
+import useAuthFormLogic from "../utils/AuthFormLogic";
 
 export function UpdatedReg() {
   const navigate = useNavigate();
 
-  const STEPS = {
-    EMAIL: "EMAIL",
-    OTP: "OTP",
-    PASSWORD: "PASSWORD",
-  };
+  const {
+    userRef,
+    errRef,
+    user,
+    setUser,
+    pwd,
+    setPwd,
+    errMsg,
+    setErrMsg,
+    validName,
+    validPwd,
+    userFocus,
+    setUserFocus,
+    pwdFocus,
+    setPwdFocus,
+    showPassword,
+    togglePasswordVisibility,
+  } = useAuthFormLogic();
 
-  const [step, setStep] = useState(STEPS.EMAIL);
-  const otpRef = useRef();
-  const pwdRef = useRef();
+  const {
+    STEPS,
+    step,
+    setStep,
+    otpRef,
+    pwdRef,
+    otp,
+    setOtp,
+    validOtp,
+    otpFocus,
+    setOtpFocus,
+    matchPwd,
+    setMatchPwd,
+    validMatch,
+    matchFocus,
+    setMatchFocus,
+    success,
+    setSuccess,
+  } = useRegisterFlow({
+    user,
+    pwd,
+    setErrMsg,
+  });
 
-  const userRef = useRef();
-  const errRef = useRef();
-
-  const [user, setUser] = useState("");
-  const [validName, setValidName] = useState(false);
-  const [userFocus, setUserFocus] = useState(false);
-
-  const [pwd, setPwd] = useState("");
-  const [validPwd, setValidPwd] = useState(false);
-  const [pwdFocus, setPwdFocus] = useState(false);
-
-  const [matchPwd, setMatchPwd] = useState("");
-  const [validMatch, setValidMatch] = useState(false);
-  const [matchFocus, setMatchFocus] = useState(false);
-  const [showPassword, setShowPassword] = useState("");
-
-  const [otp, setOtp] = useState("");
-  const [validOtp, setValidOtp] = useState(false);
-  const [otpFocus, setOtpFocus] = useState(false);
-
-  const [errMsg, setErrMsg] = useState("");
-  const [success, setSuccess] = useState(false);
-  const [refresh, setRefresh] = useState(false);
-  
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
-  useEffect(() => {
-    userRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    if (step === STEPS.EMAIL) userRef.current?.focus();
-    if (step === STEPS.OTP) otpRef.current?.focus();
-    if (step === STEPS.PASSWORD) pwdRef.current?.focus();
-  }, [step]);
-
-  useEffect(() => {
-    // webmail validation
-    const result = USER_REGEX.test(user);
-    setValidName(result);
-  }, [user]);
-
-  useEffect(() => {
-    // OTP validation
-    setValidOtp(OTP_REGEX.test(otp));
-  }, [otp]);
-
-  useEffect(() => {
-    // password validation
-    const result = PWD_REGEX.test(pwd);
-    setValidPwd(result);
-    const match = pwd === matchPwd;
-    setValidMatch(match);
-  }, [pwd, matchPwd]);
-
-  useEffect(() => {
-    setErrMsg("");
-  }, [user, pwd, matchPwd, otp]);
-
-  useEffect(() => {
-    if(refresh) {
-      window.location.reload();
-    }
-  }, (refresh))
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // only submit on PASSWORD step
+    console.log("SUBMIT CLICKED", step);
+   
     if (step !== STEPS.PASSWORD) return;
-
-    const v1 = USER_REGEX.test(user);
-    const v2 = PWD_REGEX.test(pwd);
-
-    if (!v1 || !v2) {
+  
+    if (!validName || !validPwd || !validMatch) {
       setErrMsg("Invalid Entry");
       return;
     }
-
+    // /auth/send-otp-register
     try {
       clearToken();
-
       await completeRegistration(user, pwd, matchPwd);
-      setSuccess(true);
-      navigate("/access");
+      // setSuccess(true);
+      // console.log("Success reg!", success);
+      navigate("/");
     } catch (err) {
       setErrMsg(
         err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          "Registration failed."
+        err?.response?.data?.message ||
+        "Registration failed."
       );
     }
   };
-
   return (
     <>
-      {success ? (() => setRefresh(true)) : (
+      
         <>
           <section className="w-full p-1 flex flex-col items-center justify-center gap-1">
             <Title text={"Register"}></Title>
@@ -319,8 +236,6 @@ export function UpdatedReg() {
             )}
           </form>
         </>
-      )}
-
       <section className="w-full p-1 flex flex-col items-center justify-center gap-1">
             <p
               ref={errRef}
@@ -334,61 +249,34 @@ export function UpdatedReg() {
   );
 }
 
+
 export function UpdatedLogin() {
-  const userRef = useRef();
   const navigate = useNavigate();
-  const errRef = useRef();
   const { loginUser } = useAuth();
- 
 
-  const [user, setUser] = useState("");
-  const [pwd, setPwd] = useState("");
-  const [errMsg, setErrMsg] = useState("");
-  
-
-  const [validName, setValidName] = useState(false);
-  const [validPwd, setValidPwd] = useState(false);
-
-  const [userFocus, setUserFocus] = useState(false);
-  const [pwdFocus, setPwdFocus] = useState(false);
-  const [showPassword, setShowPassword] = useState("");
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-  
-  // webmail validation
-  const admin = ADMIN_REGEX.test(user);
-  useEffect(() => {
-  
-    if (admin) {
-        setValidName(true)
-    }
-    else {
-      setValidName(USER_REGEX.test(user));
-    }
-    
-  }, [user]);
-
-  // password validation
-  useEffect(() => {
-    setValidPwd(PWD_REGEX.test(pwd));
-  }, [pwd]);
-
-  useEffect(() => {
-    userRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    setErrMsg("");
-  }, [user, pwd]);
+  const {
+    userRef,
+    errRef,
+    user,
+    setUser,
+    pwd,
+    setPwd,
+    errMsg,
+    setErrMsg,
+    validName,
+    validPwd,
+    userFocus,
+    setUserFocus,
+    pwdFocus,
+    setPwdFocus,
+    showPassword,
+    togglePasswordVisibility,
+  } = useAuthFormLogic({ allowAdmin: true });
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    const v2 = PWD_REGEX.test(pwd);
-
-    if (!v2) {
+    if (!validPwd) {
       setErrMsg("Invalid Password");
       return;
     }
@@ -450,7 +338,7 @@ export function UpdatedLogin() {
           
         </div>
 
-        <Button text="Login" type="submit"/>
+        <Button text="Login" type="submit" disabled={!validName || !validPwd}/>
         <div className="w-full flex justify-center items-center h-10">
           {userFocus && 
             <p className={userFocus && user && !validName ? "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center" : "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>
@@ -467,44 +355,228 @@ export function UpdatedLogin() {
         
       </form>
     </>
-    // disabled={!validName || !validPwd}
   );
 }
 
 
 export function ForgotPassword() {
+  const navigate = useNavigate();
+
+  const {
+    userRef,
+    user,
+    setUser,
+    pwd,
+    setPwd,
+    errMsg,
+    setErrMsg,
+    validName,
+    validPwd,
+    userFocus,
+    setUserFocus,
+    pwdFocus,
+    setPwdFocus,
+    showPassword,
+    togglePasswordVisibility,
+  } = useAuthFormLogic();
+
+  const {
+    STEPS,
+    step,
+    setStep,
+    otpRef,
+    pwdRef,
+    otp,
+    setOtp,
+    validOtp,
+    otpFocus,
+    setOtpFocus,
+    matchPwd,
+    setMatchPwd,
+    validMatch,
+    matchFocus,
+    setMatchFocus,
+  } = useRegisterFlow({
+    user,
+    pwd,
+    setErrMsg,
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+
+      // /auth/send-otp-reset
+      if (step === STEPS.EMAIL) {
+        await sendOtp(user);
+        setStep(STEPS.OTP);
+      }
+
+      else if (step === STEPS.OTP) {
+        await verifyOtp(user, otp);
+        setStep(STEPS.PASSWORD);
+      }
+
+      else if (step === STEPS.PASSWORD) {
+        if (!validPwd || !validMatch) {
+          setErrMsg("Invalid password entry");
+          return;
+        }
+        await resetPassword(user, pwd);
+        navigate("/access");
+      }
+
+    } catch (err) {
+      setErrMsg(
+        err?.response?.data?.error ||
+        "Something went wrong."
+      );
+    }
+  };
+
   return (
     <>
-    <Title text={"Forgot Password"} />
-      <form className="w-full p-5 flex flex-col items-center justify-center gap-5">
+      <Title text={"Forgot Password"} />
 
-        <div className="w-full">
-          <label className="mb-1 text-oasis-header font-oasis-text" htmlFor="webMail">PUP Webmail</label>
-          <input
+      <form
+        onSubmit={handleSubmit}
+        className="w-full p-5 flex flex-col items-center justify-center gap-5"
+      >
+
+        {/* STEP 1 — WEBMAIL */}
+        {step === STEPS.EMAIL && (
+          <>
+            <div className="w-full">
+              <label htmlFor="webMail">PUP Webmail</label>
+
+              <ValidatedInputField
+                type="text"
+                id="webMail"
+                placeholder="Enter valid webmail"
+                ref={userRef}
+                autoComplete="off"
+                required
+                value={user}
+                onChange={(e) => setUser(e.target.value)}
+                ariaInvalid={validName ? "false" : "true"}
+                ariaDescribedBy="uidnote"
+                onFocus={() => setUserFocus(true)}
+                onBlur={() => setUserFocus(false)}
+              />
+            </div>
+
+            <Button text="Send OTP" type="submit" disabled={!validName} />
+          </>
+        )}
+
+        {/* STEP 2 — OTP */}
+        {step === STEPS.OTP && (
+          <>
+            <ValidatedInputField
               type="text"
-              id="webMail"
-              placeholder="Enter valid webmail"
-              // ref={userRef}
-              autoComplete="off"
+              id="otp"
+              placeholder="Enter 6-digit OTP"
+              ref={otpRef}
               required
-              // onChange={(e) => setUser(e.target.value)}
-              // aria-invalid={validName ? "false" : "true"}
-              // aria-describedby="uidnote"
-              // onFocus={() => setUserFocus(true)}
-              // onBlur={() => setUserFocus(false)}
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              ariaInvalid={validOtp ? "false" : "true"}
+              ariaDescribedBy="otpnote"
+              onFocus={() => setOtpFocus(true)}
+              onBlur={() => setOtpFocus(false)}
+            />
 
-              className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
-          />
-        </div>
+            <Button text="Verify OTP" type="submit" disabled={!validOtp} />
+          </>
+        )}
 
-        <Button text="Send OTP" type="submit" />
+        {/* STEP 3 — NEW PASSWORD */}
+        {step === STEPS.PASSWORD && (
+          <>
+            <ValidatedInputField
+              type={showPassword ? "text" : "password"}
+              id="new_password"
+              placeholder="New Password"
+              ref={pwdRef}
+              required
+              value={pwd}
+              onChange={(e) => setPwd(e.target.value)}
+              ariaInvalid={validPwd ? "false" : "true"}
+              ariaDescribedBy="pwdnote"
+              onFocus={() => setPwdFocus(true)}
+              onBlur={() => setPwdFocus(false)}
+            />
+
+            <ValidatedInputField
+              type={showPassword ? "text" : "password"}
+              id="confirm_password"
+              placeholder="Confirm Password"
+              required
+              value={matchPwd}
+              onChange={(e) => setMatchPwd(e.target.value)}
+              ariaInvalid={validMatch ? "false" : "true"}
+              ariaDescribedBy="matchnote"
+              onFocus={() => setMatchFocus(true)}
+              onBlur={() => setMatchFocus(false)}
+            />
+
+            <Button
+              text="Reset Password"
+              type="submit"
+              disabled={!validPwd || !validMatch}
+            />
+          </>
+        )}
       </form>
-      
-{/*       
-      <p id="uidnote" className={userFocus && user && !validName ? 
-        "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center": "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>Must be a valid webmail.<br/> 
-      E.g. juanmdelacruz@iskolarngbayan.pup.edu.ph
-      </p> */}
+
+      {errMsg && (
+        <p className="text-red-500 italic font-bold text-center mt-3">
+          {errMsg}
+        </p>  
+      )}
+    </>
+  );
+}
+
+export function ValidatedInputField({ 
+  type, 
+  id,
+  value,
+  placeholder, 
+  ref,
+  autoComplete, 
+  required, 
+  onChange,
+  ariaInvalid,
+  ariaDescribedBy,
+  onFocus,
+  onBlur,
+  onCopy,
+  onCut,
+  onPaste,
+}) {
+  return (
+    <>
+      <input
+          type={type}
+          id={id}
+          placeholder={placeholder}
+          ref={ref}
+          autoComplete={autoComplete}
+          required={required}
+          onChange={onChange}
+          aria-invalid={ariaInvalid}
+          aria-describedby={ariaDescribedBy}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          value={value}
+          onCopy={onCopy}
+          onCut={onCut}
+          onPaste={onPaste}
+
+          className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
+      />
     </>
   )
 }
