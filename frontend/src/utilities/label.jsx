@@ -4,7 +4,7 @@ import Subtitle from "./subtitle";
 export function Label({ fieldId, labelText, children}) {
     return (
         <>
-             <label htmlFor={fieldId} className='font-bold text-[1rem] text-oasis-button-dark flex justify-evenly'>{children}{labelText}</label>
+             <label htmlFor={fieldId} className='font-bold text-[1rem] text-oasis-button-dark flex gap-5'>{children}{labelText}</label>
         </>
     )
 }

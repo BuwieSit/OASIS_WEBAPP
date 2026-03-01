@@ -13,11 +13,55 @@ import {
 } from "../api/auth.service";
 import Subtitle from "../utilities/subtitle";
 import { Eye, EyeClosed } from "lucide-react";
-
+import { Label } from "../utilities/label";
 
 const USER_REGEX = /^[a-z]+[a-z][a-z]+@iskolarngbayan\.pup\.edu\.ph$/;
 const PWD_REGEX = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+const ADMIN_REGEX = /^[admin]+[0-9][0-9][0-9]$/;
 const OTP_REGEX = /^\d{6}$/;
+
+export function ValidatedInputField({ 
+  type, 
+  id,
+  value,
+  placeholder, 
+  ref,
+  autoComplete, 
+  required, 
+  onChange,
+  ariaInvalid,
+  ariaDescribedBy,
+  onFocus,
+  onBlur,
+  onCopy,
+  onCut,
+  onPaste,
+
+}) {
+  return (
+    <>
+      <input
+          type={type}
+          id={id}
+          placeholder={placeholder}
+          ref={ref}
+          autoComplete={autoComplete}
+          required={required}
+          onChange={onChange}
+          aria-invalid={ariaInvalid}
+          aria-describedby={ariaDescribedBy}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          value={value}
+          onCopy={onCopy}
+          onCut={onCut}
+          onPaste={onPaste}
+
+          className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
+      />
+    </>
+  )
+}
 
 export function UpdatedReg() {
   const navigate = useNavigate();
@@ -46,6 +90,7 @@ export function UpdatedReg() {
   const [matchPwd, setMatchPwd] = useState("");
   const [validMatch, setValidMatch] = useState(false);
   const [matchFocus, setMatchFocus] = useState(false);
+  const [showPassword, setShowPassword] = useState("");
 
   const [otp, setOtp] = useState("");
   const [validOtp, setValidOtp] = useState(false);
@@ -53,6 +98,11 @@ export function UpdatedReg() {
 
   const [errMsg, setErrMsg] = useState("");
   const [success, setSuccess] = useState(false);
+  const [refresh, setRefresh] = useState(false);
+  
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   useEffect(() => {
     userRef.current?.focus();
@@ -87,6 +137,11 @@ export function UpdatedReg() {
     setErrMsg("");
   }, [user, pwd, matchPwd, otp]);
 
+  useEffect(() => {
+    if(refresh) {
+      window.location.reload();
+    }
+  }, (refresh))
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -118,24 +173,10 @@ export function UpdatedReg() {
 
   return (
     <>
-      {success ? (
-        <>
-          <section>
-            <h1>success</h1>
-            <p>Sign in</p>
-          </section>
-        </>
-      ) : (
+      {success ? (() => setRefresh(true)) : (
         <>
           <section className="w-full p-1 flex flex-col items-center justify-center gap-1">
             <Title text={"Register"}></Title>
-            <p
-              ref={errRef}
-              className={errMsg ? "right-0" : "right-full"}
-              aria-live="assertive"
-            >
-              {errMsg}
-            </p>
           </section>
 
             {/* WEBMAIL */}
@@ -143,21 +184,19 @@ export function UpdatedReg() {
                 {step === STEPS.EMAIL && (
                     <>
                         <div className="w-full">
-                            <label className="mb-1 text-oasis-header font-oasis-text" htmlFor="webMail">PUP Webmail</label>
-                            <input
-                                type="text"
-                                id="webMail"
-                                placeholder="Enter valid webmail"
-                                ref={userRef}
-                                autoComplete="off"
-                                required
-                                onChange={(e) => setUser(e.target.value)}
-                                aria-invalid={validName ? "false" : "true"}
-                                aria-describedby="uidnote"
-                                onFocus={() => setUserFocus(true)}
-                                onBlur={() => setUserFocus(false)}
-
-                                className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
+                            <Label labelText={"PUP Webmail"} fieldId={"webMail"}/>
+                            <ValidatedInputField
+                              type={"text"}
+                              id={"webMail"}
+                              placeholder={"Enter valid webmail"}
+                              ref={userRef}
+                              autoComplete="off"
+                              required
+                              onChange={(e) => setUser(e.target.value)}
+                              ariaInvalid={validName ? "false" : "true"}
+                              ariaDescribedBy="uidnote"
+                              onFocus={() => setUserFocus(true)}
+                              onBlur={() => setUserFocus(false)}
                             />
                         </div>
                         
@@ -187,22 +226,24 @@ export function UpdatedReg() {
                 {step === STEPS.OTP && (
                     <>
                         <div className="text-center">
-                            <label htmlFor="otp" className="mb-1 text-oasis-header font-oasis-text">Enter OTP</label>
-                            <input
+                            <Label labelText={"Enter OTP"} fieldId={"otp"}/>
+                            <ValidatedInputField
                                 ref={otpRef}
                                 type="text"
                                 id="otp"
                                 required
                                 placeholder="6-digit OTP"
                                 onChange={(e) => setOtp(e.target.value)}
-                                aria-describedby="otpnote"
+                                ariaDescribedBy="otpnote"
                                 onFocus={() => setOtpFocus(true)}
                                 onBlur={() => setOtpFocus(false)}
-                                
-                                className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
                             />
+
                         </div>
+                        <div className="w-full h-20 flex align-center justify-center">
                           <p id="otpnote" className={otpFocus && otp && !validOtp ? "opacity-100 font-oasis-text text-red-600 text-xs ": "opacity-0 "}> OTP must be a 6-digit number.</p>
+                        </div>
+                          
                         <Button
                             text="Verify OTP"
                             type="button"
@@ -226,54 +267,69 @@ export function UpdatedReg() {
                 {step === STEPS.PASSWORD && (
                   <>
                       <div className="text-center">
-                          <label htmlFor="password" className="mb-1 text-oasis-header font-oasis-text">Password</label>
-                          <input
+                          <Label labelText={"Password"} fieldId={"password"}/>
+                          <ValidatedInputField
                               ref={pwdRef}
-                              type="password"
+                              type={showPassword ? "text" : "password"}
                               id="password"
                               placeholder="Enter password"
                               required
                               onChange={(e) => setPwd(e.target.value)}
-                              aria-invalid={!validPwd}
-                              aria-describedby="pwdnote"
+                              ariaInvalid={!validPwd}
+                              ariaDescribedBy="pwdnote"
                               onFocus={() => setPwdFocus(true)}
                               onBlur={() => setPwdFocus(false)}
-
-                              className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
                           />
-                      </div>
 
-                      <div className="text-center">
-                          <label htmlFor="confirm_pwd">Confirm Password</label>
-                          <input
-                              type="password"
+                          {showPassword ? 
+                            <Eye color="#3E8679" className="absolute top-[35%] right-[10%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/> 
+                          : 
+                            <EyeClosed color="#3E8679" className="absolute top-[35%] right-[10%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/>
+                          }
+                          <ValidatedInputField
+                              type={showPassword ? "text" : "password"}
                               id="confirm_pwd"
                               placeholder="Re-enter password"
                               onChange={(e) => setMatchPwd(e.target.value)}
-                              aria-invalid={!validMatch}
-                              aria-describedby="matchnote"
+                              ariaInvalid={!validMatch}
+                              ariaDescribedBy="matchnote"
                               required
                               onFocus={() => setMatchFocus(true)}
                               onBlur={() => setMatchFocus(false)}
-                              
-                              className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
                           />
                       </div>
 
-                      <p id="pwdnote" className={pwdFocus && pwd && !validPwd ? "opacity-100 font-oasis-text text-red-600 text-xs ": "opacity-0 "}>
-                          Password must not be less than 8 characters.<br/>
-                          Including an uppercase letter, and special character
-                      </p>
-                      <p id="matchnote" className={matchFocus && matchPwd && !validMatch ? "opacity-100 font-oasis-text text-red-600 text-xs": "opacity-0 "}>
-                          password not matched!
-                      </p>
+                      <div className="w-full h-20 flex align-center justify-center">
+                          {pwdFocus && 
+                            <p id="pwdnote" className={pwdFocus && pwd && !validPwd ? "opacity-100 font-oasis-text text-red-600 text-xs ": "opacity-0 "}>
+                            Password must not be less than 8 characters.<br/>
+                            Including an uppercase letter, and special character
+                            </p>
+                          }
 
+                          {matchFocus && 
+                            <p id="matchnote" className={matchFocus && matchPwd && !validMatch ? "opacity-100 font-oasis-text text-red-600 text-xs": "opacity-0 "}>
+                            password not matched!
+                            </p>
+                          }
+                      </div>
+                      
                     <Button text="Register" type="submit" disabled={!validPwd || !validMatch} />
                   </>
             )}
           </form>
         </>
       )}
+
+      <section className="w-full p-1 flex flex-col items-center justify-center gap-1">
+            <p
+              ref={errRef}
+              className={`${errMsg ? "right-0" : "right-full"} text-red-500 italic font-bold`}
+              aria-live="assertive"
+            >
+              {errMsg}
+            </p>
+        </section>
     </>
   );
 }
@@ -283,10 +339,12 @@ export function UpdatedLogin() {
   const navigate = useNavigate();
   const errRef = useRef();
   const { loginUser } = useAuth();
+ 
 
   const [user, setUser] = useState("");
   const [pwd, setPwd] = useState("");
   const [errMsg, setErrMsg] = useState("");
+  
 
   const [validName, setValidName] = useState(false);
   const [validPwd, setValidPwd] = useState(false);
@@ -298,15 +356,24 @@ export function UpdatedLogin() {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
-  // // webmail validation
-  // useEffect(() => {
-  //   setValidName(USER_REGEX.test(user));
-  // }, [user]);
+  
+  // webmail validation
+  const admin = ADMIN_REGEX.test(user);
+  useEffect(() => {
+  
+    if (admin) {
+        setValidName(true)
+    }
+    else {
+      setValidName(USER_REGEX.test(user));
+    }
+    
+  }, [user]);
 
-  // // password validation
-  // useEffect(() => {
-  //   setValidPwd(PWD_REGEX.test(pwd));
-  // }, [pwd]);
+  // password validation
+  useEffect(() => {
+    setValidPwd(PWD_REGEX.test(pwd));
+  }, [pwd]);
 
   useEffect(() => {
     userRef.current?.focus();
@@ -347,32 +414,25 @@ export function UpdatedLogin() {
       >
         {/* WEBMAIL */}
         <div className="w-full">
-          <label className="mb-1 text-oasis-header font-oasis-text">
-            PUP Webmail
-          </label>
-          <input
+          <Label labelText={"PUP Webmail"} fieldId={"webMail"}/>
+          <ValidatedInputField
             type="text"
+            id="webMail"
             ref={userRef}
             value={user}
             placeholder="Please enter webmail"
             onChange={(e) => setUser(e.target.value)}
             required
-            aria-invalid={!validName}
+            ariaInvalid={!validName}
             onFocus={() => setUserFocus(true)}
             onBlur={() => setUserFocus(false)}
-            className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
           />
-        </div>
 
-        {/* <p className={userFocus && user && !validName ? "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center" : "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>
-          Must be a valid PUP webmail. <br/> E.g. juanmdelacruz@iskolarngbayan.pup.edu.ph
-        </p> */}
-
-        <div className="w-full">
-          <label className="mb-1 text-oasis-header font-oasis-text">Password</label>
-            <input
+          <Label labelText={"Password"} fieldId={"password"}/>
+            <ValidatedInputField
               type={showPassword ? "text" : "password"}
               value={pwd}
+              id="password"
               placeholder="Please enter password"
               onChange={(e) => setPwd(e.target.value)}
               required
@@ -382,7 +442,6 @@ export function UpdatedLogin() {
               onCopy={handleLogin}
               onCut={handleLogin}
               onPaste={handleLogin}
-              className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
             />
           {showPassword ? 
             <Eye color="#3E8679" className="absolute top-1/2 right-[10%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/> 
@@ -390,14 +449,20 @@ export function UpdatedLogin() {
             <EyeClosed color="#3E8679" className="absolute top-1/2 right-[10%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/>}
           
         </div>
-{/* 
-        <p className={pwdFocus && pwd && !validPwd ? "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center" : "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>
-          Password must be 8+ chars with uppercase, number, special char.
-        </p> */}
 
         <Button text="Login" type="submit"/>
         <div className="w-full flex justify-center items-center h-10">
-            <Subtitle ariaLive={"assertive"} ref={errRef} text={errMsg} color={"text-red-500"} className={"italic"} weight="font-bold"/>
+          {userFocus && 
+            <p className={userFocus && user && !validName ? "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center" : "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>
+            Must be a valid PUP webmail. <br/> E.g. juanmdelacruz@iskolarngbayan.pup.edu.ph
+            </p>
+          }
+          {pwdFocus && 
+            <p className={pwdFocus && pwd && !validPwd ? "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center" : "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>
+            Password must be 8+ chars with uppercase, number, special char.
+            </p> 
+          }
+          <Subtitle ariaLive={"assertive"} ref={errRef} text={errMsg} color={"text-red-500"} className={"italic"} weight="font-bold"/>
         </div>
         
       </form>
@@ -406,117 +471,6 @@ export function UpdatedLogin() {
   );
 }
 
-
-// export function UpdatedLogin() {
-//   const userRef = useRef();
-//   const navigate = useNavigate();
-//   const errRef = useRef();
-
-//   const { loginUser } = useAuth(); //IMPORTANT
-
-//   const [user, setUser] = useState("");
-//   const [pwd, setPwd] = useState("");
-//   const [errMsg, setErrMsg] = useState("");
-//   const [validName, setValidName] = useState(false);
-
-//   useEffect(() => {
-//   // webmail validation
-//     const result = USER_REGEX.test(user);
-//     setValidName(result);
-//   }, [user]);
-
-//     useEffect(() => {
-//     // password validation
-//     const result = PWD_REGEX.test(pwd);
-//     setValidPwd(result);
-//   }, [pwd]);
-
-//   useEffect(() => {
-//     userRef.current?.focus();
-//   }, []);
-
-//   useEffect(() => {
-//     setErrMsg("");
-//   }, [user, pwd]);
-
-//     const v1 = USER_REGEX.test(user);
-//     const v2 = PWD_REGEX.test(pwd);
-
-//     if (!v1 || !v2) {
-//       setErrMsg("Invalid Entry");
-//       return;
-//     }
-
-//   const handleLogin = async (e) => {
-//     e.preventDefault();
-
-//     try {
-//       const res = await loginUser(user, pwd);
-
-//       const redirectPath = res.role === "ADMIN" ? "/admin" : "/home";
-//       navigate(redirectPath, { replace: true });
-
-//     } catch (err) {
-//       setErrMsg(
-//         err?.response?.data?.error || "Invalid credentials"
-//       );
-//     }
-//   };
-
-//   return (
-//     <>
-//       <section className="w-full p-1 flex flex-col items-center justify-center gap-1">
-//         <Title text={"Login"} />
-//         <p
-//           ref={errRef}
-//           className={errMsg ? "opacity-1 text-red-600" : "opacity-0"}
-//           aria-live="assertive"
-//         >
-//           {errMsg}
-//         </p>
-//       </section>
-
-//       <form
-//         className="w-full p-5 flex flex-col items-center justify-center gap-5"
-//         onSubmit={handleLogin}
-//       >
-//         <div className="w-full">
-//           <label className="mb-1 text-oasis-header font-oasis-text">
-//             PUP Webmail / Admin ID
-//           </label>
-//           <input
-//             type="text"
-//             ref={userRef}
-//             value={user}
-//             onChange={(e) => setUser(e.target.value)}
-//             required
-//             className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
-//           />
-//         </div>
-
-//         <div className="w-full">
-//           <label className="mb-1 text-oasis-header font-oasis-text">
-//             Password
-//           </label>
-//           <input
-//             type="password"
-//             value={pwd}
-//             onChange={(e) => setPwd(e.target.value)}
-//             required
-//             className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
-//           />
-//         </div>
-
-//         <Button text="Login" type="submit" />
-//       </form>
-//     </>
-//   );
-// }
-
-// // Enter webmail
-// // Send OTP
-// // Verify
-// // Enter new and confirm password
 
 export function ForgotPassword() {
   return (
