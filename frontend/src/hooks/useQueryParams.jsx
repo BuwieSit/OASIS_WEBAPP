@@ -2,7 +2,6 @@ import { useSearchParams } from "react-router-dom";
 
 export default function useQueryParam(key, defaultValue) {
     const [searchParams, setSearchParams] = useSearchParams();
-
     const value = searchParams.get(key) ?? defaultValue;
 
     const setValue = (newValue) => {

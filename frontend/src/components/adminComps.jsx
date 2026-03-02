@@ -37,7 +37,9 @@ export function Dropdown({
     fieldId,
     categories = [],
     value = "",
-    onChange
+    onChange,
+    placeholder = "Select category",
+    disabled
 }) {
     const handleChange = (e) => {
         onChange?.(e.target.value); 
@@ -51,10 +53,11 @@ export function Dropdown({
                     id={fieldId}
                     value={value}
                     onChange={handleChange}
-                    className="w-full p-3 bg-white rounded text-[0.8rem] font-oasis-text"
+                    className="w-full p-3 bg-white rounded text-[0.8rem] font-oasis-text disabled:cursor-not-allowed"
+                    disabled={disabled}
                 >
                     <option value="" disabled>
-                        Select category
+                        {`${placeholder}`}
                     </option>
 
                     {categories.map((option, index) => (

@@ -1,10 +1,10 @@
 import { Star } from "lucide-react";
 import Subtitle from "./subtitle";
 
-export function Label({ fieldId, labelText}) {
+export function Label({ fieldId, labelText, children}) {
     return (
         <>
-             <label htmlFor={fieldId} className='font-bold text-[1rem] text-oasis-button-dark'>{labelText}</label>
+             <label htmlFor={fieldId} className='font-bold text-[1rem] text-oasis-button-dark flex gap-5'>{children}{labelText}</label>
         </>
     )
 }

@@ -11,8 +11,8 @@ import Subtitle from "../utilities/subtitle";
 import UserDropdownSettings from "../utilities/userDropdownSettings";
 import { useAuth } from "../context/authContext";
 import { useNavigate } from "react-router-dom";
-import { logout } from "../api/auth.service";
 import { ConfirmModal } from "./popupModal";
+import testPfp from "../assets/testprofile.png"
 
 const API_BASE = api.defaults.baseURL;
 
@@ -32,14 +32,11 @@ export function Header({ admin = false }) {
             setOpenSettings(false);
         }
         else {
-            
             requestAnimationFrame(() => setAnimate(true));
             setAnimationClass("bubble-pop");
             setOpenSettings(true)
         }
     }
-
-
     const handleNotifClick = () => {
         requestAnimationFrame(() => setAnimate(true));
         setOpen(prev => !prev);
@@ -57,8 +54,6 @@ export function Header({ admin = false }) {
         } else {
             setHasProfile(false);
         }
-
-
         setUser(res.data.user);
         setProfile(fetchedProfile);
         setHasProfile(true);
@@ -112,7 +107,7 @@ export function Header({ admin = false }) {
                         hasProfile ? (
                             <img
                             className="w-8 rounded-full object-cover aspect-square"
-                            src={profile.photo_url}
+                            src={profile.photo_url || testPfp}
                             alt="Profile"
                             />
                         ) : (
@@ -129,7 +124,6 @@ export function Header({ admin = false }) {
                     className={animationClass}
                     items={[
                         { text: "Profile", to: "/student-profile" },
-                        { text: "Settings", to: "/settings" },
                         { text: "Log out" },
                     ]}
                 />}
@@ -252,7 +246,8 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
 }
 
 
-export function StudentHeader() {
+export function StudentHeader({ showNavigation = true }) {
+
     const [scrolled, setScrolled] = useState(false);
 
     //Scroll detection
@@ -290,7 +285,6 @@ export function StudentHeader() {
         </div>
     );
 }
-
 
 
 export function AdminHeader() {

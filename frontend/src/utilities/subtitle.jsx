@@ -1,5 +1,5 @@
 
-export default function Subtitle({  isCenter = false , text, color, size = ('text-xs'), weight = ('font-normal'), isUnderlined = false, isLink = false, isAnimated = false, link, id, className, onClick, isActive, isItalic}) {
+export default function Subtitle({  isCenter = false , text, color, size = ('text-xs'), weight = ('font-normal'), isUnderlined = false, isLink = false, isAnimated = false, link, id, className, onClick, isActive, isItalic, ref, ariaLive}) {
 
     return (
         <>
@@ -9,9 +9,13 @@ export default function Subtitle({  isCenter = false , text, color, size = ('tex
                 {text}
             </a> 
         : 
-            <p className={`${isAnimated ? "animate__animated animate__fadeInDown" : ""} font-oasis-text ${weight} ${isCenter ? "text-center" : "text-start"} ${size} text-center ${color} ${isActive ? "font-bold underline underline-offset-2":""} transition ease-in-out duration-500 ${isUnderlined ? "underline underline-offset-2": ""} ${className}`} 
-            id={id} 
-            onClick={onClick}>
+            <p 
+                className={`${isAnimated ? "animate__animated animate__fadeInDown" : ""} font-oasis-text ${weight} ${isCenter ? "text-center" : "text-start"} ${size} text-center ${color} ${isActive ? "font-bold underline underline-offset-2":""} transition ease-in-out duration-500 ${isUnderlined ? "underline underline-offset-2": ""} ${className}`} 
+                id={id} 
+                onClick={onClick}
+                ref={ref}
+                aria-live={ariaLive}
+            >
                 {text}
             </p>
         }
