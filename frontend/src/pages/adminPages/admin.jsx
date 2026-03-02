@@ -20,6 +20,7 @@ export default function Admin() {
     const [dashboardError, setDashboardError] = useState(null);
     const [announcements, setAnnouncements] = useState([]);
     const [alerts, setAlerts] = useState([]);
+    const [search, setSearch] = useState("");
 
     const [activeFilter, setActiveFilter] = useState("All");
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
@@ -37,6 +38,14 @@ export default function Admin() {
         "Events and Webinars",
         "Others"
     ];
+
+    const CATEGORY_TO_ENUM = {
+        "HTE Related": "HTE_RELATED",
+        "Deadlines": "DEADLINES",
+        "Newly Approved HTEs": "NEWLY_APPROVED_HTES",
+        "Events and Webinars": "EVENTS_AND_WEBINARS",
+        "Others": "OTHERS"
+    };
 
     useEffect(() => {
         const loadDashboard = async () => {
@@ -77,26 +86,27 @@ export default function Admin() {
     const handlePost = async (e) => {
         e.preventDefault();
 
-        // validate
         if (!title || !content || !category) {
             const emptyFields = [];
-
             if (!title) emptyFields.push("Title");
             if (!content) emptyFields.push("Content");
             if (!category) emptyFields.push("Category");
 
             setModalStatus("failed");
-            setFailedFields(emptyFields); 
+            setFailedFields(emptyFields);
             return;
         }
-        
-        await AdminAPI.createAnnouncement({ title, content, category });
+
+        await AdminAPI.createAnnouncement({
+            title,
+            content,
+            category: CATEGORY_TO_ENUM[category] || category
+        });
 
         setTitle("");
         setContent("");
-        setCategory("");
+        setCategory("HTE Related"); // keep UX sane
         setModalStatus("success");
-        
 
         const res = await AdminAPI.getAnnouncements();
         setAnnouncements(res.data);
@@ -108,10 +118,18 @@ export default function Admin() {
     };
 
 
-    const filteredAnnouncements =
-        activeFilter === "All"
-        ? announcements
-        : announcements.filter(a => a.category === activeFilter);
+    const matchesFilter = (a) => {
+        if (activeFilter === "All") return true;
+        const enumFilter = CATEGORY_TO_ENUM[activeFilter] || activeFilter;
+        return a.category === enumFilter;
+    };
+
+    const matchesSearch = (a) => {
+        if (!search.trim()) return true;
+        return (a.title || "").toLowerCase().includes(search.trim().toLowerCase());
+    };
+
+    const filteredAnnouncements = announcements.filter(a => matchesFilter(a) && matchesSearch(a));
 
     return(
         <>
@@ -299,7 +317,15 @@ export default function Admin() {
 
                             </section>
                             
-                            <SearchBar />
+                            <div className="w-full">
+                                <Label labelText={"Search by Title"} />
+                                <input
+                                    className="w-full p-3 bg-white border border-gray-300 rounded-xl outline-none"
+                                    placeholder="Search announcements title..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
+                            </div>
                             {filteredAnnouncements.map(a => (
                                 <section
                                     key={a.id}
@@ -307,7 +333,9 @@ export default function Admin() {
                                     className="w-full bg-white p-5 flex flex-row items-center justify-evenly cursor-pointer"
                                 >
                                     <div className="p-5 w-full text-black rounded-2xl">
-                                        <p className="text-[0.6rem] font-normal mb-5">{a.date}</p>
+                                        <p className="text-[0.6rem] font-normal mb-5">
+                                            {a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"}
+                                        </p>
                                         <h3 className="text-[1rem] font-bold">{a.title}</h3>
                                         <p className="text-[0.8rem] font-medium">{a.content}</p>
                                     </div>
@@ -330,15 +358,17 @@ export default function Admin() {
 
                         {alerts.map(alert => (
                             <div
-                            key={alert.id}
-                            className='w-full bg-white p-3 mb-3 rounded-2xl rounded-tl-none text-black border border-oasis-button-dark hover:bg-oasis-aqua transition'
+                                key={alert.id}
+                                className='w-full bg-white p-3 mb-3 rounded-2xl rounded-tl-none text-black border border-oasis-button-dark hover:bg-oasis-aqua transition'
                             >
-                            <h3 className='text-[0.8rem] font-bold'>{alert.title}</h3>
-                            <p className='text-[0.7rem] font-light'>{alert.message}</p>
+                                <h3 className='text-[0.8rem] font-bold'>{alert.title}</h3>
+                                <p className='text-[0.7rem] font-light'>{alert.message}</p>
+                                <p className='text-[0.65rem] text-gray-600 mt-1'>
+                                    {alert.date ? new Date(alert.date).toLocaleDateString() : ""}
+                                </p>
                             </div>
                         ))}
                         </div>
-                        
                     </section>
 
                 </div>

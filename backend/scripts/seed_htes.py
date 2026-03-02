@@ -108,6 +108,48 @@ with app.app_context():
         ),
     ]
 
+    # =========================
+    # MOAs (Testing Expired + Expiring Soon)
+    # =========================
+
+    moas = [
+        # ACTIVE (normal)
+        MemorandumOfAgreement(
+            hte_id=abc.id,
+            status="ACTIVE",
+            signed_at=today - timedelta(days=180),
+            expires_at=today + timedelta(days=180),
+            document_path="uploads/moa/abc_tech.pdf",
+        ),
+
+        # EXPIRED (yesterday) -> should show in admin notifications
+        MemorandumOfAgreement(
+            hte_id=nova.id,
+            status="EXPIRED",
+            signed_at=today - timedelta(days=365),
+            expires_at=today - timedelta(days=1),  # yesterday
+            document_path="uploads/moa/nova_expired.pdf",
+        ),
+
+        # EXPIRING SOON (today)
+        MemorandumOfAgreement(
+            hte_id=pixel.id,
+            status="ACTIVE",
+            signed_at=today - timedelta(days=365),
+            expires_at=today,  # today
+            document_path="uploads/moa/pixel_expiring_today.pdf",
+        ),
+
+        # LONG ACTIVE
+        MemorandumOfAgreement(
+            hte_id=greencore.id,
+            status="ACTIVE",
+            signed_at=today - timedelta(days=90),
+            expires_at=today + timedelta(days=630),
+            document_path="uploads/moa/greencore_moa.pdf",
+        ),
+    ]
+
     db.session.add_all(moas)
     db.session.commit()
 

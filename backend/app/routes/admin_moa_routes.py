@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
+
 from app.extensions import db
 from app.models import MemorandumOfAgreement, HostTrainingEstablishment
 from app.models.user import UserRole
@@ -7,7 +8,7 @@ from app.models.user import UserRole
 admin_moa_bp = Blueprint(
     "admin_moa_bp",
     __name__,
-    url_prefix="/api/admin"
+    url_prefix="/api/admin/moas"
 )
 
 @admin_moa_bp.get("")
@@ -17,9 +18,9 @@ def get_moas():
     if claims.get("role") != UserRole.ADMIN.value:
         return jsonify({"error": "forbidden"}), 403
 
-    moas = (
-        db.session.query(MemorandumOfAgreement)
-        .join(HostTrainingEstablishment)
+    rows = (
+        db.session.query(MemorandumOfAgreement, HostTrainingEstablishment)
+        .join(HostTrainingEstablishment, HostTrainingEstablishment.id == MemorandumOfAgreement.hte_id)
         .all()
     )
 
@@ -27,15 +28,16 @@ def get_moas():
         {
             "id": moa.id,
             "status": moa.status,
-            "signed_at": moa.signed_at.isoformat(),
-            "expires_at": moa.expires_at.isoformat(),
-            "document_path": moa.document_path, 
+            "signed_at": moa.signed_at.isoformat() if moa.signed_at else None,
+            "expires_at": moa.expires_at.isoformat() if moa.expires_at else None,
+            "document_path": moa.document_path,
             "hte": {
-                "company_name": moa.hte.company_name,
-                "industry": moa.hte.industry,
-                "address": moa.hte.address,
-                "contact_person": moa.hte.contact_person,
+                "hte_id": hte.id,
+                "company_name": hte.company_name,
+                "industry": hte.industry,
+                "address": hte.address,
+                "contact_person": hte.contact_person,
             }
         }
-        for moa in moas
-    ])
+        for moa, hte in rows
+    ]), 200

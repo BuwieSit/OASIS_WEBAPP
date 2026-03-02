@@ -1,31 +1,55 @@
-
 import MainScreen from '../../layouts/mainScreen';
 import Title from '../../utilities/title';
 import Subtitle from '../../utilities/subtitle';
 import { Filter } from '../../components/adminComps';
-import { useLocalStorage } from "../../hooks/useLocalStorage";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnnouncementModal } from '../../components/userModal';
-import img from "../../assets/fallbackImage.jpg";
 
+import api from "../../api/axios.jsx";
 
 export default function Announcements() {
-    const [announcements] = useLocalStorage("announcements", []);
+    const [announcements, setAnnouncements] = useState([]);
     const [activeFilter, setActiveFilter] = useState("All");
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
-    
+    const [loading, setLoading] = useState(true);
+
+    const CATEGORY_TO_ENUM = {
+        "HTE Related": "HTE_RELATED",
+        "Deadlines": "DEADLINES",
+        "Newly Approved HTEs": "NEWLY_APPROVED_HTES",
+        "Events and Webinars": "EVENTS_AND_WEBINARS",
+        "Others": "OTHERS"
+    };
+
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const res = await api.get("/api/student/announcements");
+                setAnnouncements(res.data || []);
+            } catch (err) {
+                console.error("Student announcements error:", err);
+                setAnnouncements([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        load();
+    }, []);
+
     const filteredAnnouncements =
         activeFilter === "All"
             ? announcements
-            : announcements.filter(a => a.category === activeFilter);
+            : announcements.filter(a => a.category === (CATEGORY_TO_ENUM[activeFilter] || activeFilter));
 
     return (
         <MainScreen>
-            <AnnouncementModal 
-                visible={!!selectedAnnouncement} 
+            <AnnouncementModal
+                visible={!!selectedAnnouncement}
                 onClose={() => setSelectedAnnouncement(null)}
                 {...selectedAnnouncement}
             />
+
             <div className="w-full flex flex-col items-center">
                 <Title text="Announcements" size="text-[3rem]" />
                 <Subtitle
@@ -36,7 +60,6 @@ export default function Announcements() {
             </div>
 
             <div className="w-[70%] p-5 flex flex-col">
-                {/* FILTERS */}
                 <section className="flex gap-5 mb-5">
                     {["All", "HTE Related", "Deadlines", "Newly Approved HTEs", "Events and Webinars", "Others"].map(f => (
                         <Filter
@@ -48,17 +71,23 @@ export default function Announcements() {
                     ))}
                 </section>
 
-                {/* ANNOUNCEMENTS */}
                 <section className="flex flex-col">
+                    {loading && (
+                        <p className="text-sm text-gray-500">Loading announcements...</p>
+                    )}
+
+                    {!loading && filteredAnnouncements.length === 0 && (
+                        <p className="text-sm text-gray-500">No announcements yet.</p>
+                    )}
+
                     {filteredAnnouncements.map(a => (
                         <div
                             key={a.id}
                             className="w-full flex gap-5 p-3 border border-oasis-button-dark bg-linear-to-b from-oasis-button-light via-oasis-blue cursor-pointer"
-                            onClick={() => setSelectedAnnouncement(a)} // <-- set the clicked announcement
+                            onClick={() => setSelectedAnnouncement(a)}
                         >
                             <section>
-                                <Subtitle text={a.date} />
-                                <Subtitle text={a.time} />
+                                <Subtitle text={a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"} />
                             </section>
 
                             <section className="flex flex-col">
@@ -68,20 +97,12 @@ export default function Announcements() {
                                     color="text-oasis-button-dark"
                                     text={a.title}
                                 />
-                                <Subtitle
-                                    size="text-[0.7rem]"
-                                    text={a.content}
-                                />
+                                <Subtitle size="text-[0.7rem]" text={a.content} />
                             </section>
                         </div>
                     ))}
                 </section>
-                    
             </div>
-            {/* <div className='bg-oasis-gradient relative w-90 aspect-video shadow-[2px_2px_2px_rgba(0,0,0,0.5)] overflow-hidden cursor-pointer'>
-                    <img src={img} className='opacity-90 absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 object-cover w-full'/>
-                    <div className='bg-[rgba(0,0,0,1)] w-full h-full z-10'></div>
-            </div> */}
         </MainScreen>
     );
 }

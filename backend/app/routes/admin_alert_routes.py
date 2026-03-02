@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
-from datetime import date
+from datetime import date, timedelta
 
 from app.models.user import UserRole
 from app.models.memorandum_of_agreement import MemorandumOfAgreement
@@ -52,8 +52,10 @@ def get_admin_alerts():
         MemorandumOfAgreement.query
         .filter(
             MemorandumOfAgreement.expires_at >= today,
-            MemorandumOfAgreement.expires_at <= today.replace(day=today.day)  # safe base
+            MemorandumOfAgreement.expires_at <= (today + timedelta(days=90))
         )
+        .order_by(MemorandumOfAgreement.expires_at.asc())
+        .limit(5)
         .all()
     )
 

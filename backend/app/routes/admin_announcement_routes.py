@@ -12,6 +12,24 @@ admin_announcement_bp = Blueprint(
     url_prefix="/api/admin/announcements"
 )
 
+# Frontend labels -> DB enum values
+CATEGORY_LABEL_TO_ENUM = {
+    "HTE Related": "HTE_RELATED",
+    "Deadlines": "DEADLINES",
+    "Newly Approved HTEs": "NEWLY_APPROVED_HTES",
+    "Events and Webinars": "EVENTS_AND_WEBINARS",
+    "Others": "OTHERS",
+}
+
+def normalize_category(raw):
+    if not raw:
+        return None
+    raw = str(raw).strip()
+    # Allow passing enum directly
+    if raw in CATEGORY_LABEL_TO_ENUM.values():
+        return raw
+    return CATEGORY_LABEL_TO_ENUM.get(raw)
+
 @admin_announcement_bp.post("")
 @jwt_required()
 def create_announcement():
@@ -21,16 +39,27 @@ def create_announcement():
 
     data = request.get_json() or {}
 
+    title = (data.get("title") or "").strip()
+    content = (data.get("content") or "").strip()
+    category = normalize_category(data.get("category"))
+
+    if not title or not content or not category:
+        return jsonify({
+            "error": "validation_error",
+            "message": "title, content, and category are required"
+        }), 400
+
     announcement = Announcement(
-        title=data["title"],
-        content=data["content"],
-        category=data["category"],
+        title=title,
+        content=content,
+        category=category,
         created_by=get_jwt_identity()
     )
 
     db.session.add(announcement)
     db.session.flush()
 
+    # notify active students (keeps your current behavior)
     students = User.query.filter(
         User.role == UserRole.STUDENT,
         User.is_active.is_(True)
@@ -58,9 +87,19 @@ def list_announcements():
     if claims.get("role") != UserRole.ADMIN.value:
         return jsonify({"error": "forbidden"}), 403
 
+    category = normalize_category(request.args.get("category"))
+    q = (request.args.get("q") or "").strip()
+
+    query = Announcement.query.filter_by(is_active=True)
+
+    if category:
+        query = query.filter(Announcement.category == category)
+
+    if q:
+        query = query.filter(Announcement.title.ilike(f"%{q}%"))
+
     announcements = (
-        Announcement.query
-        .filter_by(is_active=True)
+        query
         .order_by(Announcement.created_at.desc())
         .all()
     )

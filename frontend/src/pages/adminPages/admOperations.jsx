@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { AdminAPI } from "../../api/admin.api";
 import { Check, Download, Save, Upload, X } from 'lucide-react';
+import { useRef } from "react";
 
 
 export default function AdmOperations() {
@@ -23,6 +24,7 @@ export default function AdmOperations() {
     const hteDropdown = data.map(h => h.company_name);
 
     const status = searchParams.get("status"); // ACTIVE | EXPIRED | null
+    const uploadRef = useRef(null);
 
     // =============================
     // ADD HTE FORM STATE
@@ -128,6 +130,51 @@ export default function AdmOperations() {
         }
     };
 
+    const handleDownload = async () => {
+    try {
+        const res = await AdminAPI.downloadHTEsExcel(status || "ALL");
+        const blob = new Blob([res.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `hte_overview_${status || "ALL"}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error(err);
+        alert("Download failed");
+    }
+    };
+
+    const handleUploadPick = () => {
+    uploadRef.current?.click();
+    };
+
+    const handleUploadFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+        const res = await AdminAPI.uploadHTEsExcel(file);
+        alert(
+        `Upload done!\nCreated HTEs: ${res.data.created_htes}\nUpdated HTEs: ${res.data.updated_htes}\nFailed rows: ${res.data.failed_rows.length}`
+        );
+
+        const refreshed = await AdminAPI.getHTEs(status);
+        setData(refreshed.data);
+    } catch (err) {
+        console.error(err);
+        alert("Upload failed. Check console.");
+    } finally {
+        e.target.value = "";
+    }
+    };
+
     return (
         <AdminScreen>
 
@@ -137,6 +184,13 @@ export default function AdmOperations() {
             <div className='mb-10'>
                 <Title text={"Admin Operations"} />
             </div>
+            <input
+                ref={uploadRef}
+                type="file"
+                accept=".xlsx"
+                style={{ display: "none" }}
+                onChange={handleUploadFile}
+            />
 
             {/* =============================
                 HTE TABLE
@@ -176,8 +230,8 @@ export default function AdmOperations() {
                     
 
                     <div className='w-full flex flex-row justify-end items-center gap-3'>
-                        <AnnounceButton icon={<Upload/>} btnText='Upload'/>
-                        <AnnounceButton icon={<Download/>} btnText='Download'/>
+                        <AnnounceButton icon={<Upload />} btnText="Upload" onClick={handleUploadPick} />
+                        <AnnounceButton icon={<Download />} btnText="Download" onClick={handleDownload} />
                     </div>
                 </div>
             </OasisTable>

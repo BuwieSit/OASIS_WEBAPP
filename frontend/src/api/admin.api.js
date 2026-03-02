@@ -46,4 +46,19 @@ export const AdminAPI = {
     getMoaProspects() {
         return api.get("/api/admin/moa-prospects");
     },
+
+    downloadHTEsExcel(status) {
+        return api.get("/api/admin/htes/export", {
+            params: status ? { status } : {},
+            responseType: "blob",
+        });
+    },
+
+    uploadHTEsExcel(file) {
+        const formData = new FormData();
+        formData.append("file", file);
+        return api.post("/api/admin/htes/import", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+    },
 };
