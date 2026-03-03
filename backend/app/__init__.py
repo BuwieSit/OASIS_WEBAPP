@@ -11,13 +11,17 @@ def create_app() -> Flask:
     app = Flask(__name__, static_folder="static")
     app.config.from_object(Config)
 
-    # init extensions
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-    cors.init_app(app, resources={r"/api/*": {"origins": "*"}})
+    cors.init_app(
+        app,
+        resources={
+            r"/api/*": {"origins": "*"},
+            r"/uploads/*": {"origins": "*"},
+        }
+    )
 
-    # IMPORTANT: import models so Alembic sees them
     from app import models  # noqa: F401
 
     # register blueprints
@@ -38,6 +42,7 @@ def create_app() -> Flask:
     from app.routes.admin_moa_routes import admin_moa_bp
     from app.routes.file_routes import file_bp
     from app.routes.student_announcement_routes import student_announcement_bp
+    from app.routes.admin_moa_prospect_routes import admin_moa_prospect_bp
 
     app.register_blueprint(health_bp)
     app.register_blueprint(auth_bp)
@@ -56,6 +61,7 @@ def create_app() -> Flask:
     app.register_blueprint(admin_moa_bp)
     app.register_blueprint(file_bp)
     app.register_blueprint(student_announcement_bp)
+    app.register_blueprint(admin_moa_prospect_bp)
 
     from flask import send_from_directory
     

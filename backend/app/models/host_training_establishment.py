@@ -30,6 +30,8 @@ class HostTrainingEstablishment(db.Model):
     moa_signed_at = db.Column(db.Date, nullable=True)
     moa_validity = db.Column(db.Integer, nullable=True)  # in months
     moa_expiry_date = db.Column(db.Date, nullable=True)
+    
+    logo_path = db.Column(db.String(255), nullable=True)
 
     moa_file_path = db.Column(db.String(255), nullable=True)
 

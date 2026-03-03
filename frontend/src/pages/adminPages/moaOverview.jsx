@@ -7,7 +7,6 @@ import {
     ActionButtons,
     ViewMoaButton
 } from "../../utilities/tableUtil.jsx";
-import PdfViewer from "../../utilities/pdfViewer";
 import { ViewModal } from '../../components/popupModal';
 import useQueryParam from '../../hooks/useQueryParams.jsx';
 import { useEffect, useState } from 'react';
@@ -23,21 +22,56 @@ export default function MoaOverview() {
 
     const [openView, setOpenView] = useState(false);
     const [filePdf, setFilePdf] = useState(null);
+
     const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
     /* ============================
        FETCH DATA
     ============================ */
     useEffect(() => {
+        // MOA Overview
         if (activeFilter === "overview") {
             AdminAPI.getMoas()
                 .then(res => {
-                    console.log("RAW MOA RESPONSE:", res.data);
-                    setCurrentMoas(res.data);
+                    setCurrentMoas(res.data || []);
                 })
-                .catch(console.error);
+                .catch(err => {
+                    console.error("MOA overview fetch error:", err);
+                    setCurrentMoas([]);
+                });
+        }
+
+        // MOA Prospect Submissions
+        if (activeFilter === "submissions") {
+            AdminAPI.getMoaProspects()
+                .then(res => {
+                    setProspectMoas(res.data || []);
+                })
+                .catch(err => {
+                    console.error("MOA prospects fetch error:", err);
+                    setProspectMoas([]);
+                });
         }
     }, [activeFilter]);
+
+    const buildFileUrl = (filePath) => {
+        if (!filePath) return null;
+
+        // DB usually stores: "uploads/moa/<file>.pdf"
+        const normalized = filePath.startsWith("uploads/")
+            ? filePath
+            : `uploads/${filePath}`;
+
+        // backend serves: GET /uploads/<path>
+        return `${API_BASE}/${normalized}`;
+    };
+
+    const openPdf = (filePath) => {
+        const url = buildFileUrl(filePath);
+        if (!url) return;
+        setFilePdf(url);
+        setOpenView(true);
+    };
 
     /* ============================
        COLUMNS – EXISTING MOAs
@@ -77,24 +111,28 @@ export default function MoaOverview() {
         },
         {
             header: "View MOA",
-            render: r =>
-                r.document_path ? (
+            render: r => {
+                const url = buildFileUrl(r.document_path);
+                return url ? (
                     <ViewMoaButton
-                        url={`${import.meta.env.VITE_API_BASE_URL}/api/files/${r.document_path.replace("uploads/", "")}`}
+                        url={url}
+                        onClick={() => openPdf(r.document_path)}
                     />
                 ) : (
                     <Text text="—" />
-                )
+                );
+            }
         }
     ];
 
     /* ============================
        COLUMNS – MOA PROSPECTS
+       (Actions: do nothing yet)
     ============================ */
     const prospectMoaColumns = [
         {
             header: "HTE Name",
-            render: r => <Text text={r.hte_name || "—"} />
+            render: r => <Text text={r.company_name || "—"} />
         },
         {
             header: "Industry",
@@ -114,19 +152,17 @@ export default function MoaOverview() {
         },
         {
             header: "MOA File",
-            render: r =>
-                r.moa_file ? (
+            render: r => {
+                const url = buildFileUrl(r.moa_file_path);
+                return url ? (
                     <ViewMoaButton
-                        onClick={() => {
-                            setFilePdf(
-                                `${import.meta.env.VITE_API_BASE_URL}/api/files/${r.document_path.replace("uploads/", "")}`
-                            );
-                            setOpenView(true);
-                        }}
+                        url={url}
+                        onClick={() => openPdf(r.moa_file_path)}
                     />
                 ) : (
                     <Text text="—" />
-                )
+                );
+            }
         },
         {
             header: "Actions",
@@ -194,11 +230,12 @@ export default function MoaOverview() {
                VIEW MOA MODAL
             ============================ */}
             <ViewModal
-                visible={openView}
-                onClose={() => setOpenView(false)}
-            >
-                <PdfViewer file={filePdf} />
-            </ViewModal>
+            visible={openView}
+            onClose={() => setOpenView(false)}
+            isDocument={true}
+            resourceTitle="MOA File"
+            file={filePdf}
+            />
 
         </AdminScreen>
     );

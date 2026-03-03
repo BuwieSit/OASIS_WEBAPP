@@ -336,10 +336,8 @@ def import_htes_excel():
 @admin_hte_bp.post("")
 @jwt_required()
 def create_hte_manual():
-    """
-    Manual add HTE + optional thumbnail + optional moa pdf + eligible courses.
-    """
-    if not _admin_only():
+    claims = get_jwt()
+    if claims.get("role") != UserRole.ADMIN.value:
         return jsonify({"error": "forbidden"}), 403
 
     upload_root = current_app.config.get("UPLOAD_ROOT")
@@ -349,32 +347,50 @@ def create_hte_manual():
     form = request.form
 
     company_name = (form.get("company_name") or "").strip()
-    description = (form.get("description") or "").strip()
-    address = (form.get("address") or "").strip()
     industry = (form.get("industry") or "").strip()
+    address = (form.get("address") or "").strip()
+
+    contact_person = (form.get("contact_person") or "").strip()
+    contact_position = (form.get("contact_position") or "").strip()
+    contact_number = (form.get("contact_number") or "").strip()
+    contact_email = (form.get("contact_email") or "").strip()
+
+    if not company_name or not industry or not address:
+        return jsonify({"error": "validation_error", "message": "company_name, industry, address are required"}), 400
+
+    if not contact_person or not contact_position or not contact_number or not contact_email:
+        return jsonify({"error": "validation_error", "message": "Contact fields are required"}), 400
+
+    description = (form.get("description") or "").strip() or None
+    website = (form.get("website") or "").strip() or None
+
+    eligible_courses_raw = form.get("eligible_courses")
+    course_value = eligible_courses_raw if eligible_courses_raw else None
+
     status = (form.get("status") or "PENDING").strip().upper()
-
-    # optional MOA dates (manual flow should eventually include these)
-    signed_at = _parse_date(form.get("signed_at"))
-    expires_at = _parse_date(form.get("expires_at"))
-
-    eligible_courses_raw = form.get("eligible_courses")  # JSON string array
-    course_value = None
-    if eligible_courses_raw:
-        # store as comma-separated in existing column
-        course_value = eligible_courses_raw
-
-    if not company_name or not address:
-        return jsonify({"error": "validation_error", "message": "company_name and address are required"}), 400
-
     if status not in ("ACTIVE", "PENDING", "EXPIRED"):
         status = "PENDING"
 
-    # files
+    signed_at = _parse_date(form.get("signed_at"))     # YYYY-MM-DD
+    expires_at = _parse_date(form.get("expires_at"))   # YYYY-MM-DD
+    validity_months = _parse_int(form.get("validity")) # months
+
+    # If validity is given and expiry missing, compute expiry
+    if signed_at and not expires_at and validity_months:
+        y = signed_at.year
+        m = signed_at.month + validity_months
+        y += (m - 1) // 12
+        m = ((m - 1) % 12) + 1
+
+        d = min(signed_at.day, 28)
+        expires_at = datetime(y, m, d).date()
+
+    logo = request.files.get("logo")
     thumbnail = request.files.get("thumbnail")
     moa_file = request.files.get("moa_file")
 
     try:
+        logo_path = _save_upload(logo, upload_root, "hte_logos", allowed_ext={".png", ".jpg", ".jpeg", ".webp"}) if logo else None
         thumbnail_path = _save_upload(thumbnail, upload_root, "hte_thumbnails", allowed_ext={".png", ".jpg", ".jpeg", ".webp"}) if thumbnail else None
         moa_path = _save_upload(moa_file, upload_root, "moa", allowed_ext={".pdf"}) if moa_file else None
     except ValueError as e:
@@ -382,35 +398,46 @@ def create_hte_manual():
 
     hte = HostTrainingEstablishment(
         company_name=company_name,
-        industry=industry or "N/A",
+        industry=industry,
         address=address,
-        description=description or None,
-        website=form.get("website"),
-        contact_person=form.get("contact_person") or "N/A",
-        contact_position=form.get("contact_position") or "N/A",
-        contact_number=form.get("contact_number") or "N/A",
-        contact_email=form.get("contact_email") or "N/A",
+        description=description,
+        website=website,
+
+        contact_person=contact_person,
+        contact_position=contact_position,
+        contact_number=contact_number,
+        contact_email=contact_email,
+
         moa_status=status,
         course=course_value,
+
         moa_signed_at=signed_at,
+        moa_validity=validity_months,
         moa_expiry_date=expires_at,
+
         moa_file_path=moa_path,
         thumbnail_path=thumbnail_path,
     )
 
+    if hasattr(hte, "logo_path"):
+        hte.logo_path = logo_path
+
     db.session.add(hte)
     db.session.flush()
 
-    # Create MOA record if both dates exist
     if signed_at and expires_at:
-        db.session.add(MemorandumOfAgreement(
+        moa = MemorandumOfAgreement(
             hte_id=hte.id,
             signed_at=signed_at,
             expires_at=expires_at,
             status=status,
             document_path=moa_path
-        ))
+        )
+        db.session.add(moa)
 
     db.session.commit()
 
-    return jsonify({"message": "created", "hte_id": hte.id}), 201
+    return jsonify({
+        "message": "created",
+        "hte_id": hte.id
+    }), 201

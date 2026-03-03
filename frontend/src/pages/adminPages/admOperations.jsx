@@ -13,7 +13,6 @@ import { AdminAPI } from "../../api/admin.api";
 import { Check, Download, Save, Upload, X } from 'lucide-react';
 import { useRef } from "react";
 
-
 export default function AdmOperations() {
 
     const [data, setData] = useState([]);
@@ -34,6 +33,20 @@ export default function AdmOperations() {
     const [companyAbout, setCompanyAbout] = useState("");
     const [companyLoc, setCompanyLoc] = useState("");
     const [statusValue, setStatusValue] = useState("ACTIVE");
+
+    // ✅ NEW FIELDS (required for proper manual add)
+    const [industry, setIndustry] = useState("");
+    const [website, setWebsite] = useState("");
+
+    const [contactPerson, setContactPerson] = useState("");
+    const [contactPosition, setContactPosition] = useState("");
+    const [contactNumber, setContactNumber] = useState("");
+    const [contactEmail, setContactEmail] = useState("");
+
+    // MOA fields
+    const [signedAt, setSignedAt] = useState("");     // YYYY-MM-DD
+    const [expiresAt, setExpiresAt] = useState("");   // YYYY-MM-DD
+    const [validity, setValidity] = useState("");     // months
 
     const [eligibleCourses, setEligibleCourses] = useState([]);
 
@@ -64,11 +77,11 @@ export default function AdmOperations() {
     };
 
     const toggleCourse = (course) => {
-    setEligibleCourses(prev =>
-        prev.includes(course)
-        ? prev.filter(c => c !== course)
-        : [...prev, course]
-    );
+        setEligibleCourses(prev =>
+            prev.includes(course)
+                ? prev.filter(c => c !== course)
+                : [...prev, course]
+        );
     };
 
     const resetForm = () => {
@@ -76,6 +89,18 @@ export default function AdmOperations() {
         setCompanyAbout("");
         setCompanyLoc("");
         setStatusValue("ACTIVE");
+
+        // ✅ reset new fields
+        setIndustry("");
+        setWebsite("");
+        setContactPerson("");
+        setContactPosition("");
+        setContactNumber("");
+        setContactEmail("");
+        setSignedAt("");
+        setExpiresAt("");
+        setValidity("");
+
         setEligibleCourses([]);
         setLogoFile(null);
         setThumbnailFile(null);
@@ -101,11 +126,32 @@ export default function AdmOperations() {
     const handleSaveHTE = async (e) => {
         e.preventDefault();
 
+        // ✅ Minimal frontend validation (keeps design, avoids silent fails)
+        if (!companyName || !industry || !companyLoc || !contactPerson || !contactPosition || !contactNumber || !contactEmail) {
+            alert("Please fill required fields: Company Name, Industry, Location, Contact Person, Position, Contact Number, Email Address.");
+            return;
+        }
+
         const formData = new FormData();
         formData.append("company_name", companyName);
         formData.append("description", companyAbout);
         formData.append("address", companyLoc);
         formData.append("status", statusValue);
+
+        // ✅ New fields (backend expects these)
+        formData.append("industry", industry);
+        formData.append("website", website);
+
+        formData.append("contact_person", contactPerson);
+        formData.append("contact_position", contactPosition);
+        formData.append("contact_number", contactNumber);
+        formData.append("contact_email", contactEmail);
+
+        // MOA fields (optional, but enables MOA row creation)
+        if (signedAt) formData.append("signed_at", signedAt);
+        if (expiresAt) formData.append("expires_at", expiresAt);
+        if (validity) formData.append("validity", validity);
+
         formData.append(
             "eligible_courses",
             JSON.stringify(eligibleCourses)
@@ -131,48 +177,48 @@ export default function AdmOperations() {
     };
 
     const handleDownload = async () => {
-    try {
-        const res = await AdminAPI.downloadHTEsExcel(status || "ALL");
-        const blob = new Blob([res.data], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        });
+        try {
+            const res = await AdminAPI.downloadHTEsExcel(status || "ALL");
+            const blob = new Blob([res.data], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
 
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `hte_overview_${status || "ALL"}.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-    } catch (err) {
-        console.error(err);
-        alert("Download failed");
-    }
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `hte_overview_${status || "ALL"}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error(err);
+            alert("Download failed");
+        }
     };
 
     const handleUploadPick = () => {
-    uploadRef.current?.click();
+        uploadRef.current?.click();
     };
 
     const handleUploadFile = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+        const file = e.target.files?.[0];
+        if (!file) return;
 
-    try {
-        const res = await AdminAPI.uploadHTEsExcel(file);
-        alert(
-        `Upload done!\nCreated HTEs: ${res.data.created_htes}\nUpdated HTEs: ${res.data.updated_htes}\nFailed rows: ${res.data.failed_rows.length}`
-        );
+        try {
+            const res = await AdminAPI.uploadHTEsExcel(file);
+            alert(
+                `Upload done!\nCreated HTEs: ${res.data.created_htes}\nUpdated HTEs: ${res.data.updated_htes}\nFailed rows: ${res.data.failed_rows.length}`
+            );
 
-        const refreshed = await AdminAPI.getHTEs(status);
-        setData(refreshed.data);
-    } catch (err) {
-        console.error(err);
-        alert("Upload failed. Check console.");
-    } finally {
-        e.target.value = "";
-    }
+            const refreshed = await AdminAPI.getHTEs(status);
+            setData(refreshed.data);
+        } catch (err) {
+            console.error(err);
+            alert("Upload failed. Check console.");
+        } finally {
+            e.target.value = "";
+        }
     };
 
     return (
@@ -195,31 +241,31 @@ export default function AdmOperations() {
             {/* =============================
                 HTE TABLE
             ============================== */}
-        
+
             {/* TITLE */}
             <div className='flex justify-start items-start w-[80%]'>
-                <Title text={"HTE Overview"}/>
+                <Title text={"HTE Overview"} />
             </div>
 
             <OasisTable columns={columns} data={data}>
                 <div className="w-full flex flex-row justify-between items-center gap-4 mt-4">
 
                     <div className='flex flex-row gap-3 items-center justify-start'>
-                        
+
                         <Subtitle
                             text="All"
                             isLink
                             onClick={() => navigate("/admOperations")}
                             size="text-[1rem]"
                         />
-                        <Subtitle text={"|"} size='text-[1rem]'/>
+                        <Subtitle text={"|"} size='text-[1rem]' />
                         <Subtitle
                             text="ACTIVE"
                             isLink
                             onClick={() => navigate("/admOperations?status=ACTIVE")}
                             size="text-[1rem]"
                         />
-                        <Subtitle text={"|"} size='text-[1rem]'/>
+                        <Subtitle text={"|"} size='text-[1rem]' />
                         <Subtitle
                             text="EXPIRED"
                             isLink
@@ -227,7 +273,6 @@ export default function AdmOperations() {
                             size="text-[1rem]"
                         />
                     </div>
-                    
 
                     <div className='w-full flex flex-row justify-end items-center gap-3'>
                         <AnnounceButton icon={<Upload />} btnText="Upload" onClick={handleUploadPick} />
@@ -241,7 +286,7 @@ export default function AdmOperations() {
             ============================== */}
             {/* TITLE */}
             <div className='flex justify-start items-start w-[80%]'>
-                <Title text={"Add HTE"}/>
+                <Title text={"Add HTE"} />
             </div>
             <div className="w-[80%] p-5 rounded-3xl bg-admin-element flex flex-col gap-5 shadow-[0px_0px_10px_rgba(0,0,0,0.5)]">
 
@@ -252,23 +297,49 @@ export default function AdmOperations() {
                         {/* FIRST COLUMN LOGO & THUMBNAIL*/}
                         <div className="w-full px-2 py-3 flex flex-col gap-5">
                             <FileUploadField
-                            labelText="Upload Logo"
-                            fieldId="logoFile"
-                            onChange={e => setLogoFile(e.target.files[0])}
+                                labelText="Upload Logo"
+                                fieldId="logoFile"
+                                onChange={e => setLogoFile(e.target.files[0])}
                             />
                             <FileUploadField
-                            labelText="Upload HTE Thumbnail"
-                            fieldId="thumbnailFile"
-                            onChange={e => setThumbnailFile(e.target.files[0])}
+                                labelText="Upload HTE Thumbnail"
+                                fieldId="thumbnailFile"
+                                onChange={e => setThumbnailFile(e.target.files[0])}
                             />
                             <FileUploadField
                                 labelText="MOA"
                                 fieldId="moaFile"
                                 onChange={e => setMoaFile(e.target.files[0])}
                             />
+
+                            {/* ✅ NEW MOA FIELDS (keeps same form flow, just adds below files) */}
+                            <SingleField
+                                labelText="Date Notarized (Signed Date)"
+                                fieldHolder="YYYY-MM-DD"
+                                fieldId="signedAt"
+                                value={signedAt}
+                                onChange={e => setSignedAt(e.target.value)}
+                            />
+
+                            <SingleField
+                                labelText="Validity (months)"
+                                fieldHolder="e.g. 12"
+                                fieldId="validity"
+                                value={validity}
+                                onChange={e => setValidity(e.target.value)}
+                            />
+
+                            <SingleField
+                                labelText="Expiry Date"
+                                fieldHolder="YYYY-MM-DD"
+                                fieldId="expiresAt"
+                                value={expiresAt}
+                                onChange={e => setExpiresAt(e.target.value)}
+                            />
+
                             {/* SAVE HTE BUTTONS */}
                             <div className="w-full h-full flex justify-start items-end gap-5 px-5">
-                                <AnnounceButton icon={<Save size={15}/>} btnText="Save" type="submit" />
+                                <AnnounceButton icon={<Save size={15} />} btnText="Save" type="submit" />
                                 <AnnounceButton
                                     btnText="Cancel"
                                     type="button"
@@ -281,70 +352,117 @@ export default function AdmOperations() {
                         <div className="w-full p-2 flex flex-col justify-start gap-5">
                             <div className="w-full p-2 flex flex-col gap-3">
                                 <SingleField
-                                labelText="Company Name"
-                                fieldHolder="Enter company name"
-                                fieldId="companyName"
-                                value={companyName}
-                                onChange={e => setCompanyName(e.target.value)}
+                                    labelText="Company Name"
+                                    fieldHolder="Enter company name"
+                                    fieldId="companyName"
+                                    value={companyName}
+                                    onChange={e => setCompanyName(e.target.value)}
+                                />
+
+                                {/* ✅ NEW REQUIRED FIELD */}
+                                <SingleField
+                                    labelText="Nature of Business (Industry)"
+                                    fieldHolder="Enter nature of business"
+                                    fieldId="industry"
+                                    value={industry}
+                                    onChange={e => setIndustry(e.target.value)}
                                 />
 
                                 <MultiField
-                                labelText="About Company"
-                                fieldHolder="Enter company description"
-                                fieldId="companyAbout"
-                                value={companyAbout}
-                                onChange={e => setCompanyAbout(e.target.value)}
+                                    labelText="About Company"
+                                    fieldHolder="Enter company description"
+                                    fieldId="companyAbout"
+                                    value={companyAbout}
+                                    onChange={e => setCompanyAbout(e.target.value)}
                                 />
 
                                 <SingleField
-                                labelText="Location"
-                                fieldHolder="Enter company address"
-                                fieldId="companyLoc"
-                                value={companyLoc}
-                                onChange={e => setCompanyLoc(e.target.value)}
+                                    labelText="Website"
+                                    fieldHolder="https://example.com"
+                                    fieldId="website"
+                                    value={website}
+                                    onChange={e => setWebsite(e.target.value)}
+                                />
+
+                                <SingleField
+                                    labelText="Location"
+                                    fieldHolder="Enter company address"
+                                    fieldId="companyLoc"
+                                    value={companyLoc}
+                                    onChange={e => setCompanyLoc(e.target.value)}
+                                />
+
+                                {/* ✅ CONTACT FIELDS */}
+                                <SingleField
+                                    labelText="Contact Person"
+                                    fieldHolder="Enter contact person"
+                                    fieldId="contactPerson"
+                                    value={contactPerson}
+                                    onChange={e => setContactPerson(e.target.value)}
+                                />
+
+                                <SingleField
+                                    labelText="Position"
+                                    fieldHolder="Enter position"
+                                    fieldId="contactPosition"
+                                    value={contactPosition}
+                                    onChange={e => setContactPosition(e.target.value)}
+                                />
+
+                                <SingleField
+                                    labelText="Contact Number"
+                                    fieldHolder="Enter contact number"
+                                    fieldId="contactNumber"
+                                    value={contactNumber}
+                                    onChange={e => setContactNumber(e.target.value)}
+                                />
+
+                                <SingleField
+                                    labelText="Email Address"
+                                    fieldHolder="Enter email address"
+                                    fieldId="contactEmail"
+                                    value={contactEmail}
+                                    onChange={e => setContactEmail(e.target.value)}
                                 />
 
                                 <Dropdown
-                                labelText="Status"
-                                categories={categories}
-                                value={statusValue}
-                                onChange={setStatusValue}
+                                    labelText="Status"
+                                    categories={categories}
+                                    value={statusValue}
+                                    onChange={setStatusValue}
                                 />
 
                                 <Label labelText="Eligible Course" />
                                 <section className="w-full flex flex-row flex-wrap gap-3">
-                                    {["DIT","DLMOT","DEET","DMET","DCvET","DCpET","DRET","DECET"].map(c =>
+                                    {["DIT", "DLMOT", "DEET", "DMET", "DCvET", "DCpET", "DRET", "DECET"].map(c =>
                                         <CoursesButton
-                                        key={c}
-                                        text={c}
-                                        isActive={eligibleCourses.includes(c)}
-                                        onClick={() => toggleCourse(c)}
+                                            key={c}
+                                            text={c}
+                                            isActive={eligibleCourses.includes(c)}
+                                            onClick={() => toggleCourse(c)}
                                         />
                                     )}
                                 </section>
-                                
+
                             </div>
                         </div>
-                            
 
                     </div>
                 </form>
                 {/* ADD / EDIT HTE FORM END */}
-        </div>
+            </div>
 
-
-
-         {/* TITLE FOR REVIEW*/}
+            {/* TITLE FOR REVIEW*/}
             <div className='flex justify-start items-start w-[80%]'>
-                <Title text={"Reviews Moderation"}/>
+                <Title text={"Reviews Moderation"} />
             </div>
 
             {/* REVIEW FOR PARENT CONTAINER */}
             <div className='w-[80%] max-h-200 overflow-x-hidden p-5 rounded-3xl bg-admin-element flex flex-col items-center shadow-[0px_0px_10px_rgba(0,0,0,0.5)]'>
-                
+
                 {/* DESCRIPTION WRAPPER */}
                 <div>
-                    <Subtitle text={"Approve or reject student reviews. Approved reviews will be visible on the public HTE profiles."} size='text-[0.9rem]'/>
+                    <Subtitle text={"Approve or reject student reviews. Approved reviews will be visible on the public HTE profiles."} size='text-[0.9rem]' />
                 </div>
 
                 {/* CONTENT WRAPPER */}
@@ -357,24 +475,24 @@ export default function AdmOperations() {
                         <div className="relative w-full h-fit max-h-100 p-5 bg-white rounded-3xl drop-shadow-[0px_2px_5px_rgba(0,0,0,0.5)] transition duration-300 ease-in-out flex flex-col justify-evenly items-start">
 
                             <section className='w-full flex flex-row justify-between items-center'>
-                                <Subtitle text={"Maria S."} color={"text-[#2D6259]"} size='text-[1.5rem]' weight='font-bold'/>
+                                <Subtitle text={"Maria S."} color={"text-[#2D6259]"} size='text-[1.5rem]' weight='font-bold' />
                                 <p className='font-oasis-text text-[0.8rem] italic'>Prima Tech - 22/11/2025, 8:41 PM</p>
                             </section>
 
                             <section className='h-[50%] flex flex-col justify-start items-start gap-3 relative overflow-hidden'>
-                                <RatingLabel rating={"5"}/>
-                                
+                                <RatingLabel rating={"5"} />
+
                                 {/* REVIEWS DESCRIPTION BELOW */}
                                 <div className='overflow-x-hidden overflow-y-auto'>
-                                        <p className='font-oasis-text text-[0.8rem] text-justify w-full overflow-y-auto'>Prima Tech is such a good company to take an intern job since they have benefits like allowance as well as a healthy environment with supportive and kind employees and mentors! Really had a great time here.Prima Tech is such a good company to take an intern job since they have benefits like allowance as well as a healthy environment with supportive and kind employees and mentors! Really had a great time here.Prima Tech is such a good company to take an intern job since they have benefits like allowance as well as a healthy environment with supportive and kind employees and mentors! Really had a great time here.</p>
+                                    <p className='font-oasis-text text-[0.8rem] text-justify w-full overflow-y-auto'>Prima Tech is such a good company to take an intern job since they have benefits like allowance as well as a healthy environment with supportive and kind employees and mentors! Really had a great time here.Prima Tech is such a good company to take an intern job since they have benefits like allowance as well as a healthy environment with supportive and kind employees and mentors! Really had a great time here.Prima Tech is such a good company to take an intern job since they have benefits like allowance as well as a healthy environment with supportive and kind employees and mentors! Really had a great time here.</p>
                                 </div>
-                                
+
                             </section>
 
                             <section className='w-full h-full flex justify-center items-center gap-5 px-5'>
-                                <AnnounceButton 
-                                    icon={<Check size={25}/>} 
-                                    type="submit" 
+                                <AnnounceButton
+                                    icon={<Check size={25} />}
+                                    type="submit"
                                     btnText=''
                                 />
                                 <AnnounceButton
@@ -382,7 +500,7 @@ export default function AdmOperations() {
                                     type="button"
                                     isRed={true}
                                     onClick={resetForm}
-                                    icon={<X size={25}/>}
+                                    icon={<X size={25} />}
                                 />
                             </section>
                         </div>  {/* CARD END */}
@@ -390,57 +508,54 @@ export default function AdmOperations() {
 
                         {/* CARD WRAPPER END */}
                     </div>
-                        
+
                     {/* REVIEW FILTERS PARENT */}
                     <div className='w-[40%] p-3 flex flex-col justify-start items-start sticky top-0 transiiton-all duration-100 ease-in-out'>
 
-                            <Subtitle text={"Review Criteria"} size={'text-[1rem]'} weight='font-bold'/>
+                        <Subtitle text={"Review Criteria"} size={'text-[1rem]'} weight='font-bold' />
 
-                            <div className='mt-3 mb-5 w-full flex flex-wrap justify-start items-start gap-1'>
-                                <Filter text={'Learning Experience'}/> 
-                                <Filter text={'Skill Acquisition'}/> 
-                                <Filter text={'Adequate Supervisor Support'}/> 
-                                <Filter text={'Course related'}/> 
-                            </div>
+                        <div className='mt-3 mb-5 w-full flex flex-wrap justify-start items-start gap-1'>
+                            <Filter text={'Learning Experience'} />
+                            <Filter text={'Skill Acquisition'} />
+                            <Filter text={'Adequate Supervisor Support'} />
+                            <Filter text={'Course related'} />
+                        </div>
 
-                            <Subtitle text={"Date Posted"} size={'text-[1rem]'} weight='font-bold'/>
+                        <Subtitle text={"Date Posted"} size={'text-[1rem]'} weight='font-bold' />
 
-                            <div className='mt-3 mb-5 w-full flex flex-wrap justify-start items-start gap-1'>
-                                <Filter text={'Newest'}/> 
-                                <Filter text={'Oldest'}/> 
-                            </div>
+                        <div className='mt-3 mb-5 w-full flex flex-wrap justify-start items-start gap-1'>
+                            <Filter text={'Newest'} />
+                            <Filter text={'Oldest'} />
+                        </div>
 
-                            <Subtitle text={"Ratings"} size={'text-[1rem]'} weight='font-bold'/>
+                        <Subtitle text={"Ratings"} size={'text-[1rem]'} weight='font-bold' />
 
-                            <div className='mt-3 mb-5 w-full flex flex-wrap justify-start items-start gap-1'>
-                                <Filter text={'5 stars'}/> 
-                                <Filter text={'4 stars'}/> 
-                                <Filter text={'3 stars'}/> 
-                                <Filter text={'2 stars'}/> 
-                                <Filter text={'1 stars'}/> 
-                            </div>
+                        <div className='mt-3 mb-5 w-full flex flex-wrap justify-start items-start gap-1'>
+                            <Filter text={'5 stars'} />
+                            <Filter text={'4 stars'} />
+                            <Filter text={'3 stars'} />
+                            <Filter text={'2 stars'} />
+                            <Filter text={'1 stars'} />
+                        </div>
 
-                            <Subtitle text={"HTE"} size={'text-[1rem]'} weight='font-bold'/>
+                        <Subtitle text={"HTE"} size={'text-[1rem]'} weight='font-bold' />
 
-                            <div className='mt-3 w-full flex flex-wrap justify-start items-start gap-1'>
-                                <Dropdown categories={hteDropdown}/>
-                            </div>
+                        <div className='mt-3 w-full flex flex-wrap justify-start items-start gap-1'>
+                            <Dropdown categories={hteDropdown} />
+                        </div>
 
-                            <div className='mt-3 p-5 w-full flex justify-between items-center gap-1'>
-                                <AnnounceButton btnText='Approve All'/>
-                                <AnnounceButton btnText='Clear All'/>
-                            </div>
-                        
+                        <div className='mt-3 p-5 w-full flex justify-between items-center gap-1'>
+                            <AnnounceButton btnText='Approve All' />
+                            <AnnounceButton btnText='Clear All' />
+                        </div>
+
                         {/* REVIEWS FILTER PARENT END */}
 
-                    </div>    
-                        {/* REVIEWS WRAPPER END */}
+                    </div>
+                    {/* REVIEWS WRAPPER END */}
                 </section>
 
             </div>
-
-
-
 
         </AdminScreen>
     );

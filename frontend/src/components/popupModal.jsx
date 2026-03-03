@@ -155,12 +155,40 @@ export function ViewModal({
                             
                         </section>
                     }
-                    
-                    {isDocument && 
-                        <section className="z-50 w-50 p-2 flex flex-row justify-center items-center gap-5  rounded-4xl">
-                            <AnnounceButton icon={<Download/>} btnText="Download MOA" />
-                        </section>
-                    }
+                    {isDocument && (
+                    <section className="z-50 w-50 p-2 flex flex-row justify-center items-center gap-5 rounded-4xl">
+                        <AnnounceButton
+                        icon={<Download />}
+                        btnText="Download MOA"
+                        onClick={async () => {
+                            if (!file) return;
+
+                            try {
+                            const res = await fetch(file);
+                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                            const blob = await res.blob();
+                            const blobUrl = window.URL.createObjectURL(blob);
+
+                            const filename =
+                                file.split("/").pop()?.split("?")[0] || "MOA.pdf";
+
+                            const a = document.createElement("a");
+                            a.href = blobUrl;
+                            a.download = filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+
+                            window.URL.revokeObjectURL(blobUrl);
+                            } catch (e) {
+                            console.error(e);
+                            alert("Download failed. Check console.");
+                            }
+                        }}
+                        />
+                    </section>
+                    )}
                 </div>
               
                 {/* MAIN CONTAINER */}
@@ -171,10 +199,27 @@ export function ViewModal({
                 }
 
                 {isDocument && 
-                    <div className="relative min-w-[70%] max-w-[80%] bg-oasis-gradient">
-                        <PdfViewer file={file}/>
-                    </div>
-                }
+                <div className="relative min-w-[70%] max-w-[80%] h-[85vh] bg-oasis-gradient rounded-3xl overflow-hidden">
+                    <object
+                        key={file}
+                        data={file}
+                        type="application/pdf"
+                        className="w-full h-full"
+                    >
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-3 p-5">
+                            <p className="text-sm text-white">PDF preview not available.</p>
+                            <a
+                                href={file}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sm underline text-white"
+                            >
+                                Open PDF in new tab
+                            </a>
+                        </div>
+                    </object>
+                </div>
+            }
 
             </div>
         </>
