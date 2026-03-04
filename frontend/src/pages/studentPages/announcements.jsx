@@ -50,17 +50,34 @@ export default function Announcements() {
                 {...selectedAnnouncement}
             />
 
-            <div className="w-full flex flex-col items-center">
-                <Title text="Announcements" size="text-[3rem]" />
+           <div className="w-full flex flex-col items-center mb-10 px-4 text-center">
+                <Title 
+                    text={"Announcements"} 
+                    size="text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
+                />
                 <Subtitle
-                    size="text-[1rem]"
+                    size="text-xs sm:text-sm md:text-base"
                     color="text-oasis-button-dark"
-                    text="See the latest news about OJT and internship concerns"
+                    text="See the lists of HTEs with their MOA and significant details; See the reviews about HTEs and make a review yourself!"
+                    isCenter
                 />
             </div>
 
-            <div className="w-[70%] p-5 flex flex-col">
-                <section className="flex gap-5 mb-5">
+            <div className="
+                w-full
+                lg:w-[70%]
+                px-4 sm:px-6
+                py-5
+                flex flex-col
+            ">
+
+                {/* FILTERS */}
+                <section className="
+                    flex
+                    flex-wrap
+                    gap-2 sm:gap-3
+                    mb-5
+                ">
                     {["All", "HTE Related", "Deadlines", "Newly Approved HTEs", "Events and Webinars", "Others"].map(f => (
                         <Filter
                             key={f}
@@ -71,7 +88,9 @@ export default function Announcements() {
                     ))}
                 </section>
 
-                <section className="flex flex-col">
+                {/* ANNOUNCEMENTS */}
+                <section className="flex flex-col gap-3">
+
                     {loading && (
                         <p className="text-sm text-gray-500">Loading announcements...</p>
                     )}
@@ -83,24 +102,48 @@ export default function Announcements() {
                     {filteredAnnouncements.map(a => (
                         <div
                             key={a.id}
-                            className="w-full flex gap-5 p-3 border border-oasis-button-dark bg-linear-to-b from-oasis-button-light via-oasis-blue cursor-pointer"
+                            className="
+                                w-full
+                                flex
+                                flex-col sm:flex-row
+                                gap-3 sm:gap-5
+                                p-4
+                                border border-oasis-button-dark
+                                bg-linear-to-b from-oasis-button-light via-oasis-blue
+                                cursor-pointer
+                                rounded-xl
+                                hover:shadow-md
+                                transition duration-200
+                            "
                             onClick={() => setSelectedAnnouncement(a)}
                         >
-                            <section>
-                                <Subtitle text={a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"} />
+
+                            {/* DATE */}
+                            <section className="shrink-0">
+                                <Subtitle
+                                    size="text-xs sm:text-sm"
+                                    text={a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"}
+                                />
                             </section>
 
-                            <section className="flex flex-col">
+                            {/* TITLE + CONTENT */}
+                            <section className="flex flex-col gap-1">
+
                                 <Subtitle
-                                    size="text-[1rem]"
+                                    size="text-sm sm:text-base"
                                     weight="font-bold"
                                     color="text-oasis-button-dark"
                                     text={a.title}
                                 />
-                                <Subtitle size="text-[0.7rem]" text={a.content} />
+                                <Subtitle
+                                    size="text-xs sm:text-sm line-clamp-3"
+                                    text={a.content}
+                                />
                             </section>
+
                         </div>
                     ))}
+
                 </section>
             </div>
         </MainScreen>

@@ -17,7 +17,17 @@ export function Button({ text, onClick, disabled, width = "w-auto", type = "butt
 }
 
 
-export function AnnounceButton({ type="button", textSize = "text-[0.8rem]", btnText = "Posted", onClick, disabled, icon, isFullWidth = false, isRed, className}) {
+export function AnnounceButton({
+    type = "button",
+    textSize,
+    btnText = "Posted",
+    onClick,
+    disabled,
+    icon,
+    isFullWidth = false,
+    isRed,
+    className
+    }) {
     const text = btnText.toLowerCase();
 
     const isDanger = ["delete", "reject", "clear all", "clear"].includes(text) || isRed;
@@ -29,21 +39,37 @@ export function AnnounceButton({ type="button", textSize = "text-[0.8rem]", btnT
         ? "bg-[#D3D3D3] hover:bg-[#A9A9A9] text-black"
         : isDanger
         ? "bg-red-900 hover:bg-red-700 text-white"
-        : isPending 
-        ? "bg-amber-500 hover:bg-amber-700 text-black" 
-        : isUpload 
+        : isPending
+        ? "bg-amber-500 hover:bg-amber-700 text-black"
+        : isUpload
         ? "bg-white border border-gray-400 hover:bg-gray-100 text-black"
-        : "bg-oasis-button-dark hover:bg-oasis-button-light text-white"
+        : "bg-oasis-button-dark hover:bg-oasis-button-light text-white";
 
     return (
         <button
-            type={type}
-            onClick={onClick}
-            className={`font-oasis-text ${textSize} text-center py-3 px-5 ${isFullWidth ? "w-full" : "w-auto"} flex flex-row items-center justify-center gap-3 max-w-70 rounded-full transition-all duration-200 border border-gray-400 hover:cursor-pointer ${buttonStyle} ${className}`}
-            disabled={disabled}
+        type={type}
+        onClick={onClick}
+        disabled={disabled}
+        className={`
+            font-oasis-text
+            ${textSize || "text-xs sm:text-sm md:text-base"}
+            text-center
+            px-4 py-2
+            sm:px-5 sm:py-2.5
+            md:px-6 md:py-3
+            ${isFullWidth ? "w-full" : "w-auto"}
+            flex items-center justify-center gap-2 sm:gap-3
+            rounded-full
+            transition-all duration-200
+            border border-gray-400
+            hover:cursor-pointer
+            disabled:opacity-50 disabled:cursor-not-allowed
+            ${buttonStyle}
+            ${className}
+        `}
         >
-            {icon}
-            {btnText}
+        {icon && <span className="flex items-center">{icon}</span>}
+        <span className="whitespace-nowrap">{btnText}</span>
         </button>
     );
 }

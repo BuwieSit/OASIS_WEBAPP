@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { getStudentDashboardHTEs } from "../../api/studentDashboard.service";
 import MainScreen from '../../layouts/mainScreen';
 import fallbackImg from "../../assets/fallbackImage.jpg";
 import Title from '../../utilities/title';
 import Subtitle from '../../utilities/subtitle';
 import { TutorialCard } from '../../utilities/card';
-import { StudentTable } from '../../components/oasisTable';
+import { MobileStudentTable, StudentTable } from '../../components/oasisTable';
 import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
 import SearchBar from '../../components/searchBar';
 import { ArrowRight } from 'lucide-react';
@@ -74,7 +75,6 @@ export default function Student() {
             )
         }
     ]
-
     
     const handleDownloadMOA = async (hteId) => {
         try {
@@ -91,10 +91,21 @@ export default function Student() {
             console.error("Failed to download MOA", err);
         }
     };
+    const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeHteId = searchParams.get("hteId");
+
+    useEffect(() => {
+        if (activeHteId) {
+            navigate(`/hte-profile?hteId=${activeHteId}`);
+        }
+    }, [activeHteId, navigate]);
+
+    const setHte = (hteId) => {
+        setSearchParams({ hteId });
+    };
 
     const [openView, setOpenView] = useState(false);
-    
-    // ✅ Get user's name properly
     const userName = profile?.first_name || user?.email?.split('@')[0] || "Student";
     
     return(
@@ -109,7 +120,7 @@ export default function Student() {
                     resourceTitle="What is OASIS?"
                 />
 
-                <div className="w-full aspect-video overflow-hidden relative flex flex-col items-center justify-center">
+                <div className="w-full py-10 md:py-30 lg:py-30 overflow-hidden relative flex flex-col items-center justify-center">
 
                     {/* Background Image */}
                     <img 
@@ -120,19 +131,19 @@ export default function Student() {
 
                     {/* Badge */}
                     <div className="mb-6 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-white/50 z-10">
-                        <span className="text-sm font-style: italic text-[#2d5f5d]">👋 Welcome, {userName}!</span>
+                        <span className="italic text-[#2d5f5d] text-xs sm:text-sm md:text-base">
+                            👋 Welcome, {userName}!
+                        </span>
                     </div>
 
                     {/* Main Headline */}
                     <section className='w-full flex flex-col justify-center items-center px-10 z-10'>
-                        <h1 className='text-5xl md:text-6xl lg:text-7xl font-oasis-text font-bold text-white text-center leading-tight drop-shadow-[3px_3px_8px_rgba(0,0,0,0.8)]'>
+                        <h1 className='text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-oasis-text font-bold text-white text-center leading-tight drop-shadow-[3px_3px_8px_rgba(0,0,0,0.8)]'>
                             Streamline Your OJT with
-                        </h1>
-                        <h1 className='text-5xl md:text-6xl lg:text-9xl font-oasis-text font-bold text-center leading-tight mt-2 drop-shadow-[3px_3px_8px_rgba(255,255,255,0.9)]'>
-                            <span className="text-oasis-header ">OASIS.</span>
+                            <span className="text-oasis-header "> OASIS.</span>
                         </h1>
                         
-                        <p className='text-lg md:text-xl text-white text-center mt-6 front font-oasis-text drop-shadow-[2px_2px_6px_rgba(0,0,0,0.8)]'>
+                        <p className='text-[0.6rem] sm:text-[0.6rem] md:text-[1rem] lg:text-[1.3rem] font-oasis-text text-white text-center leading-tight drop-shadow-[3px_3px_8px_rgba(0,0,0,0.8)]'>
                             Submit MOA prospects, consult ORBI for OJT inquiries, and access the centralized MOA database.
                             <br />
                             <span className>Tulay sa oportunidad, gabay sa kinabukasan.</span>
@@ -141,7 +152,7 @@ export default function Student() {
                      
                     {/* CTA Button */}
                     <a href="#prospectForm" className="z-10">
-                        <button className='mt-8 px-8 py-4 rounded-xl text-center bg-[#2d5f5d] text-white font-bold font-oasis-text cursor-pointer shadow-[0_0_20px_rgba(0,0,0,0.5)] duration-200 transition ease-in-out hover:scale-105 hover:bg-[#234948] text-base md:text-lg flex items-center gap-2'>
+                        <button className='mt-8 px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-xl text-center bg-[#2d5f5d] text-white font-bold font-oasis-text cursor-pointer shadow-[0_0_20px_rgba(0,0,0,0.5)] duration-200 transition ease-in-out hover:scale-105 hover:bg-[#234948] text-sm md:text-base lg:text-lg flex items-center gap-2'>
                             Submit MOA Prospect
                             <ArrowRight size={20} />
                         </button>
@@ -149,7 +160,7 @@ export default function Student() {
 
                 </div>
                    
-                {/* <UpperWave/> */}
+                {/* 2ND SECTION */}
                 <div className='w-full min-h-150 mt-20 h-auto pb-5 pt-5 flex flex-wrap flex-col items-center justify-center gap-10'>
 
                     <section className='w-[50%] flex flex-col gap-2'>
@@ -165,8 +176,12 @@ export default function Student() {
                                 onChange={setSearch}
                             />
                         </div>
-                        
                     </StudentTable>
+                    <MobileStudentTable
+                        columns={columns}
+                        data={tableData}
+                        onRowClick={(id) => setHte(id)}
+                    />
 
                     <section className='w-[50%] flex flex-col gap-2 mt-10'>
                         <Title text="What is OASIS?"/>
@@ -175,7 +190,7 @@ export default function Student() {
                    
 
                     <div className="w-[80%] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 pt-10 pb-10 justify-center place-items-center">
-
+            
                         <TutorialCard onClick={() => setOpenView(true)}/>
                         <TutorialCard onClick={() => setOpenView(true)}/>
                         <TutorialCard onClick={() => setOpenView(true)}/>
@@ -183,6 +198,7 @@ export default function Student() {
                         <TutorialCard onClick={() => setOpenView(true)}/>
                         <TutorialCard onClick={() => setOpenView(true)}/>
                     </div>
+
                 </div>
                 {/* <LowerWave/> */}
 

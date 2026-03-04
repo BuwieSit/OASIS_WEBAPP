@@ -5,60 +5,112 @@ import workerSrc from "pdfjs-dist/build/pdf.worker.min?url";
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export default function PdfViewer({ file }) {
-  const [numPages, setNumPages] = useState(null);
+
+  const [numPages, setNumPages] = useState(0);
   const [width, setWidth] = useState(0);
   const [err, setErr] = useState(null);
+
   const containerRef = useRef(null);
+  const pageRefs = useRef([]);
 
   useEffect(() => {
+
     const resize = () => {
-      if (containerRef.current) setWidth(containerRef.current.offsetWidth);
+      if (containerRef.current)
+        setWidth(containerRef.current.offsetWidth - 40);
     };
+
     resize();
     window.addEventListener("resize", resize);
+
     return () => window.removeEventListener("resize", resize);
+
   }, []);
 
   useEffect(() => {
-    if (containerRef.current) setWidth(containerRef.current.offsetWidth);
-    setErr(null);
-    setNumPages(null);
+    pageRefs.current = [];
   }, [file]);
+
+  const scrollToPage = (pageIndex) => {
+    const el = pageRefs.current[pageIndex];
+
+    if (el) {
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }
+  };
 
   if (!file) return null;
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full h-full overflow-y-auto overflow-x-hidden bg-white"
-    >
-      {err ? (
-        <div className="p-5 text-center">
-          <p className="font-oasis-text text-[1rem]">Failed to load PDF.</p>
-          <p className="font-oasis-text text-[0.9rem] text-gray-600 break-all">
-            {String(err)}
-          </p>
-        </div>
-      ) : (
-        <Document
-          file={{ url: file }}
-          onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-          onLoadError={(e) => setErr(e?.message || e)}
-          loading={<div className="p-5 text-center">Loading PDF...</div>}
-        >
-          {numPages &&
-            Array.from(new Array(numPages), (_, i) => (
-              <Page
+    <div className="flex w-full">
+
+      {/* PAGE NAVIGATION SIDEBAR */}
+
+      <div className="
+        hidden md:flex
+        flex-col w-40
+        p-3 gap-2
+        bg-oasis-header
+        rounded-3xl
+        sticky top-0
+        self-start
+        max-h-screen
+        overflow-y-auto
+      ">
+
+        {Array.from({ length: numPages }, (_, i) => (
+          <button
+            key={i}
+            className="
+              text-sm p-2 rounded-lg
+              hover:bg-oasis-button-light
+              cursor-pointer transition
+              text-center text-white w-full
+            "
+            onClick={() => scrollToPage(i)}
+          >
+            Page {i + 1}
+          </button>
+        ))}
+
+      </div>
+
+      {/* PDF DOCUMENT AREA */}
+      <div ref={containerRef} className="flex-1 overflow-y-auto px-4">
+
+        {err ? (
+          <div className="p-5 text-center text-red-500">
+            Failed to load PDF.
+          </div>
+        ) : (
+          <Document
+            file={{ url: file }}
+            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+            onLoadError={(e) => setErr(e?.message || e)}
+          >
+
+            {Array.from(new Array(numPages), (_, i) => (
+              <div
                 key={i}
-                pageNumber={i + 1}
-                width={width}
-                renderTextLayer={false}
-                renderAnnotationLayer={false}
-                className="mx-auto"
-              />
+                ref={el => pageRefs.current[i] = el}
+                className="mb-8 flex justify-center"
+              >
+                <Page
+                  pageNumber={i + 1}
+                  width={width}
+                  renderTextLayer={false}
+                  renderAnnotationLayer={false}
+                />
+              </div>
             ))}
-        </Document>
-      )}
+
+          </Document>
+        )}
+
+      </div>
     </div>
   );
 }

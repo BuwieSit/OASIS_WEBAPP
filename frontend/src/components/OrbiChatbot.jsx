@@ -11,12 +11,34 @@ export default function OrbiChatbot() {
 
     return (
         <>
-            <img src={orbi} onClick={handleClick} className={`fixed bottom-[0%] right-[0%] z-100 w-35 aspect-square hover:cursor-pointer hover:scale-115 transition ease-in-out duration-200 hover:drop-shadow-[3px_3px_1px_rgba(0,0,0,1)] ${animate ? "animate__animated animate__jello" : ""}`} alt='orbiChatbot'/>
-            
-            {open && <FloatingChat open={open} onClose={closeChat}/>}
-            {onBubble && <BubbleAnim start={onBubble}/>}
+            <img
+                src={orbi}
+                onClick={handleClick}
+                alt="orbiChatbot"
+                className={`
+                    fixed
+                    bottom-4 right-4
+                    sm:bottom-6 sm:right-6
+                    lg:bottom-8 lg:right-8
+                    z-50
+
+                    w-16 sm:w-20 md:w-24 lg:w-28
+                    aspect-square
+
+                    cursor-pointer
+                    transition-all duration-200 ease-in-out
+
+                    hover:scale-110
+                    hover:drop-shadow-[3px_3px_5px_rgba(0,0,0,0.4)]
+
+                    ${animate ? "animate__animated animate__jello" : ""}
+                `}
+            />
+
+            {open && <FloatingChat open={open} onClose={closeChat} />}
+            {onBubble && <BubbleAnim start={onBubble} />}
         </>
-    )
+    );
 }
 
 
@@ -29,14 +51,13 @@ export function FloatingChat({ open, onClose }) {
         let timer;
 
         if (open) {
-
-        timer = setTimeout(() => {
-            setShow(true);
-            setAnimationClass("bubble-pop"); 
-        }, 400);
+            timer = setTimeout(() => {
+                setShow(true);
+                setAnimationClass("bubble-pop");
+            }, 200);
         } else {
-        setAnimationClass("bubble-close");
-        timer = setTimeout(() => setShow(false), 400); 
+            setAnimationClass("bubble-close");
+            timer = setTimeout(() => setShow(false), 200);
         }
 
         return () => clearTimeout(timer);
@@ -45,48 +66,67 @@ export function FloatingChat({ open, onClose }) {
     if (!show) return null;
 
     return (
-        // parent container
         <div
-        className={`
-            w-100 aspect-square p-5 fixed top-[60%] right-0
-            translate-x-[-30%] -translate-y-1/2 z-100
-            ${animationClass}
-        `}
+            className="
+                fixed inset-0
+                z-50
+                flex items-center justify-center
+                bg-black/30
+                p-4"
         >
-            {/* Shown container */}
-        <div className="w-full aspect-square bg-oasis-gradient
-                        backdrop-blur-xs rounded-3xl p-2
-                        shadow-[2px_2px_5px_rgba(0,0,0,0.9)] relative">
-            <div className="w-full border-b px-3 py-2 flex flex-row justify-end items-center gap-3">
-                <Maximize2 size={20} className='z-20'/>
-                <Minus size={20} className="cursor-pointer z-20" onClick={onClose}/>
-                
-            </div>
-            {/* Messages Field */}
-            <div className="w-full h-[80%] p-5 overflow-y-auto overflow-hidden">
-            <ChatField isOrbi={true}/>
-            <ChatField isUser={true}/>
-            <ChatField isOrbi={true}/>
-            <ChatField isUser={true}/>
-            <ChatField isOrbi={true}/>
-            <ChatField isUser={true}/>
-            <ChatField isOrbi={true}/>
-            <ChatField isUser={true}/>
-            <ChatField isOrbi={true}/>
-            <ChatField isUser={true}/>
-            </div>
+            <div
+                className={`
+                    relative
+                    w-full
+                    max-w-5xl
+                    h-[90vh]
+                    bg-oasis-gradient
+                    backdrop-blur-xs
+                    rounded-3xl
+                    shadow-2xl
+                    flex flex-col
+                    overflow-hidden
+                    ${animationClass}
+                `}
+                style={{ transformOrigin: "center center" }}
+            >
 
-            <div className="w-full h-[20%] z-20 grid place-items-center">
-                <div className='w-full flex items-center gap-3'>
-                    <SingleField hasBorder={true} fieldHolder={"Enter message"} fieldId={"userMessage"}/>
-                    <div className='rounded-full p-2 transition-all duration-150 ease-in-out hover:bg-white group'>
-                        <SendHorizontal size={25} color='#2D6259' className='cursor-pointer group-hover:-rotate-z-40 transition-all duration-150 ease-in-out'/>
+                {/* HEADER */}
+                <div className="w-full border-b px-5 py-4 flex justify-between items-center">
+                    <div className="flex gap-4">
+                        <Maximize2 size={20} />
+                        <Minus size={20} className="cursor-pointer" onClick={onClose} />
                     </div>
-                   
+                </div>
+
+                {/* MESSAGES */}
+                <div className="flex-1 p-6 overflow-y-auto">
+                    <ChatField isOrbi />
+                    <ChatField isUser />
+                    <ChatField isOrbi />
+                    <ChatField isUser />
+                </div>
+
+                {/* INPUT */}
+                <div className="w-full p-4 border-t">
+                    <div className="flex items-center gap-3">
+                        <SingleField
+                            hasBorder={true}
+                            fieldHolder="Enter message"
+                            fieldId="userMessage"
+                        />
+
+                        <div className="rounded-full p-2 hover:bg-white transition group">
+                            <SendHorizontal
+                                size={22}
+                                color="#2D6259"
+                                className="cursor-pointer group-hover:-rotate-12 transition"
+                            />
+                        </div>
+                    </div>
                 </div>
 
             </div>
-        </div>
         </div>
     );
 }

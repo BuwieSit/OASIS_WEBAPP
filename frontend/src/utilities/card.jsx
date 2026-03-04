@@ -11,7 +11,7 @@ import fallbackImg from "../assets/oasisLogo.png";
 export function TutorialCard({title = "What is OASIS?", desc = "A short video of what OASIS can do.", thumbnail = fallbackImg, onClick }) {
 
   return(
-      <div className="relative bg-oasis-gradient overflow-hidden sm:w-65 md:w-75 lg:w-80 aspect-square cursor-pointer rounded-3xl shadow-[0px_0px_5px_rgba(0,0,0,0.4)] group perspective transition-all duration-150 ease-in-out hover:-translate-y-3 hover:shadow-[0px_5px_5px_rgba(0,0,0,0.5)]" onClick={onClick}>
+      <div className="relative w-full max-w-[320px] mx-auto bg-oasis-gradient overflow-hidden aspect-square cursor-pointer rounded-3xl shadow-[0px_0px_5px_rgba(0,0,0,0.4)] group transition-all duration-150 ease-in-out hover:-translate-y-3 hover:shadow-[0px_5px_5px_rgba(0,0,0,0.5)]" onClick={onClick}>
 
           <img src={thumbnail} alt="thumbnail" className="w-full h-[70%] object-cover transition-all duration-150 ease-in-out shadow-[inset_0px_0px_10px_#54A194]"/>
           <section className="h-[30%] w-full z-50 bg-white p-3 flex flex-col justify-start items-start">
@@ -74,49 +74,115 @@ export function AdmCard({ cardTitle, cardIcon, cardNumber, cardDate}) {
 
 }
 
-
-export function ReviewCard({ 
-    username = "Francine Ishael Hardy", 
-    hteName = "Prima Tech", 
-    role, // student intern, prof
-    dateTime = "22/11/2025, 8:41 PM", 
+export function ReviewCard({
+    username = "Francine Ishael Hardy",
+    hteName = "Prima Tech",
+    role = "Student intern",
+    dateTime = "22/11/2025, 8:41 PM",
     rating = "5",
     message = "Prima Tech is such a good company to take an intern job since they have benefits like allowance as well as a healthy environment with supportive and kind employees and mentors! Really had a great time here.",
-
 }) {
-  return (
-    <>
-        <div className="basis-[calc(50%-0.5rem)] aspect-video max-h-75 p-5 hover:bg-white cursor-pointer rounded-3xl hover:shadow-[0px_2px_5px_rgba(0,0,0,0.5)] transition duration-300 ease-in-out flex flex-col justify-evenly items-start gap-3">
+
+    return (
+        <div className="
+            w-full
+            sm:w-[calc(50%-0.5rem)]
+            lg:w-[calc(33.33%-1rem)]
+            min-h-[220px]
+            p-4 sm:p-5
+            hover:bg-white
+            cursor-pointer
+            rounded-3xl
+            hover:shadow-[0px_2px_5px_rgba(0,0,0,0.5)]
+            transition duration-300 ease-in-out
+            flex flex-col justify-between gap-3
+        ">
+
+            {/* HTE Name */}
             <section className="w-full flex justify-center items-center">
-              <h3 className='font-oasis-text font-bold text-[1.3rem] text-center'>{hteName}</h3>
+                <h3 className="font-oasis-text font-bold text-lg sm:text-xl text-center">
+                    {hteName}
+                </h3>
             </section>
 
-            <sections className='w-full flex flex-col justify-start items-start'>
-                <p className='font-oasis-text text-[0.7rem] text-justify w-full overflow-y-auto'>{message}</p>
-            </sections>
-    
-            <div className='w-full flex flex-row justify-between items-center'>
+            {/* Message */}
+            <section className="w-full flex flex-col">
+                <p className="
+                    font-oasis-text
+                    text-xs sm:text-sm
+                    text-justify
+                    w-full
 
-                <section className="w-full flex flex-col justify-start items-start">
-                  <Label labelText={username}/>
-                  <Subtitle text={"Student intern"}/>
-                  <div className="flex flex-row">
-                     
-                      <img src={goldStar} className="w-7.5 aspect-square object-contain"/>
-                      <img src={goldStar} className="w-7.5 aspect-square object-contain"/>
-                      <img src={goldStar} className="w-7.5 aspect-square object-contain"/>
-                      <img src={goldStar} className="w-7.5 aspect-square object-contain"/>
-                      <img src={goldStar} className="w-7.5 aspect-square object-contain"/>
-                  </div>
-                  
-                </section>
-                
+                    line-clamp-4
+                ">
+                    {message}
+                </p>
+            </section>
+
+            {/* Footer Info */}
+            <div className="w-full flex flex-col gap-1">
+
+                <Label labelText={username}/>
+
+                <Subtitle text={role}/>
+
+                {/* Rating Stars */}
+                <div className="flex flex-row flex-wrap">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                        <img
+                            key={index}
+                            src={goldStar}
+                            className="w-6 sm:w-7 aspect-square object-contain"
+                        />
+                    ))}
+                </div>
 
             </div>
-    </div>
-    </>
-  )
+        </div>
+    );
 }
+// export function ReviewCard({ 
+//     username = "Francine Ishael Hardy", 
+//     hteName = "Prima Tech", 
+//     role, // student intern, prof
+//     dateTime = "22/11/2025, 8:41 PM", 
+//     rating = "5",
+//     message = "Prima Tech is such a good company to take an intern job since they have benefits like allowance as well as a healthy environment with supportive and kind employees and mentors! Really had a great time here.",
+
+// }) {
+//   return (
+//     <>
+//         <div className="basis-[calc(50%-0.5rem)] aspect-video max-h-75 p-5 hover:bg-white cursor-pointer rounded-3xl hover:shadow-[0px_2px_5px_rgba(0,0,0,0.5)] transition duration-300 ease-in-out flex flex-col justify-evenly items-start gap-3">
+//             <section className="w-full flex justify-center items-center">
+//               <h3 className='font-oasis-text font-bold text-[1.3rem] text-center'>{hteName}</h3>
+//             </section>
+
+//             <sections className='w-full flex flex-col justify-start items-start'>
+//                 <p className='font-oasis-text text-[0.7rem] text-justify w-full overflow-y-auto'>{message}</p>
+//             </sections>
+    
+//             <div className='w-full flex flex-row justify-between items-center'>
+
+//                 <section className="w-full flex flex-col justify-start items-start">
+//                   <Label labelText={username}/>
+//                   <Subtitle text={"Student intern"}/>
+//                   <div className="flex flex-row">
+                     
+//                       <img src={goldStar} className="w-7.5 aspect-square object-contain"/>
+//                       <img src={goldStar} className="w-7.5 aspect-square object-contain"/>
+//                       <img src={goldStar} className="w-7.5 aspect-square object-contain"/>
+//                       <img src={goldStar} className="w-7.5 aspect-square object-contain"/>
+//                       <img src={goldStar} className="w-7.5 aspect-square object-contain"/>
+//                   </div>
+                  
+//                 </section>
+                
+
+//             </div>
+//     </div>
+//     </>
+//   )
+// }
 
 
 export function AddReviewCard() {

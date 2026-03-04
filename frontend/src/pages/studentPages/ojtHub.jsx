@@ -15,63 +15,108 @@ export default function OjtHub() {
     return(
         <>
             <MainScreen>
-                <div className='w-full flex flex-col items-center mb-10'>
-                    <Title text={"OJT Hub"} size="text-[3rem]"/>
-                    <Subtitle size={"text-[1rem]"} color={"text-oasis-button-dark"} text={"See the guidelines, procedures, and requirements regarding On-The-Job training!"}/>
-                 </div>
+                <div className="w-full flex flex-col items-center mb-10 px-4 text-center">
+                    <Title 
+                        text={"OJT Hub"} 
+                        size="text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
+                    />
+                    <Subtitle
+                        size="text-xs sm:text-sm md:text-base"
+                        color="text-oasis-button-dark"
+                        text="See the lists of HTEs with their MOA and significant details; See the reviews about HTEs and make a review yourself!"
+                        isCenter
+                    />
+                </div>
 
                 {/* PARENT CONTAINER */}
-                <div className='w-full p-20 flex flex-row justify-evenly items-start duration-500 transition ease-in-out'>
-                     <div className='w-[70%] p-2 flex flex-col justify-center items-center gap-20'>
-                        {/* RENDER CONTENTS */}
+                <div className="
+                    w-full
+                    px-4 sm:px-8 lg:px-16
+                    py-10
+                    flex
+                    flex-col lg:flex-row
+                    gap-10
+                    items-start
+                    transition duration-500 ease-in-out
+                ">
+                    {/* SIDENAV */}
+                    <div className="
+                        w-full
+                        lg:w-[260px]
+                        bg-linear-to-top bg-oasis-gradient
+                        p-4 sm:p-5
+                        rounded-3xl
+                        lg:sticky lg:top-10
+                    ">
+
+                        <section className="w-full border-b-2 py-2">
+                            <Subtitle text={"Contents"} size={"text-base"} weight={"font-bold"} />
+                        </section>
+
+                        {/* MOBILE = horizontal scroll row */}
+                        {/* DESKTOP = vertical column */}
+                        <section className="
+                            w-full
+                            flex
+                            flex-wrap
+                            lg:flex-col
+                            gap-5
+                            mt-4
+                            justify-center
+                        ">
+
+                            <SideNavText 
+                                text={"Guidelines"} 
+                                onClick={() => setActiveFilter("guidelines")}
+                                isActive={activeFilter === "guidelines"}
+                            />
+
+                            <SideNavText 
+                                text={"OJT Journey"} 
+                                onClick={() => setActiveFilter("ojtjourney")}
+                                isActive={activeFilter === "ojtjourney"}
+                            />
+                            <SideNavText 
+                                text={"MOA Process"} 
+                                onClick={() => setActiveFilter("moaprocess")}
+                                isActive={activeFilter === "moaprocess"}
+                            />
+                            <SideNavText 
+                                text={"Key Guidelines"}
+                                onClick={() => setActiveFilter("keyguidelines")}
+                                isActive={activeFilter === "keyguidelines"} 
+                            />
+                            <SideNavText 
+                                text={"Internship Forms and Templates"} 
+                                onClick={() => setActiveFilter("formstemplates")}
+                                isActive={activeFilter === "formstemplates"} 
+                            />
+                            <SideNavText 
+                                text={"OJT Portfolio"} 
+                                onClick={() => setActiveFilter("ojtportfolio")}
+                                isActive={activeFilter === "ojtportfolio"} 
+                            />
+
+                        </section>
+                    </div>
+
+                    {/* CONTENT */}
+                    <div className="
+                        w-full
+                        lg:flex-1
+                        flex
+                        flex-col
+                        gap-16
+                    ">
                         {activeFilter === "guidelines" && <Guidelines/>}
                         {activeFilter === "ojtjourney" && <OjtJourney/>}
                         {activeFilter === "moaprocess" && <MoaProcess/>}
                         {activeFilter === "keyguidelines" && <KeyGuidelines/>}
                         {activeFilter === "formstemplates" && <FormsTemplates/>}
                         {activeFilter === "ojtportfolio" && <OjtPortfolio/>}
-                    </div>  
-                    
-                        <div className='w-70 bg-linear-to-top bg-oasis-gradient sticky top-10 self-start p-5 rounded-3xl'>
-                            <section className='w-full border-b-2 py-2'>
-                                <Subtitle text={"Contents"} size={"text-[1rem]"} weight={"font-bold"}/>
-                            </section>
-                            <section className='w-full flex flex-col gap-3 mt-5'>
-                                <SideNavText 
-                                    text={"Guidelines"} 
-                                    onClick={() => setActiveFilter("guidelines")}
-                                    isActive={activeFilter === "guidelines"}
-                                />
-                                <SideNavText 
-                                    text={"OJT Journey"} 
-                                    onClick={() => setActiveFilter("ojtjourney")}
-                                    isActive={activeFilter === "ojtjourney"}
-                                />
-                                <SideNavText 
-                                    text={"MOA Process"} 
-                                    onClick={() => setActiveFilter("moaprocess")}
-                                    isActive={activeFilter === "moaprocess"}
-                                />
-                                <SideNavText 
-                                    text={"Key Guidelines"}
-                                    onClick={() => setActiveFilter("keyguidelines")}
-                                    isActive={activeFilter === "keyguidelines"} 
+                    </div>
 
-                                />
-                                <SideNavText 
-                                    text={"Internship Forms and Templates"} 
-                                    onClick={() => setActiveFilter("formstemplates")}
-                                    isActive={activeFilter === "formstemplates"} 
-                                />
-                                <SideNavText 
-                                    text={"OJT Portfolio"} 
-                                    onClick={() => setActiveFilter("ojtportfolio")}
-                                    isActive={activeFilter === "ojtportfolio"} 
-                                />
-                            </section>
-                        </div>
-
-                </div>  
+                </div>
                
             </MainScreen>
         </>

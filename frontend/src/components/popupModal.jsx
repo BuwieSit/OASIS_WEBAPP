@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { ArrowUpRight, Check, CircleX, Download, X } from "lucide-react";
 import { AnnounceButton } from "./button";
 import Subtitle from "../utilities/subtitle";
-import PdfViewer from "../utilities/pdfViewer";
 import { Form, Link } from "react-router-dom";
 import { SingleField } from "./fieldComp";
 import { Dropdown } from "./adminComps";
 import { Label } from "../utilities/label";
 import Title from "../utilities/title";
+import PdfViewer from "../utilities/pdfViewer";
 
 export function GeneralPopupModal({ 
     time = 5000, 
@@ -107,8 +107,10 @@ export function ConfirmModal({ confText = "complete action?", onCancel, onLogOut
     )
 }
 
-export function ViewModal({ 
-    videoLink = "https://www.youtube.com/embed/ctyRKH4T_AY?si=Stqm7esXNJ6rKVlp", 
+
+
+export function ViewModal({
+    videoLink = "https://www.youtube.com/embed/ctyRKH4T_AY",
     visible,
     onClose,
     isVideo,
@@ -120,11 +122,7 @@ export function ViewModal({
     useEffect(() => {
         if (typeof document === "undefined") return;
 
-        if (visible) {
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = "auto";
-        }
+        document.body.style.overflow = visible ? "hidden" : "auto";
 
         return () => {
             document.body.style.overflow = "auto";
@@ -132,96 +130,265 @@ export function ViewModal({
     }, [visible]);
 
     if (!visible) return null;
-    
+
     return (
-        <>
-        {/* BLACK BG */}
-            <div className="w-full h-screen p-5 flex flex-col justify-start gap-5 items-center bg-[rgba(0,0,0,.6)] fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-150 overflow-y-auto">
-                <div className="w-full rounded-3xl p-2 sticky top-0 z-10 flex flex-row justify-between items-center">
-                    {/* LEFT */}
-                    <section className="z-50 flex flex-row justify-center items-center gap-5 rounded-4xl">
-                        <div className="p-2 rounded-full transition-all duration-100 ease-in-out cursor-pointer hover:bg-[rgba(255,255,255,0.5)] hover:shadow-[2px_2px_10px_rgba(0,0,0,0.5)]">
-                            <X size={30} color="white" onClick={onClose}/>
+        <div className="
+            fixed inset-0
+            z-50
+            bg-black/70
+            flex
+            items-start md:items-center
+            justify-center
+            p-3 md:p-6
+            overflow-y-auto
+        ">
+
+            {/* Modal Container */}
+            <div className="
+                w-full
+                max-w-6xl
+                max-h-[95vh]
+                rounded-3xl
+                shadow-2xl
+                flex flex-col
+                animate__animated animate__fadeIn
+                overflow-hidden
+            ">
+
+                {/* HEADER */}
+                <div className="
+                    sticky top-0 z-10
+                    backdrop-blur-md
+                    p-3 md:p-5
+                    flex flex-col sm:flex-row
+                    justify-between
+                    items-center
+                    gap-3
+                ">
+
+                    <section className="flex items-center gap-3">
+                        <div
+                            className="
+                                p-2 rounded-full
+                                hover:bg-white/40
+                                transition cursor-pointer
+                            "
+                        >
+                            <X size={28} color="white" onClick={onClose} />
                         </div>
-                       <Subtitle text={resourceTitle} color={"text-white"} size="text-[1.2rem]"/>
-                    </section>
-                        
-                    {/* RIGHT */}
-                    {isVideo && 
-                        <section className="z-50  p-2 flex flex-row justify-center items-center gap-5  rounded-4xl">
-                            <Link to={"/home"}>
-                                <AnnounceButton icon={<ArrowUpRight/>} btnText="Go to page" />
-                            </Link>
-                            
-                        </section>
-                    }
-                    {isDocument && (
-                    <section className="z-50 w-50 p-2 flex flex-row justify-center items-center gap-5 rounded-4xl">
-                        <AnnounceButton
-                        icon={<Download />}
-                        btnText="Download MOA"
-                        onClick={async () => {
-                            if (!file) return;
 
-                            try {
-                            const res = await fetch(file);
-                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-                            const blob = await res.blob();
-                            const blobUrl = window.URL.createObjectURL(blob);
-
-                            const filename =
-                                file.split("/").pop()?.split("?")[0] || "MOA.pdf";
-
-                            const a = document.createElement("a");
-                            a.href = blobUrl;
-                            a.download = filename;
-                            document.body.appendChild(a);
-                            a.click();
-                            a.remove();
-
-                            window.URL.revokeObjectURL(blobUrl);
-                            } catch (e) {
-                            console.error(e);
-                            alert("Download failed. Check console.");
-                            }
-                        }}
+                        <Subtitle
+                            text={resourceTitle}
+                            color="text-white"
+                            size="text-base sm:text-lg md:text-xl"
                         />
                     </section>
-                    )}
-                </div>
-              
-                {/* MAIN CONTAINER */}
-                {isVideo && 
-                    <div className="relative w-[60%] aspect-video bg-oasis-gradient">
-                        <iframe className="w-full h-full" src={videoLink} title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-                    </div>
-                }
 
-                {isDocument && 
-                <div className="relative min-w-[70%] max-w-[80%] h-[85vh] bg-oasis-gradient rounded-3xl overflow-hidden">
-                    <object
-                        key={file}
-                        data={file}
-                        type="application/pdf"
-                        className="w-full h-full"
-                    >
-                        <div className="w-full h-full flex flex-col items-center justify-center gap-3 p-5">
-                            <p className="text-sm text-white">PDF preview not available.</p>
-                            <a
-                                href={file}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-sm underline text-white"
-                            >
-                                Open PDF in new tab
-                            </a>
-                        </div>
-                    </object>
+                    {/* RIGHT ACTIONS */}
+                    <section className="flex flex-wrap justify-center gap-3">
+
+                        {isVideo && (
+                            <Link to="/home">
+                                <AnnounceButton
+                                    icon={<ArrowUpRight />}
+                                    btnText="Go to page"
+                                />
+                            </Link>
+                        )}
+
+                        {isDocument && (
+                            <AnnounceButton
+                                icon={<Download />}
+                                btnText="Download MOA"
+                                onClick={async () => {
+                                    if (!file) return;
+
+                                    try {
+                                        const res = await fetch(file);
+                                        if (!res.ok) throw new Error();
+
+                                        const blob = await res.blob();
+                                        const blobUrl = URL.createObjectURL(blob);
+
+                                        const filename =
+                                            file.split("/").pop()?.split("?")[0] || "MOA.pdf";
+
+                                        const a = document.createElement("a");
+                                        a.href = blobUrl;
+                                        a.download = filename;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        a.remove();
+
+                                        URL.revokeObjectURL(blobUrl);
+
+                                    } catch {
+                                        alert("Download failed.");
+                                    }
+                                }}
+                            />
+                        )}
+
+                    </section>
                 </div>
-            }
+
+                {/* CONTENT AREA */}
+                <div className="flex-1 overflow-y-auto p-4">
+
+                    {/* VIDEO */}
+                    {isVideo && (
+                        <div className="
+                            w-full
+                            max-w-4xl
+                            aspect-video
+                            rounded-2xl
+                            overflow-hidden
+                            bg-black
+                        ">
+                            <iframe
+                                className="w-full h-full"
+                                src={videoLink}
+                                title="video"
+                                frameBorder="0"
+                                allowFullScreen
+                            />
+                        </div>
+                    )}
+
+                    {/* DOCUMENT */}
+                    {isDocument && (
+                        <div className="w-full max-w-5xl rounded-2xl overflow-hidden">
+
+                            {visible && isDocument && (
+                                <div className="flex justify-center items-center w-full aspect-auto overflow-y-auto ">
+                                    <PdfViewer file={file}/>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                </div>
 
             </div>
-        </>
-    )
+        </div>
+    );
 }
+
+// export function ViewModal({ 
+//     videoLink = "https://www.youtube.com/embed/ctyRKH4T_AY?si=Stqm7esXNJ6rKVlp", 
+//     visible,
+//     onClose,
+//     isVideo,
+//     isDocument,
+//     resourceTitle,
+//     file,
+// }) {
+
+//     useEffect(() => {
+//         if (typeof document === "undefined") return;
+
+//         if (visible) {
+//             document.body.style.overflow = "hidden";
+//         } else {
+//             document.body.style.overflow = "auto";
+//         }
+
+//         return () => {
+//             document.body.style.overflow = "auto";
+//         };
+//     }, [visible]);
+
+//     if (!visible) return null;
+    
+//     return (
+//         <>
+//         {/* BLACK BG */}
+//             <div className="w-full h-screen p-5 flex flex-col justify-start gap-5 items-center bg-[rgba(0,0,0,.6)] fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-150 overflow-y-auto">
+//                 <div className="w-full rounded-3xl p-2 sticky top-0 z-10 flex flex-row justify-between items-center">
+//                     {/* LEFT */}
+//                     <section className="z-50 flex flex-row justify-center items-center gap-5 rounded-4xl">
+//                         <div className="p-2 rounded-full transition-all duration-100 ease-in-out cursor-pointer hover:bg-[rgba(255,255,255,0.5)] hover:shadow-[2px_2px_10px_rgba(0,0,0,0.5)]">
+//                             <X size={30} color="white" onClick={onClose}/>
+//                         </div>
+//                        <Subtitle text={resourceTitle} color={"text-white"} size="text-[1.2rem]"/>
+//                     </section>
+                        
+//                     {/* RIGHT */}
+//                     {isVideo && 
+//                         <section className="z-50  p-2 flex flex-row justify-center items-center gap-5  rounded-4xl">
+//                             <Link to={"/home"}>
+//                                 <AnnounceButton icon={<ArrowUpRight/>} btnText="Go to page" />
+//                             </Link>
+                            
+//                         </section>
+//                     }
+//                     {isDocument && (
+//                     <section className="z-50 w-50 p-2 flex flex-row justify-center items-center gap-5 rounded-4xl">
+//                         <AnnounceButton
+//                         icon={<Download />}
+//                         btnText="Download MOA"
+//                         onClick={async () => {
+//                             if (!file) return;
+
+//                             try {
+//                             const res = await fetch(file);
+//                             if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+//                             const blob = await res.blob();
+//                             const blobUrl = window.URL.createObjectURL(blob);
+
+//                             const filename =
+//                                 file.split("/").pop()?.split("?")[0] || "MOA.pdf";
+
+//                             const a = document.createElement("a");
+//                             a.href = blobUrl;
+//                             a.download = filename;
+//                             document.body.appendChild(a);
+//                             a.click();
+//                             a.remove();
+
+//                             window.URL.revokeObjectURL(blobUrl);
+//                             } catch (e) {
+//                             console.error(e);
+//                             alert("Download failed. Check console.");
+//                             }
+//                         }}
+//                         />
+//                     </section>
+//                     )}
+//                 </div>
+              
+//                 {/* MAIN CONTAINER */}
+//                 {isVideo && 
+//                     <div className="relative w-[60%] aspect-video bg-oasis-gradient">
+//                         <iframe className="w-full h-full" src={videoLink} title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+//                     </div>
+//                 }
+
+//                 {isDocument && 
+//                 <div className="relative min-w-[70%] max-w-[80%] h-[85vh] bg-oasis-gradient rounded-3xl overflow-hidden">
+//                     <object
+//                         key={file}
+//                         data={file}
+//                         type="application/pdf"
+//                         className="w-full h-full"
+//                     >
+//                         <div className="w-full h-full flex flex-col items-center justify-center gap-3 p-5">
+//                             <p className="text-sm text-white">PDF preview not available.</p>
+//                             <a
+//                                 href={file}
+//                                 target="_blank"
+//                                 rel="noreferrer"
+//                                 className="text-sm underline text-white"
+//                             >
+//                                 Open PDF in new tab
+//                             </a>
+//                         </div>
+//                     </object>
+//                 </div>
+//             }
+
+//             </div>
+//         </>
+//     )
+// }

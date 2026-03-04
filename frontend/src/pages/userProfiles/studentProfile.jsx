@@ -82,10 +82,30 @@ export default function StudentProfile() {
 
   return (
     <StudentProfileScreen>
-      <div className="bg-white p-5 max-w-[95%] w-[90%] border rounded-3xl grid grid-cols-2 gap-5 backdrop-blur-3xl">
+      <div className="
+          bg-white
+          p-4 sm:p-5
+          w-full max-w-[95%] md:w-[90%]
+          border rounded-3xl
+          backdrop-blur-3xl
+
+          grid
+          grid-cols-1
+          lg:grid-cols-2
+
+          gap-5
+      ">
       
         {/* ========== LEFT COLUMN ========== */}
-        <div className="w-full h-auto p-3 flex flex-col gap-5 justify-start items-center">
+        <div className="
+            w-full
+            h-auto
+            p-2 sm:p-3
+            flex flex-col
+            gap-5
+            justify-start
+            items-center
+        ">
           {/* Student Account (Read Only) */}
           <Subtitle text={displayFullname} size="text-[1.5rem]" color={"text-oasis-button-dark"} weight="font-bold"/>          
           {/* Profile Picture */}
@@ -163,18 +183,13 @@ export default function StudentProfile() {
         </div>
 
         {/* ========== RIGHT COLUMN ========== */}
-        <div className="w-full h-auto p-3 flex flex-col gap-5 justify-start items-start border-l pl-8">
+        <div className="w-full h-auto p-3 flex flex-col gap-5 justify-start items-start lg:border-l lg:pl-8">
 
           {/* NAME */}
           <div className="w-full">
-            <div className="grid grid-cols-3 gap-2">
-                <label className="block mb-2 text-sm font-semibold text-gray-600">First name</label>
-                <label className="block mb-2 text-sm font-semibold text-gray-600">Last name</label>
-                <label className="block mb-2 text-sm font-semibold text-gray-600">Middle Initial</label>
-            </div>
 
             {isEditing ? (
-                <div className="w-full flex gap-5">
+                <div className="w-full flex flex-col sm:flex-row gap-3">
                   <SingleField
                     hasBorder={true}
                     fieldHolder={"First name"}
@@ -183,31 +198,44 @@ export default function StudentProfile() {
                   />
                   <SingleField
                     hasBorder={true}
-                    fieldHolder={"Last name"}
-                    onChange={(e) => setLastName(e.target.value)}
-                    value={lastName}
-                  />
-                  <SingleField
-                    hasBorder={true}
                     fieldHolder={"Middle Initial"}
                     onChange={(e) => setMiddleInitial(e.target.value.charAt(0).toUpperCase())}
                     value={middleInitial}
                   />
+                  <SingleField
+                    hasBorder={true}
+                    fieldHolder={"Last name"}
+                    onChange={(e) => setLastName(e.target.value)}
+                    value={lastName}
+                  />
+                  
                 </div>
 
 
             ) : (
-              <div className="grid grid-cols-3 gap-2">
-                <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
-                    {firstName || "-"}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div>
+                    <label className="block mb-2 text-sm font-semibold text-gray-600">First name</label>
+                    <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
+                        {firstName || "-"}
+                    </div>
                 </div>
-                <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
-                    {lastName || "-"}
+              
+                <div>
+                    <label className="block mb-2 text-sm font-semibold text-gray-600">Middle Initial</label>
+                    <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
+                        {middleInitial || "-"}
+                    </div>
                 </div>
-                <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
-                    {middleInitial || "-"}
+
+                <div>
+                    <label className="block mb-2 text-sm font-semibold text-gray-600">Last Name</label>
+                    <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
+                        {lastName || "-"}
+                    </div>
                 </div>
-              </div>
+
+            </div>
               
             )}
           </div>

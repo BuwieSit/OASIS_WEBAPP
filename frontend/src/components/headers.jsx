@@ -3,7 +3,7 @@ import oasisLogo from "../assets/oasisLogo.png";
 import NavItem from "./navItem";
 import HoverLift from "./hoverLift";
 import { useState, useEffect } from "react";
-import { CircleUserRound, Bell, BellDot, LayoutDashboard, ChevronLeft, Cog, FileText, Upload, Users, LogOut } from "lucide-react";
+import { CircleUserRound, Bell, BellDot, LayoutDashboard, ChevronLeft, Cog, FileText, Upload, Users, LogOut, Menu, MenuIcon, User, UserRoundCog } from "lucide-react";
 import Notifications from "../utilities/notifications";
 import { UserRound, BellIcon } from "lucide-react";
 import api from "../api/axios.jsx";
@@ -13,6 +13,7 @@ import { useAuth } from "../context/authContext";
 import { useNavigate } from "react-router-dom";
 import { ConfirmModal } from "./popupModal";
 import testPfp from "../assets/testprofile.png"
+import { useScrollTop } from "../hooks/useScrollToTop.jsx";
 
 const API_BASE = api.defaults.baseURL;
 
@@ -25,7 +26,14 @@ export function Header({ admin = false }) {
 
     const [animationClass, setAnimationClass] = useState("");
     const [openSettings, setOpenSettings] = useState(false);
+    const [activeDropdown, setActiveDropdown] = useState(null);
 
+    const toggleDropdown = (dropdownName) => {
+        setActiveDropdown(prev =>
+            prev === dropdownName ? null : dropdownName
+        );
+    };
+    
     const handleSettingsClick = () => {
         if (openSettings) {
             setAnimationClass("bubble-close");
@@ -76,7 +84,8 @@ export function Header({ admin = false }) {
                 <Subtitle text={"Admin"} color={"text-[#3E8679]"} size={"text-[1rem]"}/> 
             </header>
             : 
-            <header className="sticky top-0 w-full h-5 flex flex-row justify-between
+            // STUDENT HEADER
+            <header className="fixed md:sticky lg:sticky top-0 w-full h-5 flex flex-row justify-between
             items-center bg-linear-to-t from-oasis-blue via-oasis-blue to-oasis-dark min-h-15 px-5 shadow-[0_5px_10px_rgba(0,0,0,0.3)] z-50">
                 {/* VINCENT */}
                 <LogoWrap />
@@ -85,40 +94,44 @@ export function Header({ admin = false }) {
                 <div className="flex gap-3 items-center">
                     <HoverLift>
                         {!admin && (
-                            <a
-                            href="#prospectForm"
-                            className="font-oasis-text text-oasis-button-dark cursor-pointer"
-                            >
-                            Submit MOA Prospect
-                            </a>
+                            <Subtitle 
+                                isLink 
+                                link={"#prospectForm"} 
+                                text={"Submit MOA Prospect"}
+                                size={"text-md"}
+                                weight={"font-bold"}
+                                color={"text-oasis-header"}
+                                isMobile={true}
+                            />
                         )}
                     </HoverLift>
 
                     <HoverLift onClick={handleNotifClick}>
                         {!admin && (
                             <div>
-                            <Bell size={28} color="#54A194" />
+                            <Bell className="hidden md:block lg:block" size={28} color="#54A194" />
                             </div>
                         )}
                     </HoverLift>
 
                     <HoverLift onClick={handleSettingsClick}>
                     {!admin && (
-                        hasProfile ? (
-                            <img
-                            className="w-8 rounded-full object-cover aspect-square"
-                            src={profile.photo_url || testPfp}
-                            alt="Profile"
-                            />
-                        ) : (
-                            <CircleUserRound color="#54A194" size={28}/>
-                        )
+                        <img
+                        className="w-8 rounded-full object-cover aspect-square hidden md:block lg:block"
+                        src={profile.photo_url}
+                        alt="Profile"
+                        />
                     )}
                     </HoverLift>
-
+                    
+                    
+                    <Menu onClick={() => toggleDropdown("menu")} className="md:hidden lg:hidden absolute left-[5%] cursor-pointer" color="#54A194" />
+                    <UserRoundCog onClick={() => toggleDropdown("profile")} className="md:hidden lg:hidden absolute right-[5%] cursor-pointer" color="#54A194"/>
                 </div>
             </header>
         }
+            {activeDropdown === "menu" && <NavigationDropdown/>}
+            {activeDropdown === "profile" && <ProfileDropdown/>}
             {openSettings && <UserDropdownSettings
                     open={openSettings}
                     className={animationClass}
@@ -128,13 +141,13 @@ export function Header({ admin = false }) {
                     ]}
                 />}
             {open && <Notifications open={open} />}
+
         </>
     )
 }
 
 export function AdminNavigation({ isOpen, setIsOpen}) {
-    
-    const [time, setTime] = useState('');
+
     const { logoutUser } = useAuth();
     const navigate = useNavigate();
     const [confirmation, setConfirmation] = useState(false);
@@ -143,24 +156,6 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
         logoutUser();
         navigate("/access")
     }
-
-    // Time update
-    useEffect(() => {
-        const updateTime = () => {
-            setTime(
-                new Date().toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hour12: true,
-                })
-            );
-        };
-
-        updateTime();
-        const interval = setInterval(updateTime, 1000);
-
-        return () => clearInterval(interval);
-    }, []);
 
     return (
         <>
@@ -236,156 +231,64 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
                         iconLeft={<LogOut color="#2B6259"/>}
                         onClick={() => setConfirmation(true)}
                     />
-
-                    
                 </div>
-
             </div>
         </>
     )
 }
 
-
 export function StudentHeader({ showNavigation = true }) {
-
-    const [scrolled, setScrolled] = useState(false);
-
-    //Scroll detection
-    useEffect(() => {
-        const handleScroll = () => {
-            if (window.scrollY > 0) {
-                setScrolled(true);
-            } else {
-                setScrolled(false);
-            }
-        };
-
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+    const scrolled = useScrollTop(50);
 
     return (
         <div
             className={`
-                fixed top-0 left-0 w-full z-110 translate-y-15
-                transition-all duration-300 
-                ${scrolled ? 'backdrop-blur-md bg-white/30 shadow-lg translate-y-[-15]' : 'bg-white drop-shadow-[0px_10px_5px_rgba(0,0,0,0.3)]'}
-                flex flex-row justify-between items-center px-5 py-3 z-100
+                fixed top-15 left-0 w-full z-50 
+                -translate-y-0
+                hidden md:flex
+                flex-row justify-between items-center px-5 py-3
+                transition-all duration-300 ease-in-out
+                ${scrolled 
+                    ? "sm:flex backdrop-blur-md bg-white/30 shadow-lg -translate-y-15" 
+                    : "bg-white shadow-md"
+                }
             `}
         >
-                {/* VINCENT */}
-                <ul className="w-full p-3 flex flex-row justify-center items-center gap-15">
-                    <NavItem to="/home" label="Home" isOpen={true}/>
-                    <NavItem to="/htedirectory" label="HTE Directory" isOpen={true}/>
-                    <NavItem to="/ojthub" label="OJT Hub" isOpen={true}/>
-                    <NavItem to="/announcements" label="Announcement" isOpen={true}/>
-                </ul>
-            
-
+            <ul className="w-full p-3 hidden md:flex flex-row justify-center items-center gap-15">
+                <NavItem to="/home" label="Home" isOpen={true}/>
+                <NavItem to="/htedirectory" label="HTE Directory" isOpen={true}/>
+                <NavItem to="/ojthub" label="OJT Hub" isOpen={true}/>
+                <NavItem to="/announcements" label="Announcement" isOpen={true}/>
+            </ul>
         </div>
     );
 }
 
-
-export function AdminHeader() {
-    const [time, setTime] = useState('');
-    const [scrolled, setScrolled] = useState(false);
-
-    const [animationClass, setAnimationClass] = useState("");
-    const [openSettings, setOpenSettings] = useState(false);
-
-    const handleSettingsClick = () => {
-        if (openSettings) {
-            setAnimationClass("bubble-close");
-            setOpenSettings(false);
-        }
-        else {
-            requestAnimationFrame(() => setAnimate(true));
-            setAnimationClass("bubble-pop");
-            setOpenSettings(true)
-        }
-    }
-    // Time update
-    useEffect(() => {
-        const updateTime = () => {
-            setTime(
-                new Date().toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hour12: true,
-                })
-            );
-        };
-
-        updateTime();
-        const interval = setInterval(updateTime, 1000);
-
-        return () => clearInterval(interval);
-    }, []);
-
-    // Scroll detection
-    useEffect(() => {
-        const handleScroll = () => {
-            if (window.scrollY > 0) {
-                setScrolled(true);
-            } else {
-                setScrolled(false);
-            }
-        };
-
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
-
-
+export function NavigationDropdown() {
     return (
-        <div
-            className={`
-                fixed top-0 left-0 w-full z-50 translate-y-15
-                transition-all duration-300
-                ${scrolled ? 'backdrop-blur-md bg-white/30 shadow-lg translate-y-[-15]' : 'bg-transparent'}
-                flex flex-row justify-between items-center px-5 py-3
-            `}
-        >
-            {/* Time + Clock */}
-            <div className="bg-admin-header-bg p-3 rounded-4xl min-w-28 flex flex-wrap flex-row justify-center items-center gap-3">
-                <p className="animate__animated animate__fadeInUp ease-in">{time}</p>
-                <img src={clock} className="w-[1.2rem]" />
+        <>
+            <div className={`fixed w-50 h-full p-5 block md:hidden lg:hidden aspect-square backdrop-blur-md bg-white/30 shadow-lg left-0 top-15 -translate-x-[0%] -translate-y-[0%] z-100 transition-all duration-300 ease-in-out rounded-b-3xl`}>
+                <ul className="w-full flex flex-col gap-5 items-start justify-center">
+                    <NavItem to="/home" label="Home" isOpen={true}/>
+                    <NavItem to="/htedirectory" label="HTE Directory" isOpen={true}/>
+                    <NavItem to="/ojthub" label="OJT Hub" isOpen={true}/>
+                    <NavItem to="/announcements" label="Announcement" isOpen={true}/>
+                </ul>     
             </div>
+        </>
+    )
+}
 
-            {/* Navigation */}
-            <div className="bg-admin-header-bg p-1 rounded-4xl w-fit min-h-14 max-h-14 flex flex-row justify-between items-center">
-                <ul className="w-full p-3 flex flex-row justify-center items-center gap-15">
-                    {/* VINCENT */}
-                    <NavItem to="/admin" label="Dashboard" />
-                    <NavItem to="/admoperations" label="Operations" />
-                    <NavItem to="/admMoaOverview" label="MOA Overview" />
-                    <NavItem to="/admUploads" label="Document Upload" />
-                    <NavItem to="/admStudents" label="Students" />
-                </ul>
+export function ProfileDropdown() {
+    return (
+        <>
+            <div className={`fixed w-50 h-full p-5 block md:hidden lg:hidden aspect-square backdrop-blur-md bg-white/30 shadow-lg right-0 top-15 -translate-x-[0%] -translate-y-[0%] z-100 transition-all duration-300 ease-in-out rounded-b-3xl`}>
+                <ul className="w-full flex flex-col gap-5 items-start justify-center">
+                    <NavItem to="/student-profile" label="Profile" isOpen={true}/>
+                    <NavItem isTrigger={true} label="Notifications" isOpen={true}/>
+                    <NavItem isTrigger={true} label="Log out" isOpen={true}/>
+                </ul>     
             </div>
-
-            {/* Icons */}
-            <div className="bg-admin-header-bg p-3 rounded-4xl w-fit flex flex-row justify-between items-center gap-5">
-                <HoverLift>
-                    <BellIcon/>
-                </HoverLift>
-                
-                <HoverLift>
-                    <UserRound onClick={handleSettingsClick}/>
-                </HoverLift>
-            </div>
-            {openSettings && 
-                <UserDropdownSettings
-                    open={openSettings}
-                    className={animationClass}
-                    items={[
-                        { text: "Profile", to: "/admin-profile" },
-                        { text: "Settings", to: "/admSettings" },
-                        { text: "Sign out" },
-                    ]}
-                />
-            }
-        </div>
-    );
+        </>
+    )
 }

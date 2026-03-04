@@ -11,7 +11,7 @@ import AverageRating from '../../components/averageRating'
 import { AddReviewCard, ReviewCard } from '../../utilities/card'
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { LowerWave, UpperWave } from '../../utilities/waves';
-import { StudentTable } from '../../components/oasisTable';
+import { MobileStudentTable, StudentTable } from '../../components/oasisTable';
 import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
 import { useEffect, useState } from "react";
 import { fetchHTEs, downloadMOA } from "../../api/student.service";
@@ -114,17 +114,28 @@ export default function HteDirectory() {
         <>
             <MainScreen>
                 <div className="flex flex-col justify-center items-center gap-10 w-full">
-
-                    <div className='w-full flex flex-col items-center mb-10'>
-                        <Title text={"HTE Directory"} size="text-[3rem]"/>
-                        <Subtitle size={"text-[1rem]"} color={"text-oasis-button-dark"} text={"See the lists of HTEs with their MOA and significant details; See the reviews about HTEs and make a review yourself!"}/>
+                    
+                    <div className="w-full flex flex-col items-center mb-10 px-4 text-center">
+                        <Title 
+                            text={"HTE Directory"} 
+                            size="text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
+                        />
+                        <Subtitle
+                            size="text-xs sm:text-sm md:text-base"
+                            color="text-oasis-button-dark"
+                            text="See the lists of HTEs with their MOA and significant details; See the reviews about HTEs and make a review yourself!"
+                            isCenter
+                        />
                     </div>
 
                     {/* VINCENT - LINK TO HTE PROFILE BAWAT SLIDE ITEM */}
-                    <Title text={"Overview of Host Training Establishment"}/>
+                    <Title 
+                        text={"Overview of Host Training Establishment"} 
+                        size="text-[1rem] sm:text-[1rem] md:text-[1.3rem] lg:text-[1.5rem]"
+                    />
+
                     <section className="w-[90%] flex flex-col gap-5 justify-center items-center">
                         <div className='w-full flex flex-row justify-between items-center'>
-
                             <SearchBar
                                 value={search}
                                 onChange={setSearch}
@@ -133,8 +144,7 @@ export default function HteDirectory() {
                         <EmblaCarousel options={OPTIONS} slides={slides} onSelectHte={setHte}/>
                     </section>
 
-                    
-                    
+                
                     <section className="w-full flex flex-col gap-5 justify-center items-center">
                         <Title text={"List of available HTE with MOA"}/>
                         {/* TABLE HERE */}
@@ -147,37 +157,65 @@ export default function HteDirectory() {
                                 />
                             </div>
                         </StudentTable>
+
+                        <MobileStudentTable
+                            columns={columns}
+                            data={htes}
+                            onRowClick={(id) => setHte(id)}
+                        />
                     </section>
 
 {/* REVIEWS SECTION */}
                     <div>
                         <UpperWave/>
-                        <section className="bg-oasis-blue w-full flex flex-col gap-5 justify-center items-center">
-                            <Title text={"Student Reviews"}/>
+                        <section className="bg-oasis-blue w-full flex flex-col gap-6 justify-center items-center px-4 py-8">
 
-                            <section className='w-[80%] flex justify-start items-center'>
-                                <Filter text={"Filters"}/>
+                            <Title text={"Student Reviews"} />
+
+                            {/* Filters */}
+                            <section className="w-full flex justify-start">
+                                <div className="w-full max-w-[900px] mx-auto">
+                                    <Filter text={"Filters"} />
+                                </div>
                             </section>
 
-                            <section className="w-full p-5 flex flex-row justify-evenly items-center">
-                                <ReviewRatings/>
-                                <AverageRating/>
+                            {/* Ratings Summary */}
+                            <section className="w-full flex flex-col md:flex-row justify-center items-center gap-8 p-5">
+
+                                <ReviewRatings />
+                                <AverageRating />
+
                             </section>
 
-                            <section className="w-full p-5 flex justify-evenly items-center relative">
-                                <section className="w-[50%] max-h-100 overflow-y-auto p-5 flex flex-wrap gap-4 rounded-3xl ">
-                                    <ReviewCard/>
-                                    <ReviewCard/>
-                                    <ReviewCard/>
-                                    <ReviewCard/>
-            
+                            {/* Reviews List + Add Review */}
+                            <section className="w-full flex flex-col lg:flex-row justify-center items-start gap-6 p-4">
+
+                                {/* Review Cards Container */}
+                                <section className="
+                                    w-full
+                                    max-h-[420px]
+                                    overflow-y-auto
+                                    p-4
+                                    flex flex-wrap
+                                    gap-4
+                                    rounded-3xl
+                                    justify-center
+                                    lg:w-[60%]
+                                ">
+                                    <ReviewCard />
+                                    <ReviewCard />
+                                    <ReviewCard />
+                                    <ReviewCard />
                                 </section>
-                                
-                                <AddReviewCard />
-                            </section>
-                            
 
+                                {/* Add Review */}
+                                <div className="w-full lg:w-[35%] flex justify-center">
+                                    <AddReviewCard />
+                                </div>
+
+                            </section>
                         </section>
+                        
                         <LowerWave/>
                     </div>
                     

@@ -286,7 +286,7 @@ export function UpdatedLogin() {
       const redirectPath = res.role === "ADMIN" ? "/admin" : "/home";
       navigate(redirectPath, { replace: true });
     } catch (err) {
-      setErrMsg(err?.response?.data?.error || "Invalid credentials");
+      setErrMsg(err?.response?.data?.error || "Error. Please try again.");
     }
   };
 
@@ -448,7 +448,7 @@ export function ForgotPassword() {
         {step === STEPS.EMAIL && (
           <>
             <div className="w-full">
-              <label htmlFor="webMail">PUP Webmail</label>
+              <Label labelText={"PUP Webmail"} fieldId={"webMail"}/>
 
               <ValidatedInputField
                 type="text"

@@ -7,7 +7,64 @@ import imgBg from "../assets/fallbackImage.jpg";
 import { submitMoaProspect } from "../api/student.service";
 
 export default function ProspectMoaForm() {
-
+    const moaSteps = [
+        {
+            title: "New Potential HTE's",
+            description: "The Student/Trainee emails the contact information of the potential HTE's to the OJT Coordinator.",
+            bg: "bg-[#4A9B8E]"
+        },
+        {
+            title: "Submit the MOA to HTE",
+            description: "The OJT Coordinator will email the MOA templates to HTEs for review and approval.",
+            bg: "bg-[#4A9B8E]"
+        },
+        {
+            title: "MOA to Coordinator",
+            description: "Reviewed MOA template will be submitted to the OJT Coordinator.",
+            bg: "bg-[#8B7355]"
+        },
+        {
+            title: "MOA to Legal Approval",
+            description: "Send MOA to Legal Office for review and approval.",
+            bg: "bg-[#C85A54]"
+        },
+        {
+            title: "Approved the MOA",
+            description: "Approved MOA will be returned to Coordinator.",
+            bg: "bg-[#C85A54]"
+        },
+        {
+            title: "Printing of MOA",
+            description: "Coordinator will print the approved MOA.",
+            bg: "bg-[#6BB36B]"
+        },
+        {
+            title: "MOA for Signature",
+            description: "Endorse MOA to Dean and VPAA for signature.",
+            bg: "bg-[#8B7355]"
+        },
+        {
+            title: "Informing of Retrieval",
+            description: "Email HTE for MOA retrieval.",
+            bg: "bg-[#4A9B8E]"
+        },
+        {
+            title: "Retrieval of MOA",
+            description: "Students may retrieve MOA via OJT office.",
+            bg: "bg-[#4A9B8E]"
+        },
+        {
+            title: "Signature & Notarization",
+            description: "Submit signed MOA for notarization.",
+            bg: "bg-[#8B7355]"
+        },
+        {
+            title: "Submission of MOA",
+            description: "Submit notarized MOA to OJT Office.",
+            bg: "bg-[#4A9B8E]"
+        }
+    ];
+    
     const [formData, setFormData] = useState({
         company_name: "",
         industry: "",
@@ -76,7 +133,7 @@ export default function ProspectMoaForm() {
             >
                 <img
                     src={imgBg}
-                    className="w-full h-full z-1 absolute top-1/2 left-1/2 
+                    className="w-full h-full object-cover z-1 absolute top-1/2 left-1/2 
                     -translate-x-1/2 -translate-y-1/2 opacity-50"
                 />
 
@@ -85,142 +142,22 @@ export default function ProspectMoaForm() {
                     <Subtitle text={"Please fill out this form to propose a new Host Training Establishment (HTE) for partnership."} />
                 </section>
 
-                <section className="w-full flex items-start justify-center gap-5 z-10">
+                <section className="w-full grid md:grid-cols-2 lg:grid-cols-2 place-items-start justify-items-center gap-5 z-10">
                     
-                    <div className="bg-oasis-gradient w-[450px] p-10 flex flex-col justify-center items-start shadow-[3px_3px_2px_rgba(0,0,0,0.4)] rounded-3xl">
+                    {/* MOA PROCESS STEPS */}
+                    <div className="bg-oasis-gradient hidden w-[450px] p-10 md:flex lg:flex flex-col justify-center items-start shadow-[3px_3px_2px_rgba(0,0,0,0.4)] rounded-3xl">
                         <Subtitle size={"text-[1.2rem]"} color={"text-black"} weight={"font-bold"} text={"MOA Process Flow"}/>
 
                         <div className="mt-5 w-full font-oasis-text text-[0.85rem] flex flex-col gap-4">
-                            
-                            {/* Step 01 */}
-                            <div className="flex gap-3 items-start">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#4A9B8E] flex items-center justify-center text-white font-bold shadow-md">
-                                    01
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-[0.95rem] mb-1">New Potential HTE's</h3>
-                                    <p className="text-justify">The Student/Trainee emails the contact information of the potential HTE's to the OJT Coordinator.</p>
-                                </div>
-                            </div>
-
-                            {/* Step 02 */}
-                            <div className="flex gap-3 items-start">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#4A9B8E] flex items-center justify-center text-white font-bold shadow-md">
-                                    02
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-[0.95rem] mb-1">Submit the MOA to HTE</h3>
-                                    <p className="text-justify">The OJT Coordinator will email the MOA templates to HTEs for review and approval.</p>
-                                </div>
-                            </div>
-
-                            {/* Step 03 */}
-                            <div className="flex gap-3 items-start">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#8B7355] flex items-center justify-center text-white font-bold shadow-md">
-                                    03
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-[0.95rem] mb-1">MOA to OJT Coordinator</h3>
-                                    <p className="text-justify">The reviewed MOA template from the HTE will be submitted to the OJT Coordinator with attachments.</p>
-                                </div>
-                            </div>
-
-                            {/* Step 04 */}
-                            <div className="flex gap-3 items-start">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#C85A54] flex items-center justify-center text-white font-bold shadow-md">
-                                    04
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-[0.95rem] mb-1">MOA to Legal Approval</h3>
-                                    <p className="text-justify">The OJT Coordinator will send the MOA to Legal Office for review and approval.</p>
-                                </div>
-                            </div>
-
-                            {/* Step 05 */}
-                            <div className="flex gap-3 items-start">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#C85A54] flex items-center justify-center text-white font-bold shadow-md">
-                                    05
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-[0.95rem] mb-1">Approved the MOA</h3>
-                                    <p className="text-justify">The Approved MOA will be sent back to the OJT Coordinator.</p>
-                                </div>
-                            </div>
-
-                            {/* Step 06 */}
-                            <div className="flex gap-3 items-start">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#6BB36B] flex items-center justify-center text-white font-bold shadow-md">
-                                    06
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-[0.95rem] mb-1">Printing of MOA</h3>
-                                    <p className="text-justify">The OJT Coordinator will print the approved MOA.</p>
-                                </div>
-                            </div>
-
-                            {/* Step 07 */}
-                            <div className="flex gap-3 items-start">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#8B7355] flex items-center justify-center text-white font-bold shadow-md">
-                                    07
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-[0.95rem] mb-1">MOA for Signature</h3>
-                                    <p className="text-justify">The printed MOA will be endorsed to Dean and VPAA for signature.</p>
-                                </div>
-                            </div>
-
-                            {/* Step 08 */}
-                            <div className="flex gap-3 items-start">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#4A9B8E] flex items-center justify-center text-white font-bold shadow-md">
-                                    08
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-[0.95rem] mb-1">Informing of Retrieval</h3>
-                                    <p className="text-justify">After signing the MOA, the OJT Coordinator will email the HTE to retrieve the MOA.</p>
-                                </div>
-                            </div>
-
-                            {/* Step 09 */}
-                            <div className="flex gap-3 items-start">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#4A9B8E] flex items-center justify-center text-white font-bold shadow-md">
-                                    09
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-[0.95rem] mb-1">Retrieval of MOA</h3>
-                                    <p className="text-justify">The students may now retrieve the MOA via the OJT HTE office.</p>
-                                </div>
-                            </div>
-
-                            {/* Step 10 */}
-                            <div className="flex gap-3 items-start">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#8B7355] flex items-center justify-center text-white font-bold shadow-md">
-                                    10
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-[0.95rem] mb-1">Signature of HTE in MOA and Notarization</h3>
-                                    <p className="text-justify">Once the HTE signed the MOA, the students will submit it for notarization.</p>
-                                </div>
-                            </div>
-
-                            {/* Step 11 */}
-                            <div className="flex gap-3 items-start">
-                                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#4A9B8E] flex items-center justify-center text-white font-bold shadow-md">
-                                    11
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-[0.95rem] mb-1">Submission of MOA</h3>
-                                    <p className="text-justify">The students will submit the notarized MOA to the OJT Office and 1 copy for the students.</p>
-                                </div>
-                            </div>
-
+                            <MOAStepList steps={moaSteps}/> 
                         </div>
                     </div>
 
                     {/* FORM */}
-                    <div className="w-150">
+                    <div className="w-full max-w-[600px] px-4 sm:px-6 lg:px-0">
                         <form
                             onSubmit={handleSubmit}
-                            className="bg-oasis-gradient p-10 flex flex-col justify-center items-start shadow-[3px_3px_2px_rgba(0,0,0,0.4)] rounded-3xl gap-3"
+                            className="bg-oasis-gradient p-5 sm:p-8 md:p-10 flex flex-col justify-center items-start shadow-[3px_3px_2px_rgba(0,0,0,0.4)] rounded-3xl gap-3"
                         >
                             <Subtitle
                                 size={"text-[1rem]"}
@@ -311,4 +248,51 @@ export default function ProspectMoaForm() {
             </div>
         </>
    );
+}
+
+export function MOAStepList({ steps }) {
+    const oasisBgClasses = [
+        "bg-oasis-aqua",
+        "bg-oasis-blue",
+        "bg-oasis-dark",
+        "bg-oasis-header"
+    ];
+
+    const getRandomBg = () => {
+        return oasisBgClasses[
+            Math.floor(Math.random() * oasisBgClasses.length)
+        ];
+    };
+    return (
+        <div className="flex flex-col gap-6">
+
+            {steps.map((step, index) => (
+                <div key={index} className="flex gap-3 items-start">
+
+                    {/* Step Number Badge */}
+                    <div className={`
+                        shrink-0 w-10 h-10 rounded-full
+                        flex items-center justify-center
+                        text-white font-bold shadow-md
+                        ${step.bg || getRandomBg()}
+                    `}>
+                        {(index + 1).toString().padStart(2, "0")}
+                    </div>
+
+                    {/* Content */}
+                    <div>
+                        <h3 className="font-bold text-[0.95rem] mb-1">
+                            {step.title}
+                        </h3>
+
+                        <p className="text-justify text-sm">
+                            {step.description}
+                        </p>
+                    </div>
+
+                </div>
+            ))}
+
+        </div>
+    );
 }
