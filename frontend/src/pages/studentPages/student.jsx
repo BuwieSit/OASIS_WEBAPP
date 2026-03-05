@@ -169,7 +169,7 @@ export default function Student() {
                     </section>
 
                     {/* TABLE HERE */}
-                    <StudentTable columns={columns} data={tableData}>
+                    <StudentTable columns={columns} data={tableData} onRowClick={(id) => setHte(id)}>
                         <div className='w-full flex flex-row justify-between items-center'>
                             <SearchBar
                                 value={search}

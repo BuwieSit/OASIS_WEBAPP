@@ -21,9 +21,9 @@ export default function HteDirectory() {
     
     const [htes, setHtes] = useState([]);
     const [search, setSearch] = useState("");
-    const [industry, setIndustry] = useState("");
-    const [course, setCourse] = useState("");
-    const [location, setLocation] = useState("");
+    const [industry] = useState("");
+    const [course] = useState("");
+    const [location] = useState("");
 
     useEffect(() => {
         fetchHTEs({
@@ -140,6 +140,7 @@ export default function HteDirectory() {
                                 onChange={setSearch}
                             />
                         </div>
+
                         <EmblaCarousel options={OPTIONS} slides={slides} onSelectHte={setHte}/>
                     </section>
 
@@ -147,7 +148,7 @@ export default function HteDirectory() {
                     <section className="w-full flex flex-col gap-5 justify-center items-center">
                         <Title text={"List of available HTE with MOA"}/>
                         {/* TABLE HERE */}
-                        <StudentTable columns={columns} data={htes}>
+                        <StudentTable columns={columns} data={htes} onRowClick={(id) => setHte(id)}>
                             <div className='w-full flex flex-row justify-between items-center'>
                                 <Filter icon={<FilterIcon/>} text={"Filter"} size={"text-[1rem]"}/>
                                 <SearchBar

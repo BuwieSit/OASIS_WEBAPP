@@ -101,13 +101,16 @@ export default function ProspectMoaForm() {
         payload.append("contact_position", formData.contact_position);
         payload.append("contact_email", formData.contact_email);
         payload.append("contact_number", formData.contact_number);
-        payload.append("moa_file", formData.moa_file);
+        
+        if (formData.moa_file) {
+            payload.append("moa_file", formData.moa_file);
+        }
+        
 
         try {
             await submitMoaProspect(payload);
             alert("MOA Prospect submitted successfully.");
 
-            // Optional: reset form after success
             setFormData({
                 company_name: "",
                 industry: "",
@@ -123,6 +126,13 @@ export default function ProspectMoaForm() {
             alert("Failed to submit MOA Prospect.");
         }
     };
+
+    const emptyFields = Object.entries(formData)
+        .filter(([key, value]) => key !== "moa_file" && !value)
+        .map(([key]) => key);
+    const readableFields = emptyFields.map(field =>
+        field.replaceAll("_", " ")
+        );
 
     return (
         <>
@@ -234,13 +244,24 @@ export default function ProspectMoaForm() {
                                 value={formData.contact_number}
                                 onChange={handleChange("contact_number")}
                             />
-
+                                
+                            {readableFields.length > 0 && (
+                                <Subtitle
+                                    color="text-red-600"
+                                    size="text-[0.9rem]"
+                                    text={`${readableFields.join(", ")} ${readableFields.length > 1 ? "are" : "is"} required`}
+                                />
+                            )}
+                                
                             <div className="w-full col-span-2 flex justify-center">
+                                
                                 <AnnounceButton
                                     isFullWidth={true}
                                     btnText="Submit MOA Prospect"
+                                    type="submit"
                                 />
                             </div>
+                            
                         </form>
                      </div>
 

@@ -117,7 +117,7 @@ export function StatusDropdown({ value, onChange }) {
 
 
 export function StatusView({ value }) {
-    const text = value.toLowerCase();
+    const text = value?.toLowerCase();
     const statusClasses = {
         active: "bg-oasis-button-light text-white",
         pending: "bg-amber-400 text-white",

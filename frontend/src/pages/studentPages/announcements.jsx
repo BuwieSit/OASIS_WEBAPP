@@ -140,10 +140,8 @@ export default function Announcements() {
                                     text={a.content}
                                 />
                             </section>
-
                         </div>
                     ))}
-
                 </section>
             </div>
         </MainScreen>

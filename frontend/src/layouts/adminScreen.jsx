@@ -31,7 +31,7 @@ export default function AdminScreen({ children }) {
                 <Header admin />
 
                 {children}
-
+                <div className="mt-[50dvh]"></div>
                 <Footer />
             </div>
         </div>

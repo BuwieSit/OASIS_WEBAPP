@@ -12,6 +12,7 @@
 }
 
 @theme {
+  --color-page-white: #F4FCF8;
   --color-oasis-aqua: #00D0FF; /* Login Reg*/
   --color-oasis-dark: #54A194; /* GRADIENT */
   --color-oasis-blue: #D0FCDC; /* ELEMENTS */
@@ -22,7 +23,7 @@
   --color-oasis-button-dark: #2D6259;
   --color-admin-header-bg: rgba(178,190,181, 0.3);
   --color-admin-element: #CDE8E3;
-  
+
 
   --font-oasis-text: "Poppins";
   --font-oasis-title: "Heavitas";
@@ -102,7 +103,7 @@ html {
   scroll-behavior: smooth;
 }
 body {
-  background: #F4FCF8;
+  background: var(--color-page-white);
   
 }
 

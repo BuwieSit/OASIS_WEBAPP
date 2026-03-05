@@ -2,6 +2,7 @@ import { Download } from "lucide-react";
 import { AnnounceButton } from "./button";
 import Subtitle from "../utilities/subtitle";
 import { useState, useMemo } from "react";
+import { usePagination } from "../hooks/usePagination";
 
 const maxHeight = "max-h-150";
 
@@ -126,25 +127,30 @@ export default function OasisTable({ columns = [], data = [], children }) {
   );
 }
 
-export function StudentTable({ columns = [], data = [], children }) {
+export function StudentTable({ columns = [], data = [], children, onRowClick }) {
+
+    const {page, setPage, displayData, totalPages} = usePagination(data, columns, 5);
+
     return (
-        <>
-            <div className={`w-[90%] ${maxHeight} p-3 rounded-2xl hidden md:flex lg:flex flex-col items-center justify-center font-oasis-text`}>
-                {children && 
-                    <div className="w-full flex flex-col justify-center items-start">
-                        {children}
-                    </div>
-                }
-                
-                <table className="w-full border-spacing-y-2 shadow-[4px_4px_2px_rgba(0,0,0,0.5)]">
-                    
+        <div className="w-full xl:w-[90%] 2xl:w-[80%] p-3 rounded-2xl hidden md:flex flex-col items-center font-oasis-text">
+
+            {children &&
+                <div className="w-full flex flex-col justify-center items-start">
+                    {children}
+                </div>
+            }
+
+            {/* TABLE WRAPPER */}
+            <div className="w-full overflow-x-auto">
+                <table className="w-full min-w-[800px] border-spacing-y-2 shadow-[4px_4px_2px_rgba(0,0,0,0.5)]">
+
                     {/* HEADER */}
                     <thead>
-                        <tr className="bg-oasis-button-dark rounded-2xl">
+                        <tr className="bg-oasis-button-dark">
                             {columns.map((col, colIndex) => (
                                 <th
                                     key={colIndex}
-                                    className="p-3 text-[1rem] text-white text-center"
+                                    className="p-3 text-[0.9rem] lg:text-[1rem] text-white text-center whitespace-nowrap"
                                 >
                                     {col.header}
                                 </th>
@@ -154,23 +160,55 @@ export function StudentTable({ columns = [], data = [], children }) {
 
                     {/* BODY */}
                     <tbody>
-                        {data.map((row, rowIndex) => (
-                            <tr key={row.id || rowIndex} 
-                            className="rounded-2xl text-[0.9rem] text-center bg-white">
-
-                            {columns.map((col, colIndex) => (
-                                <td key={colIndex} className="py-2">
-                                    {col.render(row)}
-                                </td>   
-                            ))}
+                        {displayData.map((row, rowIndex) => (
+                            <tr
+                                key={row.id || rowIndex}
+                                className="text-[0.85rem] lg:text-[0.9rem] text-center bg-white cursor-pointer transition hover:bg-gray-300"
+                                onClick={() => onRowClick?.(row.id)}
+                            >
+                                {columns.map((col, colIndex) => (
+                                    <td
+                                        key={colIndex}
+                                        className="py-2 px-2 whitespace-nowrap "
+                                    >
+                                        {col.render(row)}
+                                    </td>
+                                ))}
                             </tr>
                         ))}
-                        
                     </tbody>
 
                 </table>
             </div>
-        </>
+
+            {/* PAGINATION */}
+            {data.length > totalPages && (
+                <div className="flex items-center gap-3 mt-4">
+
+                    <button
+                        onClick={() => setPage(prev => Math.max(prev - 1, 0))}
+                        disabled={page === 0}
+                        className="px-3 py-1 rounded bg-oasis-button-light text-white disabled:opacity-40 transition cursor-pointer hover:bg-oasis-header"
+                    >
+                        Prev
+                    </button>
+
+                    <span className="text-sm">
+                        Page {page + 1} of {totalPages}
+                    </span>
+
+                    <button
+                        onClick={() => setPage(prev => Math.min(prev + 1, totalPages - 1))}
+                        disabled={page === totalPages - 1}
+                        className="px-3 py-1 rounded bg-oasis-button-light text-white disabled:opacity-40 transition cursor-pointer hover:bg-oasis-header"
+                    >
+                        Next
+                    </button>
+
+                </div>
+            )}
+
+        </div>
     );
 }
 
@@ -179,27 +217,13 @@ export function MobileStudentTable({
     data = [],
     onRowClick
 }) {
-
-    const PAGE_SIZE = 3;
-    const [page, setPage] = useState(0);
-    // Empty state fallback
-    const displayData = useMemo(() => {
-        if (!data.length) {
-            return [Object.fromEntries(columns.map(col => [col.header, "-"]))];
-        }
-
-        const start = page * PAGE_SIZE;
-        return data.slice(start, start + PAGE_SIZE);
-
-    }, [data, page, columns]);
-
-    const totalPages = Math.ceil(data.length / PAGE_SIZE);
+    const {page, setPage, displayData, totalPages} = usePagination(data, columns, 5);
 
     return (
         <div className="w-full p-5 block md:hidden lg:hidden">
             
             {/* Pagination Controls */}
-            {data.length > PAGE_SIZE && (
+            {data.length > totalPages && (
                 <div className="flex justify-center items-center gap-4 my-4 font-oasis-text">
 
                     <button
@@ -270,7 +294,7 @@ export function MobileStudentTable({
             ))}
 
             {/* Pagination Controls */}
-            {data.length > PAGE_SIZE && (
+            {data.length > totalPages && (
                 <div className="flex justify-center items-center gap-4 my-4 font-oasis-text">
 
                     <button

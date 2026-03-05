@@ -60,7 +60,15 @@ const EmblaCarousel = (props) => {
 
   return (
     <section className="embla">
+      {/* TOP CURVE */}
+      <div className="absolute top-[-40%] left-1/2 -translate-x-1/2 w-[150vw] h-50 rounded-[100%] pointer-events-none bg-page-white z-30"/>
+
+      {/* BOTTOM CURVE */}
+      <div className="absolute bottom-[-25%] left-1/2 -translate-x-1/2 w-[150vw] h-50 rounded-[100%] pointer-events-none bg-page-white z-30"/>
+
+      
       <div className="embla__viewport" ref={emblaRef}>
+ 
         <div className="embla__container">
           {slides.map((slide, index) => (
             <CarouselItem 
