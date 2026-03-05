@@ -17,11 +17,14 @@ import api from "../../api/axios";
 export default function Student() {
 
     const [tableData, setTableData] = useState([]);
-    const [search, setSearch] = useState("");
     const [user, setUser] = useState(null); // ✅ Fixed: Changed from userName to user
     const [profile, setProfile] = useState(null); // ✅ Added profile state
     const [loading, setLoading] = useState(true);
-
+    const [search, setSearch] = useState("");
+    const filteredHtes = tableData.filter((hte) =>
+        hte.hteName.toLowerCase().includes(search.toLowerCase()) ||
+        hte.industry.toLowerCase().includes(search.toLowerCase())
+    );
     useEffect(() => {
         async function fetchUser() {
             try {
@@ -169,7 +172,7 @@ export default function Student() {
                     </section>
 
                     {/* TABLE HERE */}
-                    <StudentTable columns={columns} data={tableData} onRowClick={(id) => setHte(id)}>
+                    <StudentTable columns={columns} data={filteredHtes} onRowClick={(id) => setHte(id)}>
                         <div className='w-full flex flex-row justify-between items-center'>
                             <SearchBar
                                 value={search}

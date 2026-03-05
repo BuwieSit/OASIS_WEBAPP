@@ -78,7 +78,7 @@ export function Header({ admin = false }) {
         <>
         {admin ? 
             <header className="sticky top-0 w-full h-5 flex flex-row justify-between
-            items-center bg-linear-to-t from-oasis-blue via-oasis-blue to-oasis-dark min-h-15 px-5 shadow-[0_5px_10px_rgba(0,0,0,0.3)] z-50">
+            items-center bg-linear-to-t from-oasis-blue via-oasis-blue to-oasis-dark min-h-15 px-5 shadow-[0_5px_10px_rgba(0,0,0,0.3)] z-90">
                 <LogoWrap />
                 <img src={oasisLogo} className="absolute left-1/2 -translate-x-1/2 w-25 aspect-auto"/>
                 <Subtitle text={"Admin"} color={"text-[#3E8679]"} size={"text-[1rem]"}/> 
@@ -86,7 +86,7 @@ export function Header({ admin = false }) {
             : 
             // STUDENT HEADER
             <header className="fixed md:sticky lg:sticky top-0 w-full h-5 flex flex-row justify-between
-            items-center bg-linear-to-t from-oasis-blue via-oasis-blue to-oasis-dark min-h-15 px-5 shadow-[0_5px_10px_rgba(0,0,0,0.3)] z-50">
+            items-center bg-linear-to-t from-oasis-blue via-oasis-blue to-oasis-dark min-h-15 px-5 shadow-[0_5px_10px_rgba(0,0,0,0.3)] z-90">
                 {/* VINCENT */}
                 <LogoWrap />
                 <img src={oasisLogo} className="absolute left-1/2 -translate-x-1/2 w-25 aspect-auto"/>
@@ -243,13 +243,13 @@ export function StudentHeader({ showNavigation = true }) {
     return (
         <div
             className={`
-                fixed top-15 left-0 w-full z-50 
+                fixed top-15 left-0 w-full
                 -translate-y-0
                 hidden md:flex
                 flex-row justify-between items-center px-5 py-3
-                transition-all duration-300 ease-in-out
+                transition-all duration-300 ease-in-out z-100
                 ${scrolled 
-                    ? "sm:flex backdrop-blur-md bg-white/30 shadow-lg -translate-y-15" 
+                    ? "hidden backdrop-blur-lg bg-white/40 shadow-lg -translate-y-15" 
                     : "bg-white shadow-md"
                 }
             `}
@@ -259,6 +259,8 @@ export function StudentHeader({ showNavigation = true }) {
                 <NavItem to="/htedirectory" label="HTE Directory" isOpen={true}/>
                 <NavItem to="/ojthub" label="OJT Hub" isOpen={true}/>
                 <NavItem to="/announcements" label="Announcement" isOpen={true}/>
+
+                {/* {scrolled ? "" : ""} */}
             </ul>
         </div>
     );

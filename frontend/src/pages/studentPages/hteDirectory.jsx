@@ -20,11 +20,15 @@ import { FilterIcon } from 'lucide-react';
 export default function HteDirectory() {
     
     const [htes, setHtes] = useState([]);
-    const [search, setSearch] = useState("");
     const [industry] = useState("");
     const [course] = useState("");
     const [location] = useState("");
-
+    const [search, setSearch] = useState("");
+    const filteredHtes = htes.filter((hte) =>
+        hte.hteName.toLowerCase().includes(search.toLowerCase()) ||
+        hte.industry.toLowerCase().includes(search.toLowerCase())
+    );
+    
     useEffect(() => {
         fetchHTEs({
             search,
@@ -148,7 +152,7 @@ export default function HteDirectory() {
                     <section className="w-full flex flex-col gap-5 justify-center items-center">
                         <Title text={"List of available HTE with MOA"}/>
                         {/* TABLE HERE */}
-                        <StudentTable columns={columns} data={htes} onRowClick={(id) => setHte(id)}>
+                        <StudentTable columns={columns} data={filteredHtes} onRowClick={(id) => setHte(id)}>
                             <div className='w-full flex flex-row justify-between items-center'>
                                 <Filter icon={<FilterIcon/>} text={"Filter"} size={"text-[1rem]"}/>
                                 <SearchBar

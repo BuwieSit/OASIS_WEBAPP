@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import ChatField from '../utilities/chatField';
-import orbi from "../assets/orbi.png";
+import orbi from '../assets/orbi.png';
 import { SingleField } from './fieldComp';
-import { ArrowBigRightDash, Maximize2, Minus, Send, SendHorizontal } from 'lucide-react';
+import { Maximize2, Minus, SendHorizontal } from 'lucide-react';
 import { useChatbotToggle } from '../hooks/useChatbotToggle';
+
+
 
 export default function OrbiChatbot() {
 
@@ -20,7 +22,7 @@ export default function OrbiChatbot() {
                     bottom-4 right-4
                     sm:bottom-6 sm:right-6
                     lg:bottom-8 lg:right-8
-                    z-50
+                    z-150
 
                     w-16 sm:w-20 md:w-24 lg:w-28
                     aspect-square
@@ -69,7 +71,7 @@ export function FloatingChat({ open, onClose }) {
         <div
             className="
                 fixed inset-0
-                z-50
+                z-150
                 flex items-center justify-center
                 bg-black/30
                 p-4"
@@ -93,7 +95,7 @@ export function FloatingChat({ open, onClose }) {
 
                 {/* HEADER */}
                 <div className="w-full border-b px-5 py-4 flex justify-between items-center">
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 justify-end w-full">
                         <Maximize2 size={20} />
                         <Minus size={20} className="cursor-pointer" onClick={onClose} />
                     </div>

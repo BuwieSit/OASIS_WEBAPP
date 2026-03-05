@@ -1,45 +1,4 @@
 
-// import { NavLink } from "react-router-dom";
-// import HoverLift from "./hoverLift";
-
-// export default function NavItem({ to, label, iconLeft, iconRight, isOpen, isTrigger, onClick }) {
-//     return (
-//         <li>
-//             <HoverLift>
-//                 <div
-//                     className={`
-//                         flex items-center w-full
-//                         ${isOpen ? "justify-between gap-2" : "justify-center"}
-//                     `}
-//                     onClick={onClick}
-//                 >
-//                     {/* LEFT ICON */}
-//                     {iconLeft}
-
-//                     {/* LABEL */}
-//                     <NavLink
-//                         to={to}
-//                         className={({ isActive }) =>
-//                             `
-//                             font-oasis-text font-bold transition-all duration-200
-//                             ${isTrigger ? "" : `${isActive ? "scale-110 -translate-y-1 text-oasis-aqua underline underline-offset-4" : ""}`}
-                            
-//                             ${isOpen ? "opacity-100 ml-1" : "opacity-0 w-0 overflow-hidden"}
-//                             `
-//                         }
-//                     >
-//                         {label}
-//                     </NavLink>
-
-//                     {/* RIGHT ICON */}
-//                     {isOpen && iconRight}
-//                 </div>
-//             </HoverLift>
-//         </li>
-//     );
-// }
-
-
 import { NavLink } from "react-router-dom";
 import HoverLift from "./hoverLift";
 import React from "react";

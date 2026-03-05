@@ -1,8 +1,5 @@
-import { FooterWave } from "./waves.jsx"
 import Title from "../utilities/title.jsx"
-import Subtitle from "../utilities/subtitle.jsx";
-import { MultiField, SingleField } from "./fieldComp.jsx";
-import { AdminField } from "../utilities/inputField.jsx";
+import { SingleField } from "./fieldComp.jsx";
 import { Button } from "./button.jsx";
 import oasisLogo from "../assets/oasisLogo.png";
 import komunidevsLogo from "../assets/komunidevs logo-02.png";
@@ -12,15 +9,15 @@ export default function Footer() {
     return (
         <footer className="z-90 w-full">
 
-            <div className="mt-[-3px] w-full min-h-50 flex flex-col lg:flex-row p-5 sticky bottom-0 bg-linear-to-b from-oasis-blue from-10% via-oasis-blue via-40% to-white">
+            <div className="mt-[-3px] w-full min-h-50 flex flex-col justify-between lg:flex-row p-5 sticky bottom-0 bg-linear-to-b from-oasis-blue from-10% via-oasis-blue via-40% to-white">
 
                 {/* LEFT */}
-                <section className="w-full lg:w-1/3 flex justify-center lg:justify-start">
+                <section className="w-full lg:w-1/6 flex justify-center lg:justify-start">
                     <img src={oasisLogo} className="object-contain w-full"/>
                 </section>
 
                 {/* MIDDLE */}
-                <section className="w-full lg:w-1/3 flex flex-col lg:flex-row justify-center items-center gap-6">
+                <section className="w-full lg:w-1/2 flex flex-col lg:grid lg:grid-cols-3 lg:place-content-center justify-center items-center gap-6">
 
                     <ul className="w-full flex flex-col justify-center items-center p-3">
                         <Title text={"Contact Info"}/>
@@ -46,9 +43,9 @@ export default function Footer() {
                 </section>
 
                 {/* RIGHT */}
-                <section className="w-full lg:w-1/3 flex flex-col items-center justify-center mt-6 lg:mt-0">
+                <section className="w-full lg:w-1/5 flex flex-col items-center justify-center mt-6 lg:mt-0">
                     <form className="flex flex-col gap-5">
-                        <Title text={"Give our system a feedback!"}/>
+                        <Title text={"Have questions about our system? Contact our support team."} size="text-[1rem]"/>
                         <SingleField labelText={"Message"} fieldHolder={"Enter Message"} fieldId={"message"}/>
                         <Button text={"Submit"}/>
                     </form>

@@ -1,10 +1,14 @@
 import { useState } from "react";
+import clickSound from '../assets/sounds/bubble.mp3';
 
 export function useChatbotToggle() {
     const [open, setOpen] = useState(false);
     const [animate, setAnimate] = useState(false);
     const [onBubble, setOnBubble] = useState(false);
-
+    const playSound = () => {
+        new Audio(clickSound).play();
+    };
+    
     const openChat = () => {
         if (open) return;
 
@@ -22,6 +26,7 @@ export function useChatbotToggle() {
     };
     
     const handleClick = () => {
+        playSound();
         setOnBubble(false);
         setTimeout(() => setOnBubble(true), 10);
 

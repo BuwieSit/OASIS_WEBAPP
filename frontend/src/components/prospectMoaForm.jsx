@@ -248,7 +248,8 @@ export default function ProspectMoaForm() {
                             {readableFields.length > 0 && (
                                 <Subtitle
                                     color="text-red-600"
-                                    size="text-[0.9rem]"
+                                    size="text-[0.8rem]"
+                                    isItalic
                                     text={`${readableFields.join(", ")} ${readableFields.length > 1 ? "are" : "is"} required`}
                                 />
                             )}

@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 
-export default function SearchBar() {
+export default function SearchBar({ value, onChange }) {
     return (
         <div className="relative w-full flex justify-end my-5 px-4">
 
@@ -10,6 +10,8 @@ export default function SearchBar() {
             />
 
             <input
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
                 className="
                     w-full
                     max-w-[320px] sm:max-w-[350px] md:max-w-[400px] lg:max-w-[450px]
