@@ -1,6 +1,5 @@
 import MainScreen from '../../layouts/mainScreen'
 import Title from '../../utilities/title'
-import ctaBg from "../../assets/ctaBg.png"
 import fallbackImg from "../../assets/fallbackImage.jpg"
 import Subtitle from '../../utilities/subtitle';
 import EmblaCarousel from '../../components/EmblaCarousel';
@@ -10,7 +9,7 @@ import ReviewRatings from '../../components/reviewRatings'
 import AverageRating from '../../components/averageRating'
 import { AddReviewCard, ReviewCard } from '../../utilities/card'
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { LowerWave, UpperWave } from '../../utilities/waves';
+import { LowerWave, UpperWave } from '../../components/waves';
 import { MobileStudentTable, StudentTable } from '../../components/oasisTable';
 import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
 import { useEffect, useState } from "react";

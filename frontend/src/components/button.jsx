@@ -17,61 +17,130 @@ export function Button({ text, onClick, disabled, width = "w-auto", type = "butt
 }
 
 
+// export function AnnounceButton({
+//     type = "button",
+//     textSize,
+//     btnText = "Posted",
+//     onClick,
+//     disabled,
+//     icon,
+//     isFullWidth = false,
+//     isRed,
+//     className
+//     }) {
+//     const text = btnText.toLowerCase();
+
+//     const isDanger = ["delete", "reject", "clear all", "clear"].includes(text) || isRed;
+//     const isNeutral = ["cancel"].includes(text);
+//     const isPending = ["pending"].includes(text);
+//     const isUpload = ["upload file", "upload"].includes(text);
+
+//     const buttonStyle = isNeutral
+//         ? "bg-[#D3D3D3] hover:bg-[#A9A9A9] text-black"
+//         : isDanger
+//         ? "bg-red-900 hover:bg-red-700 text-white"
+//         : isPending
+//         ? "bg-amber-500 hover:bg-amber-700 text-black"
+//         : isUpload
+//         ? "bg-white border border-gray-400 hover:bg-gray-100 text-black"
+//         : "bg-oasis-button-dark hover:bg-oasis-button-light text-white";
+
+//     return (
+//         <button
+//         type={type}
+//         onClick={onClick}
+//         disabled={disabled}
+//         className={`
+//             font-oasis-text
+//             ${textSize || "text-xs sm:text-sm md:text-base"}
+//             text-center
+//             px-4 py-2
+//             sm:px-5 sm:py-2.5
+//             md:px-6 md:py-3
+//             ${isFullWidth ? "w-full" : "w-auto"}
+//             flex items-center justify-center gap-2 sm:gap-3
+//             rounded-full
+//             transition-all duration-200
+//             border border-gray-400
+//             hover:cursor-pointer
+//             disabled:opacity-50 disabled:cursor-not-allowed
+//             ${buttonStyle}
+//             ${className}
+//         `}
+//         >
+//         {icon && <span className="flex items-center">{icon}</span>}
+//         <span className="whitespace-nowrap">{btnText}</span>
+//         </button>
+//     );
+// }
+
 export function AnnounceButton({
-    type = "button",
-    textSize,
-    btnText = "Posted",
-    onClick,
-    disabled,
-    icon,
-    isFullWidth = false,
-    isRed,
-    className
-    }) {
-    const text = btnText.toLowerCase();
+  type = "button",
+  textSize,
+  btnText = "Posted",
+  onClick,
+  disabled,
+  icon,
+  isFullWidth = false,
+  isRed,
+  className
+}) {
+  const text = btnText.toLowerCase();
 
-    const isDanger = ["delete", "reject", "clear all", "clear"].includes(text) || isRed;
-    const isNeutral = ["cancel"].includes(text);
-    const isPending = ["pending"].includes(text);
-    const isUpload = ["upload file", "upload"].includes(text);
+  const isDanger = ["delete", "reject", "clear all", "clear"].includes(text) || isRed;
+  const isNeutral = ["cancel"].includes(text);
+  const isPending = ["pending"].includes(text);
+  const isUpload = ["upload file", "upload"].includes(text);
 
-    const buttonStyle = isNeutral
-        ? "bg-[#D3D3D3] hover:bg-[#A9A9A9] text-black"
-        : isDanger
-        ? "bg-red-900 hover:bg-red-700 text-white"
-        : isPending
-        ? "bg-amber-500 hover:bg-amber-700 text-black"
-        : isUpload
-        ? "bg-white border border-gray-400 hover:bg-gray-100 text-black"
-        : "bg-oasis-button-dark hover:bg-oasis-button-light text-white";
+  const buttonStyle = isNeutral
+    ? "bg-[#D3D3D3] hover:bg-[#A9A9A9] text-black"
+    : isDanger
+    ? "bg-red-900 hover:bg-red-700 text-white"
+    : isPending
+    ? "bg-amber-500 hover:bg-amber-700 text-black"
+    : isUpload
+    ? "bg-white border border-gray-400 hover:bg-gray-100 text-black"
+    : "bg-oasis-button-dark hover:bg-oasis-button-light text-white";
 
-    return (
-        <button
-        type={type}
-        onClick={onClick}
-        disabled={disabled}
-        className={`
-            font-oasis-text
-            ${textSize || "text-xs sm:text-sm md:text-base"}
-            text-center
-            px-4 py-2
-            sm:px-5 sm:py-2.5
-            md:px-6 md:py-3
-            ${isFullWidth ? "w-full" : "w-auto"}
-            flex items-center justify-center gap-2 sm:gap-3
-            rounded-full
-            transition-all duration-200
-            border border-gray-400
-            hover:cursor-pointer
-            disabled:opacity-50 disabled:cursor-not-allowed
-            ${buttonStyle}
-            ${className}
-        `}
-        >
-        {icon && <span className="flex items-center">{icon}</span>}
-        <span className="whitespace-nowrap">{btnText}</span>
-        </button>
-    );
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={`
+        font-oasis-text
+        ${textSize || "text-xs sm:text-sm"}
+
+        ${isFullWidth ? "w-full" : "w-auto"}
+
+        flex items-center justify-center
+        gap-1.5 sm:gap-2
+
+        px-3 py-1.5
+        sm:px-4 sm:py-2
+
+        rounded-full
+        transition-all duration-200
+        border border-gray-400
+        hover:cursor-pointer
+
+        disabled:opacity-50 disabled:cursor-not-allowed
+
+        ${buttonStyle}
+        ${className}
+      `}
+    >
+      {icon && (
+        <span className="flex items-center shrink-0">
+          {icon}
+        </span>
+      )}
+
+      <span className="break-words text-center leading-tight">
+        {btnText}
+      </span>
+    </button>
+  );
 }
 
 

@@ -1,4 +1,4 @@
-import { FooterWave } from "../utilities/waves"
+import { FooterWave } from "./waves.jsx"
 import Title from "../utilities/title.jsx"
 import Subtitle from "../utilities/subtitle.jsx";
 import { MultiField, SingleField } from "./fieldComp.jsx";

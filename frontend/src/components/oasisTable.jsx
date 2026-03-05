@@ -5,56 +5,126 @@ import { useState, useMemo } from "react";
 
 const maxHeight = "max-h-150";
 
-export default function OasisTable({ columns = [], data = [], children }) {
-    return (
-        <>
-            <div className={`w-[80%] ${maxHeight} p-5 bg-admin-element rounded-2xl flex flex-col items-center justify-center font-oasis-text shadow-[0px_0px_10px_rgba(0,0,0,0.5)]`}>
-                {children && 
-                    <div className="w-full flex flex-col justify-center items-start">
-                        {children}
-                    </div>
-                }
+// export default function OasisTable({ columns = [], data = [], children }) {
+//     return (
+//         <>
+//             <div className={`w-[80%] ${maxHeight} p-5 bg-admin-element rounded-2xl flex flex-col items-center justify-center font-oasis-text shadow-[0px_0px_10px_rgba(0,0,0,0.5)]`}>
+//                 {children && 
+//                     <div className="w-full flex flex-col justify-center items-start">
+//                         {children}
+//                     </div>
+//                 }
                 
 
-                <table className="w-full mt-5 rounded-3xl overflow-hidden ">
+//                 <table className="w-full mt-5 rounded-3xl overflow-hidden ">
                     
-                    {/* HEADER */}
-                    <thead className="rounded-2xl ">
-                        <tr className="bg-white rounded-2xl border-b border-gray-300">
-                            {columns.map((col, colIndex) => (
-                                <th
-                                    key={colIndex}
-                                    className="p-3 text-[1rem] font-bold text-oasis-button-dark text-center"
-                                >
-                                    {col.header}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
+//                     {/* HEADER */}
+//                     <thead className="rounded-2xl ">
+//                         <tr className="bg-white rounded-2xl border-b border-gray-300">
+//                             {columns.map((col, colIndex) => (
+//                                 <th
+//                                     key={colIndex}
+//                                     className="p-3 text-[1rem] font-bold text-oasis-button-dark text-center"
+//                                 >
+//                                     {col.header}
+//                                 </th>
+//                             ))}
+//                         </tr>
+//                     </thead>
                
-                    {/* BODY */}
-                    <tbody>
-                        {data.map((row, rowIndex) => (
-                            <tr key={row.id || rowIndex} 
-                            className="bg-white rounded-2xl text-[0.9rem] text-center">
+//                     {/* BODY */}
+//                     <tbody>
+//                         {data.map((row, rowIndex) => (
+//                             <tr key={row.id || rowIndex} 
+//                             className="bg-white rounded-2xl text-[0.9rem] text-center">
 
-                            {columns.map((col, colIndex) => (
-                                <td key={colIndex} className="p-3">
-                                    {col.render(row)}
-                                </td>   
-                            ))}
-                            </tr>
-                        ))}
+//                             {columns.map((col, colIndex) => (
+//                                 <td key={colIndex} className="p-3">
+//                                     {col.render(row)}
+//                                 </td>   
+//                             ))}
+//                             </tr>
+//                         ))}
                         
-                    </tbody>
+//                     </tbody>
 
-                </table>
+//                 </table>
 
-            </div>
-        </>
-    );
+//             </div>
+//         </>
+//     );
+// }
+export default function OasisTable({ columns = [], data = [], children }) {
+  return (
+    <div
+      className={`
+        w-full xl:w-[90%] 2xl:w-[80%]
+        max-h-[600px]
+        p-4 sm:p-5
+        bg-admin-element
+        rounded-2xl
+        flex flex-col
+        font-oasis-text
+        shadow-[0px_0px_10px_rgba(0,0,0,0.5)]
+      `}
+    >
+      
+      {/* TOP CONTENT */}
+      {children && (
+        <div className="w-full flex flex-col justify-center items-start">
+          {children}
+        </div>
+      )}
+
+      {/* TABLE WRAPPER (SCROLL FIX) */}
+      <div className="w-full overflow-x-auto overflow-y-auto mt-5">
+        <table className="min-w-[900px] w-full border-collapse">
+          
+          {/* HEADER */}
+          <thead>
+            <tr className="bg-white border-b border-gray-300">
+              {columns.map((col, colIndex) => (
+                <th
+                  key={colIndex}
+                  className="
+                    p-3
+                    text-sm lg:text-base
+                    font-bold
+                    text-oasis-button-dark
+                    text-center
+                    whitespace-nowrap
+                  "
+                >
+                  {col.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+
+          {/* BODY */} 
+          <tbody>
+            {data.map((row, rowIndex) => (
+              <tr
+                key={row.id || rowIndex}
+                className="bg-white transition cursor-pointer hover:bg-gray-200 text-sm lg:text-[0.95rem] text-center border-b border-gray-200"
+              >
+                {columns.map((col, colIndex) => (
+                  <td
+                    key={colIndex}
+                    className="p-3 whitespace-nowrap "
+                  >
+                    {col.render(row)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+
+        </table>
+      </div>
+    </div>
+  );
 }
-
 
 export function StudentTable({ columns = [], data = [], children }) {
     return (

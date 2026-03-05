@@ -2,11 +2,9 @@ import { useEffect, useState } from "react";
 import { ArrowUpRight, Check, CircleX, Download, X } from "lucide-react";
 import { AnnounceButton } from "./button";
 import Subtitle from "../utilities/subtitle";
-import { Form, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { SingleField } from "./fieldComp";
 import { Dropdown } from "./adminComps";
-import { Label } from "../utilities/label";
-import Title from "../utilities/title";
 import PdfViewer from "../utilities/pdfViewer";
 
 export function GeneralPopupModal({ 
@@ -44,51 +42,7 @@ export function GeneralPopupModal({
     );
 }
 
-export function DocsAddModal({ subId = "", onClick }) {
-    const itemTypes = [
-        "Header",
-        "Numerical List",
-        "Bulleted List",
-        "Alphabetical List"
-        
-    ]
-    return (
-        <>
-            <div className="w-full h-screen fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-110 bg-[rgba(0,0,0,0.5)] pointer-events-none">
 
-                <div className={`fixed top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 min-w-[30%]  p-10 backdrop-blur-2xl bg-oasis-gradient border border-gray-500 rounded-3xl drop-shadow-lg flex flex-col items-center justify-center gap-5 font-oasis-text font-bold text-[1.3rem] duration-300 transition ease-in-out pointer-events-auto`}>
-                
-                <form className="w-full h-full flex flex-col justify-center items-start gap-5">
-
-                    
-                    <div className="flex flex-col gap-3 ">
-                        <Subtitle size="text-[1.5rem]" text={"Add new item"}/>
-                        <Dropdown placeholder="Select Item type" categories={itemTypes}/>
-                    </div>
-                    
-                    <Subtitle size="text-[1rem]" text={"Please enter a title"}/>
-                    <SingleField fieldId={`sublist${subId}`} fieldHolder={`Title...`}/>
-                
-                    <label className="flex gap-3 items-center cursor-pointer group">
-                        <Subtitle size="text-[1rem]" text={"Nest under a parent?"} />
-                        <input
-                            type="checkbox"
-                            className="w-5 h-5 cursor-pointer group-hover:shadow-[0px_0px_5px_rgba(0,0,0,0.3)] transition duration-100 ease-in-out"
-                        />
-                    </label>
-
-                    <Dropdown placeholder="Select parent" disabled={"true"}/>
-                    <div className="flex justify-end gap-3 w-full ">
-                        <AnnounceButton btnText="Cancel" onClick={onClick}/>
-                        <AnnounceButton btnText="Create"/>
-                    </div>
-                </form>
-
-                </div>
-            </div>
-        </>
-    )
-}
 
 export function ConfirmModal({ confText = "complete action?", onCancel, onLogOut}) {
     return (

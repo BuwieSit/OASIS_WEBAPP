@@ -1,7 +1,5 @@
-import { UpperWave, LowerWave } from './utilities/waves';
 import Title from './utilities/title';
 import Subtitle from './utilities/subtitle';
-import { CustomCard } from './utilities/card';
 import LandingScreen from './layouts/landingScreen.jsx';
 import fallbackImg from './assets/fallbackImage.jpg';
 import { LogIn } from 'lucide-react';
@@ -9,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { ViewModal } from './components/popupModal.jsx';
 import { useState } from 'react';
 import { TutorialCard } from './utilities/card';
+import { UpperWave, LowerWave } from './components/waves.jsx';
 export function HoverContainer({ children }) {
     return (
         <>

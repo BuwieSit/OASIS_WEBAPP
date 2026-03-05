@@ -6,7 +6,7 @@ import { Dropdown, Filter } from '../../components/adminComps.jsx';
 import { Label, RatingLabel } from '../../utilities/label.jsx';
 import { AnnounceButton, CoursesButton } from '../../components/button.jsx';
 import Subtitle from '../../utilities/subtitle.jsx';
-import { Text } from '../../utilities/tableUtil.jsx';
+import { Text, HteLocation } from '../../utilities/tableUtil.jsx';
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { AdminAPI } from "../../api/admin.api";
@@ -116,7 +116,7 @@ export default function AdmOperations() {
     const columns = [
         { header: "HTE Name", render: r => <Text text={r.company_name} /> },
         { header: "Industry", render: r => <Text text={r.industry} /> },
-        { header: "Location", render: r => <Text text={r.address} /> },
+        { header: "Location", render: r => <HteLocation address={r.address} /> },
         { header: "Status", render: r => <Text text={r.moa?.status || "NO MOA"} /> },
         { header: "MOA Validity", render: r => <Text text={calcValidity(r.moa)} /> },
         { header: "Signed Date", render: r => <Text text={formatDate(r.moa?.signed_at)} /> },
