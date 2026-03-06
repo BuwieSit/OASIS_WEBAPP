@@ -166,7 +166,7 @@ export default function MoaOverview() {
         },
         {
             header: "Actions",
-            render: r => <ActionButtons rowId={r.id} />
+            render: r => <ActionButtons onReject rowId={r.id} />
         }
     ];
 
@@ -230,11 +230,11 @@ export default function MoaOverview() {
                VIEW MOA MODAL
             ============================ */}
             <ViewModal
-            visible={openView}
-            onClose={() => setOpenView(false)}
-            isDocument={true}
-            resourceTitle="MOA File"
-            file={filePdf}
+                visible={openView}
+                onClose={() => setOpenView(false)}
+                isDocument={true}
+                resourceTitle="MOA File"
+                file={filePdf}
             />
 
         </AdminScreen>

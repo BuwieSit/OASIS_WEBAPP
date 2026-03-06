@@ -20,11 +20,11 @@
   --color-oasis-light: #3E8679; /* INTERACTIVE */
   --color-oasis-icons: #377268;
   --color-oasis-button-light: #54A194;
-  --color-oasis-button-dark: #2D6259;
+  --color-oasis-button-dark: rgba(45,98,89,1);
   --color-admin-header-bg: rgba(178,190,181, 0.3);
   --color-admin-element: #CDE8E3;
 
-
+  --color-oasis-red: rgba(128,0,32, 1);
   --font-oasis-text: "Poppins";
   --font-oasis-title: "Heavitas";
 
@@ -34,6 +34,14 @@
     var(--color-oasis-blue) 50%,
     var(--color-oasis-blue) 50%
   );
+
+  --background-oasis-redient: linear-gradient(
+    170deg,
+    var(--color-oasis-button-light) 0%,
+    var(--color-oasis-blue) 50%,
+    var(--color-oasis-red) 50%
+  );
+
 }
 
 @layer utilities {

@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import close from "../assets/icons/close.png"
 
 export default function UserModal({ children }) { 
@@ -19,7 +20,7 @@ export function AnnouncementModal({ visible, onClose, title, content, date, time
     return (
         <div className="
             fixed inset-0
-            z-50
+            z-150
             bg-black/40
             flex items-center justify-center
             p-4
@@ -91,9 +92,11 @@ export function AnnouncementModal({ visible, onClose, title, content, date, time
                         flex items-center justify-center
                         hover:scale-105
                         transition
+                        cursor-pointer
                     "
                 >
-                    <img src={close} className="w-4 h-4 object-contain" />
+                    
+                    <X/>
                 </button>
 
             </div>

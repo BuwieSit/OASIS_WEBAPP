@@ -15,7 +15,7 @@ import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
 import { useEffect, useState } from "react";
 import { fetchHTEs, downloadMOA } from "../../api/student.service";
 import SearchBar from '../../components/searchBar';
-import { FilterIcon } from 'lucide-react';
+import { FilterIcon, FilterX } from 'lucide-react';
 
 export default function HteDirectory() {
     
@@ -137,14 +137,18 @@ export default function HteDirectory() {
                         size="text-[1rem] sm:text-[1rem] md:text-[1.3rem] lg:text-[1.5rem]"
                     />
 
+
+                 
                     <section className="w-[90%] flex flex-col gap-5 justify-center items-center">
-                        <div className='w-full flex flex-row justify-between items-center'>
+                        <div className='w-full flex flex-row justify-between items-center z-70'>
+                            <div className="w-full max-w-[200px] mx-auto">
+                                    <Filter text={"Filters"} icon={<FilterIcon fill='#3E8679' stroke='white'/>}/>
+                                </div>
                             <SearchBar
                                 value={search}
                                 onChange={setSearch}
                             />
                         </div>
-
                         <EmblaCarousel options={OPTIONS} slides={slides} onSelectHte={setHte}/>
                     </section>
 
@@ -153,13 +157,7 @@ export default function HteDirectory() {
                         <Title text={"List of available HTE with MOA"}/>
                         {/* TABLE HERE */}
                         <StudentTable columns={columns} data={filteredHtes} onRowClick={(id) => setHte(id)}>
-                            <div className='w-full flex flex-row justify-between items-center'>
-                                <Filter icon={<FilterIcon/>} text={"Filter"} size={"text-[1rem]"}/>
-                                <SearchBar
-                                    value={search}
-                                    onChange={setSearch}
-                                />
-                            </div>
+
                         </StudentTable>
 
                         <MobileStudentTable

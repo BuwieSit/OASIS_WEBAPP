@@ -1,7 +1,7 @@
 import AdminScreen from '../../layouts/adminScreen.jsx';
 import Title from "../../utilities/title.jsx";
 import { AdmCard } from "../../utilities/card.jsx"
-import { UsersRound, Book, BookAlert, BookPlus, Building2, FileCheck, Check, X} from 'lucide-react';
+import { UsersRound, Book, BookAlert, BookPlus, Building2, FileCheck, Check, X, Eye, Trash} from 'lucide-react';
 import { SingleField, MultiField } from '../../components/fieldComp.jsx';
 import { Filter, Dropdown } from '../../components/adminComps.jsx';
 import { Label } from '../../utilities/label.jsx';
@@ -9,7 +9,7 @@ import SearchBar from '../../components/searchBar.jsx';
 import { AnnounceButton } from '../../components/button.jsx';
 import { useState, useEffect } from 'react';
 import { AnnouncementModal } from '../../components/userModal.jsx';
-import { GeneralPopupModal } from '../../components/popupModal.jsx';
+import { ConfirmModal, GeneralPopupModal } from '../../components/popupModal.jsx';
 import { Link } from 'react-router-dom';
 import { AdminAPI } from "../../api/admin.api";
 import SvgLoader from '../../components/SvgLoader.jsx';
@@ -24,6 +24,9 @@ export default function Admin() {
 
     const [activeFilter, setActiveFilter] = useState("All");
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+    const [deleteModalShow, setDeleteModalShow] = useState(false);
+    const [announcementToDelete, setAnnouncementToDelete] = useState(null);
+    const [lastPostedTitle, setLastPostedTitle] = useState("");
 
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
@@ -82,9 +85,9 @@ export default function Admin() {
         .catch(() => setAlerts([])); 
     }, []);
 
-
     const handlePost = async (e) => {
         e.preventDefault();
+        setLastPostedTitle(title);
 
         if (!title || !content || !category) {
             const emptyFields = [];
@@ -96,12 +99,14 @@ export default function Admin() {
             setFailedFields(emptyFields);
             return;
         }
+        
 
         await AdminAPI.createAnnouncement({
             title,
             content,
             category: CATEGORY_TO_ENUM[category] || category
         });
+
 
         setTitle("");
         setContent("");
@@ -140,21 +145,36 @@ export default function Admin() {
                     {...selectedAnnouncement}
                 />
 
+                {deleteModalShow && announcementToDelete && (
+                    <ConfirmModal 
+                        onConfirm={() => {
+                            handleDelete(announcementToDelete.id);
+                            setDeleteModalShow(false);
+                            setAnnouncementToDelete(null);
+                        }}
+                        onCancel={() => {
+                            setDeleteModalShow(false);
+                            setAnnouncementToDelete(null);
+                        }}
+                        confText={`delete "${announcementToDelete.title}"?`}
+                    />
+                )}
                 
-                {modalStatus === "success" && (
+                {modalStatus === "success" && lastPostedTitle && (
                     <GeneralPopupModal
-                        icon={<Check size={40}/>}
-                        time={3000}
+                        icon={<Check size={35}/>}
+                        time={2000}
                         onClose={() => setModalStatus(null)}
                         title="Success"
+                        text={`Posted announcement: ${lastPostedTitle}`}
                         isSuccess={true}
                     />
                 )}
 
                 {modalStatus === "failed" && (
                     <GeneralPopupModal
-                        icon={<X size={40}/>}
-                        time={3000}
+                        icon={<X size={35}/>}
+                        time={2000}
                         onClose={() => setModalStatus(null)}
                         title={"Failed"}
                         text={`Please fill the following field(s)\n: ${failedFields.join(", ")}`}
@@ -262,14 +282,13 @@ export default function Admin() {
                             <Title text={"Post Announcements"}/>
                     </div>
                     {/* POST ANNOUNCEMENTS SECTION */}
-                    <section className='p-5 w-[90%] flex flex-row justify-between items-start gap-5 font-oasis-text text-oasis-button-dark'>
+                    <section className='p-5 w-[90%] flex flex-row justify-between items-start gap-5 font-oasis-text text-oasis-button-dark '>
                         
-                        <form className='w-[70%] min-h-24 p-10 bg-admin-element flex flex-col items-start justify-center gap-5 text-black' 
+                        <form className='w-[70%] min-h-24 p-10 bg-admin-element flex flex-col items-start justify-center gap-5 text-black rounded-3xl' 
                         onSubmit={(e) => {
                             e.preventDefault();
                             handlePost(e);
                         }}>
-
                             <SingleField
                                 labelText="Announcement Title"
                                 fieldHolder="Enter title..."
@@ -277,7 +296,6 @@ export default function Admin() {
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                             />
-
                             <MultiField
                                 labelText="Announcement Content"
                                 fieldHolder="Enter contents..."
@@ -285,9 +303,7 @@ export default function Admin() {
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
                             />
-
                             <div className='w-full'>
-
                                <Dropdown
                                     labelText="Select Category"
                                     categories={categories}
@@ -329,27 +345,36 @@ export default function Admin() {
                             {filteredAnnouncements.map(a => (
                                 <section
                                     key={a.id}
-                                    onClick={() => setSelectedAnnouncement(a)}
-                                    className="w-full bg-white p-5 flex flex-row items-center justify-evenly cursor-pointer"
+                                    className="w-full bg-white rounded-3xl p-5 flex flex-row items-center justify-evenly"
                                 >
                                     <div className="p-5 w-full text-black rounded-2xl">
-                                        <p className="text-[0.6rem] font-normal mb-5">
+                                        <p className="text-[0.8rem] text-gray-500 italic font-normal mb-5">
                                             {a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"}
                                         </p>
                                         <h3 className="text-[1rem] font-bold">{a.title}</h3>
-                                        <p className="text-[0.8rem] font-medium">{a.content}</p>
+                                        <p className="text-[0.8rem] font-medium line-clamp-2">{a.content}</p>
                                     </div>
 
-                                    <div className="w-[50%] flex flex-row justify-evenly items-center gap-10">
-                                        <AnnounceButton btnText="Posted" />
-                                        <AnnounceButton btnText="Delete" onClick={() => handleDelete(a.id)}/>
+                                    <div className="w-[50%] flex flex-row gap-10">
+                                        <AnnounceButton 
+                                            icon={<Eye/>} 
+                                            btnText="View" 
+                                            onClick={() => setSelectedAnnouncement(a)}
+                                        />
+                                        <AnnounceButton 
+                                            btnText="Delete" 
+                                            onClick={() => {
+                                                setAnnouncementToDelete(a);
+                                                setDeleteModalShow(true);
+                                            }}
+                                        />
                                     </div>
                                 </section>
                             ))}
                         </form>
                        
                         {/* NOTIFICATIONS */}
-                        <div id='notifications' className='w-[25%] min-h-24 p-10 bg-admin-element'>
+                        <div id='notifications' className='w-[25%] rounded-3xl min-h-24 p-10 bg-admin-element'>
                         <p className='text-[0.8rem] mb-5 font-black'>Notifications</p>
 
                         {alerts.length === 0 && (
@@ -357,16 +382,19 @@ export default function Admin() {
                         )}
 
                         {alerts.map(alert => (
-                            <div
-                                key={alert.id}
-                                className='w-full bg-white p-3 mb-3 rounded-2xl rounded-tl-none text-black border border-oasis-button-dark hover:bg-oasis-aqua transition'
-                            >
-                                <h3 className='text-[0.8rem] font-bold'>{alert.title}</h3>
-                                <p className='text-[0.7rem] font-light'>{alert.message}</p>
-                                <p className='text-[0.65rem] text-gray-600 mt-1'>
-                                    {alert.date ? new Date(alert.date).toLocaleDateString() : ""}
-                                </p>
+                            <div>
+                                <div
+                                    key={alert.id}
+                                    className='w-full bg-white p-3 mb-3 rounded-2xl rounded-tl-none text-black border border-oasis-button-dark hover:bg-oasis-gradient transition cursor-pointer'
+                                >
+                                    <h3 className='text-[0.8rem] font-bold'>{alert.title}</h3>
+                                    <p className='text-[0.7rem] font-light line-clamp-2'>{alert.message}</p>
+                                    <p className='text-[0.65rem] text-gray-600 mt-1'>
+                                        {alert.date ? new Date(alert.date).toLocaleDateString() : ""}
+                                    </p>
+                                </div>
                             </div>
+                            
                         ))}
                         </div>
                     </section>

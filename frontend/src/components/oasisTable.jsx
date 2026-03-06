@@ -1,60 +1,7 @@
-import { Download } from "lucide-react";
-import { AnnounceButton } from "./button";
 import Subtitle from "../utilities/subtitle";
-import { useState, useMemo } from "react";
 import { usePagination } from "../hooks/usePagination";
 
-const maxHeight = "max-h-150";
 
-// export default function OasisTable({ columns = [], data = [], children }) {
-//     return (
-//         <>
-//             <div className={`w-[80%] ${maxHeight} p-5 bg-admin-element rounded-2xl flex flex-col items-center justify-center font-oasis-text shadow-[0px_0px_10px_rgba(0,0,0,0.5)]`}>
-//                 {children && 
-//                     <div className="w-full flex flex-col justify-center items-start">
-//                         {children}
-//                     </div>
-//                 }
-                
-
-//                 <table className="w-full mt-5 rounded-3xl overflow-hidden ">
-                    
-//                     {/* HEADER */}
-//                     <thead className="rounded-2xl ">
-//                         <tr className="bg-white rounded-2xl border-b border-gray-300">
-//                             {columns.map((col, colIndex) => (
-//                                 <th
-//                                     key={colIndex}
-//                                     className="p-3 text-[1rem] font-bold text-oasis-button-dark text-center"
-//                                 >
-//                                     {col.header}
-//                                 </th>
-//                             ))}
-//                         </tr>
-//                     </thead>
-               
-//                     {/* BODY */}
-//                     <tbody>
-//                         {data.map((row, rowIndex) => (
-//                             <tr key={row.id || rowIndex} 
-//                             className="bg-white rounded-2xl text-[0.9rem] text-center">
-
-//                             {columns.map((col, colIndex) => (
-//                                 <td key={colIndex} className="p-3">
-//                                     {col.render(row)}
-//                                 </td>   
-//                             ))}
-//                             </tr>
-//                         ))}
-                        
-//                     </tbody>
-
-//                 </table>
-
-//             </div>
-//         </>
-//     );
-// }
 export default function OasisTable({ columns = [], data = [], children }) {
   return (
     <div
@@ -107,7 +54,7 @@ export default function OasisTable({ columns = [], data = [], children }) {
             {data.map((row, rowIndex) => (
               <tr
                 key={row.id || rowIndex}
-                className="bg-white transition cursor-pointer hover:bg-gray-200 text-sm lg:text-[0.95rem] text-center border-b border-gray-200"
+                className="bg-white transition hover:bg-gray-200 text-sm lg:text-[0.95rem] text-center border-b border-gray-200"
               >
                 {columns.map((col, colIndex) => (
                   <td

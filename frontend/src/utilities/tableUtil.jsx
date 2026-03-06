@@ -1,4 +1,4 @@
-import { ArchiveRestore, Delete, PencilIcon, Trash } from "lucide-react";
+import { ArchiveRestore, CircleX, Delete, PencilIcon, Trash, X } from "lucide-react";
 import { Filter } from "../components/adminComps";
 import { AnnounceButton } from "../components/button";
 import Subtitle from "./subtitle";
@@ -137,14 +137,15 @@ export function StatusView({ value }) {
     )
 }
 
-export function ActionButtons({ onEdit, onArchive, onDelete}) {
+export function ActionButtons({ onEdit, onArchive, onReject}) {
     return(
         <>
             {/* Actions, these are icons with Edit, Archive, Delete. */}
             <div className="flex justify-center gap-3">
                 <button className="cursor-pointer" onClick={onEdit}><PencilIcon color="#2B6259"/></button>
                 <button className="cursor-pointer" onClick={onArchive}><ArchiveRestore color="#2B6259"/></button>
-                {/* <button className="cursor-pointer" onClick={onDelete}><Trash color="#2B6259"/></button> */}
+                {onReject ? <button className="cursor-pointer" onClick={onReject}><CircleX color="#2B6259"/></button> : ""}
+                
             </div>
             {/* Tooltip */}
             <div>

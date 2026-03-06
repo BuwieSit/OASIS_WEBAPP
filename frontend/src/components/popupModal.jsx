@@ -28,13 +28,19 @@ export function GeneralPopupModal({
     if (!visible) return null;
 
     return (
-        <div className={`fixed top-0 right-0 translate-y-5 -translate-x-[3%] w-[30%] p-3 backdrop-blur-2xl bg-[rgba(255,255,255,1)] border  
-        ${isSuccess ? "text-oasis-button-dark border-oasis-button-dark" : "text-black border-gray-400"} 
-        ${isFailed ? "text-red-600 border-red-600": "text-black border-gray-400"} 
-        rounded-3xl drop-shadow-lg flex flex-col items-center justify-center gap-5 font-oasis-text font-bold text-[1.3rem] duration-300 transition ease-in-out z-100`}>
-            {icon}
-            <Subtitle text={title} size="text-[1rem]" weight="font-bold"/>
-            <Subtitle text={text} size="text-[0.8rem]"/>
+        <div 
+            className={`fixed top-0 translate-y-5 w-[30%] p-3 rounded-3xl flex flex-col items-center justify-center font-oasis-text font-bold text-[1.3rem] duration-300 transition ease-in-out z-100 
+            ${isSuccess ? "text-oasis-button-dark drop-shadow-[0px_0px_2px_rgba(45,98,89,1)]" : "text-black"} 
+            ${isFailed ? "text-oasis-red drop-shadow-[0px_0px_2px_rgba(128,0,32,1)]": "text-black "} 
+        `}>
+            <div className="bg-white rounded-t-2xl p-1 min-w-[100px] flex justify-center items-center">
+                {icon}
+            </div>
+            <div className="bg-white rounded-2xl p-3 w-full flex flex-col justify-center items-center">
+                <Subtitle text={title} size="text-[1rem]" weight="font-bold"/>
+                <Subtitle text={text} size="text-[0.8rem]"/>
+            </div>
+            
         </div>
 
     );
@@ -42,15 +48,20 @@ export function GeneralPopupModal({
 
 
 
-export function ConfirmModal({ confText = "complete action?", onCancel, onLogOut}) {
+export function ConfirmModal({ confText = "complete action?", onCancel, onLogOut, onConfirm}) {
     return (
         <>
             <div className="w-full h-screen fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-110 bg-[rgba(0,0,0,0.5)] pointer-events-none">
             
-                <div className={`fixed top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 w-[30%] aspect-video p-3 backdrop-blur-2xl bg-white border border-gray-300 rounded-3xl drop-shadow-lg flex flex-col items-center justify-center gap-5 font-oasis-text font-bold text-[1.3rem] duration-300 transition ease-in-out pointer-events-auto`}>
+                <div 
+                    className={`fixed top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 w-[30%] aspect-video p-10 backdrop-blur-2xl 
+                    ${onConfirm ? "bg-page-white" : "bg-white"} 
+                    border border-gray-300 rounded-3xl drop-shadow-lg flex flex-col items-center justify-center gap-5 font-oasis-text font-bold text-[1.3rem] duration-300 transition ease-in-out pointer-events-auto
+                `}>
+
                     <Subtitle text={`Do you want to ${confText}`} size="text-[1rem]" weight="font-bold"/>
                     <div className="flex flex-row gap-3">
-                        <AnnounceButton btnText="Confirm" onClick={onLogOut}/>
+                        <AnnounceButton btnText="Confirm" onClick={onLogOut || onConfirm}/>
                         <AnnounceButton btnText="Cancel" onClick={onCancel}/>
                     </div>
                 </div>
@@ -86,7 +97,7 @@ export function ViewModal({
     return (
         <div className="
             fixed inset-0
-            z-50
+            z-100
             bg-black/70
             flex
             items-start md:items-center
