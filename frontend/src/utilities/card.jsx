@@ -56,10 +56,10 @@ export function AdmCard({ cardTitle, cardIcon, cardNumber, cardDate}) {
     return (
       <>
       
-        <div className="p-3 w-full min-w-70 min-h-42 rounded-2xl font-oasis-text text-[0.8rem] flex flex-col justify-between items-center bg-oasis-gradient">
+        <div className="p-3 w-full min-w-70 min-h-42 font-oasis-text text-[0.8rem] flex flex-col justify-between items-center border border-gray-300 transition ease-in-out hover:bg-oasis-blue">
 
           <section className="w-full flex flex-row justify-between items-center gap-2">
-              <p className="text-wrap text-[0.9rem] font-bold">{cardTitle}</p>
+              <p className="text-wrap text-[0.9rem] font-bold text-oasis-header">{cardTitle}</p>
               {cardIcon}
           </section>
 

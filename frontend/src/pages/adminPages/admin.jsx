@@ -1,7 +1,7 @@
 import AdminScreen from '../../layouts/adminScreen.jsx';
 import Title from "../../utilities/title.jsx";
 import { AdmCard } from "../../utilities/card.jsx"
-import { UsersRound, Book, BookAlert, BookPlus, Building2, FileCheck, Check, X, Eye, Trash} from 'lucide-react';
+import { UsersRound, Book, BookAlert, BookPlus, Building2, FileCheck, Check, X, Eye, Trash, Paperclip, Megaphone, Bell} from 'lucide-react';
 import { SingleField, MultiField } from '../../components/fieldComp.jsx';
 import { Filter, Dropdown } from '../../components/adminComps.jsx';
 import { Label } from '../../utilities/label.jsx';
@@ -194,92 +194,107 @@ export default function Admin() {
                         <Title text={"Admin Dashboard"}/>
                     </div>
 
-                    <section className='p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10'>
+                    <section className='p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'>
                         {/* VINCENT - router per card, total students (if clicked) > Students tab */}
                         <Link to={"/admStudents"}>
                             <AdmCard
-                            cardTitle="Total Students"
-                            cardIcon={<UsersRound color="#377268" />}
-                            cardNumber={
-                                loadingDashboard ? <SvgLoader size={20}/> :
-                                dashboardError ? "-" : 
-                                dashboard?.metrics?.total_students ?? "-"
-                            }
-                            cardDate={dashboard?.last_updated
-                                ? new Date(dashboard.last_updated).toLocaleDateString()
-                                : "-"}
+                                cardTitle="Total Students"
+                                cardIcon={<UsersRound color="#377268" />}
+                                cardNumber={
+                                    loadingDashboard ? <SvgLoader size={20}/> :
+                                    dashboardError ? "-" : 
+                                    dashboard?.metrics?.total_students ?? "-"
+                                }
+                                cardDate={dashboard?.last_updated
+                                    ? new Date(dashboard.last_updated).toLocaleDateString()
+                                    : "-"}
                             />
                         </Link>
 
                         <Link to={"/admMoaOverview"}>
                             <AdmCard
-                            cardTitle="Total Active MOAs"
-                            cardIcon={<Book color="#377268" />}
-                            cardNumber={
-                                loadingDashboard ? <SvgLoader size={20}/> :
-                                dashboardError ? "-" : 
-                                dashboard?.metrics?.total_active_moas ?? "-"}
-                            cardDate={dashboard?.last_updated
-                                ? new Date(dashboard.last_updated).toLocaleDateString()
-                                : "-"}
+                                cardTitle="Total Active MOAs"
+                                cardIcon={<Book color="#377268" />}
+                                cardNumber={
+                                    loadingDashboard ? <SvgLoader size={20}/> :
+                                    dashboardError ? "-" : 
+                                    dashboard?.metrics?.total_active_moas ?? "-"}
+                                cardDate={dashboard?.last_updated
+                                    ? new Date(dashboard.last_updated).toLocaleDateString()
+                                    : "-"}
                             />
                         </Link>
 
                         <Link to={"/admMoaOverview"}>
                             <AdmCard
-                            cardTitle="Total Expired MOAs"
-                            cardIcon={<BookAlert color="#377268" />}
-                            cardNumber={
-                                loadingDashboard ? <SvgLoader size={20}/> :
-                                dashboardError ? "-" : 
-                                dashboard?.metrics?.total_expired_moas ?? "-"}
-                            cardDate={dashboard?.last_updated
-                                ? new Date(dashboard.last_updated).toLocaleDateString()
-                                : "-"}
+                                cardTitle="Total Expired MOAs"
+                                cardIcon={<BookAlert color="#377268" />}
+                                cardNumber={
+                                    loadingDashboard ? <SvgLoader size={20}/> :
+                                    dashboardError ? "-" : 
+                                    dashboard?.metrics?.total_expired_moas ?? "-"}
+                                cardDate={dashboard?.last_updated
+                                    ? new Date(dashboard.last_updated).toLocaleDateString()
+                                    : "-"}
                             />
                         </Link>
 
                         <Link to={"/admMoaOverview"}>
                             <AdmCard
-                            cardTitle="Total MOA Prospect Submissions"
-                            cardIcon={<BookPlus color="#377268" />}
-                            cardNumber={
-                                loadingDashboard ? <SvgLoader size={20}/> :
-                                dashboardError ? "-" : 
-                                dashboard?.metrics?.total_moa_prospects ?? "-"}
-                            cardDate={dashboard?.last_updated
-                                ? new Date(dashboard.last_updated).toLocaleDateString()
-                                : "-"}
+                                cardTitle="Total MOA Prospect Submissions"
+                                cardIcon={<BookPlus color="#377268" />}
+                                cardNumber={
+                                    loadingDashboard ? <SvgLoader size={20}/> :
+                                    dashboardError ? "-" : 
+                                    dashboard?.metrics?.total_moa_prospects ?? "-"}
+                                cardDate={dashboard?.last_updated
+                                    ? new Date(dashboard.last_updated).toLocaleDateString()
+                                    : "-"}
                             />
                         </Link>
 
                         <Link to={"/admOperations"}>
                             <AdmCard
-                            cardTitle="Total Host Training Establishments"
-                            cardIcon={<Building2 color="#377268" />}
-                            cardNumber={
-                                loadingDashboard ? <SvgLoader size={20}/> :
-                                dashboardError ? "-" : 
-                                dashboard?.metrics?.total_htes ?? "-"}
-                            cardDate={dashboard?.last_updated
-                                ? new Date(dashboard.last_updated).toLocaleDateString()
-                                : "-"}
+                                cardTitle="Total Host Training Establishments"
+                                cardIcon={<Building2 color="#377268" />}
+                                cardNumber={
+                                    loadingDashboard ? <SvgLoader size={20}/> :
+                                    dashboardError ? "-" : 
+                                    dashboard?.metrics?.total_htes ?? "-"}
+                                cardDate={dashboard?.last_updated
+                                    ? new Date(dashboard.last_updated).toLocaleDateString()
+                                    : "-"}
                             />
                         </Link>
-
                         <Link to={"/admUploads"}>
                             <AdmCard
-                            cardTitle="Total Uploaded Documents"
-                            cardIcon={<FileCheck color="#377268" />}
-                            cardNumber={
-                                loadingDashboard ? <SvgLoader size={30}/> :
-                                dashboardError ? "-" : 
-                                dashboard?.metrics?.total_uploaded_documents ?? "-"}
-                            cardDate={dashboard?.last_updated
-                                ? new Date(dashboard.last_updated).toLocaleDateString()
-                                : "-"}
+                                cardTitle="Total Uploaded Documents"
+                                cardIcon={<FileCheck color="#377268" />}
+                                cardNumber={
+                                    loadingDashboard ? <SvgLoader size={30}/> :
+                                    dashboardError ? "-" : 
+                                    dashboard?.metrics?.total_uploaded_documents ?? "-"}
+                                cardDate={dashboard?.last_updated
+                                    ? new Date(dashboard.last_updated).toLocaleDateString()
+                                    : "-"}
                             />
                         </Link>
+                         <a href='#announcements'>
+                            <AdmCard
+                                cardTitle="Total Announcements posted"
+                                cardIcon={<Megaphone color="#377268" />}
+                                cardNumber={'2'}
+                                cardDate={'00/00/0000'}
+                            />
+                        </a>
+                        <a href='#notifications'>
+                            <AdmCard
+                                cardTitle="Total Notifications"
+                                cardIcon={<Bell color="#377268" />}
+                                cardNumber={'2'}
+                                cardDate={'00/00/0000'}
+                            />
+                        </a>
                     </section>
                     {/* OJT JOURNEY */}
                         
@@ -327,7 +342,7 @@ export default function Admin() {
                         {/* FILTER ANNOUNCEMNTS */}
 
                             <Label labelText={"Filter Announcements"}/>
-                            <section className='w-full flex flex-row items-center justify-start gap-5'>
+                            <section id='announcements' className='w-full flex flex-row items-center justify-start gap-5'>
                                 {["All", "HTE Related", "Deadlines", "Newly Approved HTEs", "Events and Webinars", "Others"].map(f => (
                                     <Filter
                                         key={f}

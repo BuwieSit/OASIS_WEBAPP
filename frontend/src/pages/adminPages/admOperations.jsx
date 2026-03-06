@@ -563,7 +563,7 @@ export default function AdmOperations() {
                 <Title text={"Reviews Moderation"} />
             </div>
 
-            <div className='w-[80%] max-h-200 overflow-x-hidden p-5 rounded-3xl bg-admin-element flex flex-col items-center shadow-[0px_0px_10px_rgba(0,0,0,0.5)]'>
+            <div className='w-[95%] max-w-[1800px] max-h-200 overflow-x-hidden p-5 rounded-3xl bg-admin-element flex flex-col items-center shadow-[0px_0px_10px_rgba(0,0,0,0.5)]'>
 
                 <div className="w-full flex flex-col gap-2">
                     <Subtitle
@@ -577,10 +577,11 @@ export default function AdmOperations() {
                     />
                 </div>
 
-                <section className='w-full py-5 flex flex-row justify-evenly items-start font-oasis-text'>
+                <section className='w-full py-5 flex flex-row gap-6 justify-between items-start font-oasis-text'>
 
                     {/* LEFT: REVIEW CARDS */}
-                    <div className="w-[50%] h-full grid gap-4 grid-cols-[repeat(auto-fit,minmax(260px,2fr))]">
+                    <div className="flex-1 h-full grid gap-4 
+                        grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
 
                         {reviews.length === 0 && !reviewsLoading && (
                             <div className="w-full p-5 bg-white rounded-3xl drop-shadow-[0px_2px_5px_rgba(0,0,0,0.2)]">
@@ -726,3 +727,80 @@ export default function AdmOperations() {
         </AdminScreen>
     );
 }
+
+
+// <div className='w-[80%] max-h-200 overflow-x-hidden p-5 rounded-3xl bg-admin-element flex flex-col items-center shadow-[0px_0px_10px_rgba(0,0,0,0.5)]'>
+
+//                 <div className="w-full flex flex-col gap-2">
+//                     <Subtitle
+//                         text={"Approve or reject student reviews. Approved reviews will be visible on the public HTE profiles."}
+//                         size='text-[0.9rem]'
+//                     />
+//                     <Subtitle
+//                         text={reviewsLoading ? "Loading reviews..." : `Showing ${reviews.length} review(s)`}
+//                         size='text-[0.85rem]'
+//                         color="text-[#2D6259]"
+//                     />
+//                 </div>
+
+//                 <section className='w-full py-5 flex flex-row justify-evenly items-start font-oasis-text'>
+
+//                     {/* LEFT: REVIEW CARDS */}
+//                     <div className="w-[50%] h-full grid gap-4 grid-cols-[repeat(auto-fit,minmax(260px,2fr))]">
+
+//                         {reviews.length === 0 && !reviewsLoading && (
+//                             <div className="w-full p-5 bg-white rounded-3xl drop-shadow-[0px_2px_5px_rgba(0,0,0,0.2)]">
+//                                 <Subtitle text="No reviews found for the selected filters." size="text-[0.95rem]" />
+//                             </div>
+//                         )}
+
+//                         {reviews.map((r) => (
+//                             <div
+//                                 key={r.id}
+//                                 className="relative w-full h-fit max-h-100 p-5 bg-white rounded-3xl drop-shadow-[0px_2px_5px_rgba(0,0,0,0.5)] transition duration-300 ease-in-out flex flex-col justify-evenly items-start"
+//                             >
+//                                 <section className='w-full flex flex-row justify-between items-center gap-3'>
+//                                     <Subtitle
+//                                         text={r.reviewer || "Anonymous"}
+//                                         color={"text-[#2D6259]"}
+//                                         size='text-[1.2rem]'
+//                                         weight='font-bold'
+//                                     />
+//                                     <p className='font-oasis-text text-[0.75rem] italic text-right'>
+//                                         {r.hte_name} — {formatDateTime(r.created_at)}
+//                                     </p>
+//                                 </section>
+
+//                                 <section className='h-[50%] flex flex-col justify-start items-start gap-3 relative overflow-hidden mt-2'>
+//                                     <RatingLabel rating={String(r.rating)} />
+
+//                                     <div className="w-full flex flex-row justify-start items-center gap-2">
+//                                         <Subtitle text="Criteria:" size="text-[0.8rem]" weight="font-bold" />
+//                                         <p className="text-[0.8rem]">{r.criteria || "—"}</p>
+//                                     </div>
+
+//                                     <div className='overflow-x-hidden overflow-y-auto w-full max-h-35'>
+//                                         <p className='font-oasis-text text-[0.8rem] text-justify w-full'>
+//                                             {r.message}
+//                                         </p>
+//                                     </div>
+//                                 </section>
+
+//                                 <section className='w-full h-full flex justify-center items-center gap-5 px-5 mt-3'>
+//                                     <AnnounceButton
+//                                         icon={<Check size={25} />}
+//                                         type="button"
+//                                         btnText=''
+//                                         onClick={() => handleApproveReview(r.id)}
+//                                     />
+//                                     <AnnounceButton
+//                                         btnText=""
+//                                         type="button"
+//                                         isRed={true}
+//                                         icon={<X size={25} />}
+//                                         onClick={() => handleRejectReview(r.id)}
+//                                     />
+//                                 </section>
+//                             </div>
+//                         ))}
+//                     </div>
