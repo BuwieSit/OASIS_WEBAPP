@@ -83,15 +83,14 @@ def _save_upload(file_storage, upload_root, subdir, allowed_ext=None):
     out_dir = os.path.join(upload_root, subdir)
     os.makedirs(out_dir, exist_ok=True)
 
-    out_name = f"{uuid.uuid4().hex}{ext}"
+    base = secure_filename(os.path.splitext(filename)[0])
+    out_name = f"{base}_{uuid.uuid4().hex}{ext}"
     out_path = os.path.join(out_dir, out_name)
     file_storage.save(out_path)
 
-    # store path as 'uploads/...'
     return f"uploads/{subdir}/{out_name}"
 
 def _overview_query(status):
-    # latest MOA per HTE by created_at (fallback to signed_at)
     latest_moa = (
         db.session.query(
             MemorandumOfAgreement.hte_id,

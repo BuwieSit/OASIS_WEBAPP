@@ -101,20 +101,26 @@ export default function Admin() {
         }
         
 
+    try {
         await AdminAPI.createAnnouncement({
-            title,
-            content,
-            category: CATEGORY_TO_ENUM[category] || category
+        title,
+        content,
+        category: CATEGORY_TO_ENUM[category] || category
         });
 
 
         setTitle("");
         setContent("");
-        setCategory("HTE Related"); // keep UX sane
+        setCategory("HTE Related");
         setModalStatus("success");
 
         const res = await AdminAPI.getAnnouncements();
         setAnnouncements(res.data);
+    } catch (err) {
+        console.error(err);
+        setModalStatus("failed");
+        setFailedFields(["Server error (check backend/API)"]);
+    }
     };
 
     const handleDelete = async (id) => {
@@ -366,6 +372,7 @@ export default function Admin() {
                                             onClick={() => {
                                                 setAnnouncementToDelete(a);
                                                 setDeleteModalShow(true);
+                                                // onClick={(e) => { e.stopPropagation();
                                             }}
                                         />
                                     </div>

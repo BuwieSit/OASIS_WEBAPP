@@ -43,6 +43,8 @@ def create_app() -> Flask:
     from app.routes.file_routes import file_bp
     from app.routes.student_announcement_routes import student_announcement_bp
     from app.routes.admin_moa_prospect_routes import admin_moa_prospect_bp
+    from app.routes.student_review_routes import student_review_bp
+    from app.routes.admin_review_routes import admin_review_bp
 
     app.register_blueprint(health_bp)
     app.register_blueprint(auth_bp)
@@ -62,6 +64,8 @@ def create_app() -> Flask:
     app.register_blueprint(file_bp)
     app.register_blueprint(student_announcement_bp)
     app.register_blueprint(admin_moa_prospect_bp)
+    app.register_blueprint(student_review_bp)
+    app.register_blueprint(admin_review_bp)
 
     from flask import send_from_directory
     
