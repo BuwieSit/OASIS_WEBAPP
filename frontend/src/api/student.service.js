@@ -23,3 +23,11 @@ export function submitMoaProspect(formData) {
     },
   });
 }
+
+export function getHteReviews(hteId) {
+  return api.get(`/api/student/htes/${hteId}/reviews`);
+}
+
+export function submitHteReview(hteId, payload) {
+  return api.post(`/api/student/htes/${hteId}/reviews`, payload);
+}

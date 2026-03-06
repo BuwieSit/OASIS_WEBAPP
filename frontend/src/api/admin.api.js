@@ -61,4 +61,24 @@ export const AdminAPI = {
             headers: { "Content-Type": "multipart/form-data" },
         });
     },
+
+    getReviews(params = {}) {
+        return api.get("/api/admin/reviews", { params });
+    },
+
+    approveReview(id) {
+        return api.patch(`/api/admin/reviews/${id}/approve`);
+    },
+
+    rejectReview(id) {
+        return api.patch(`/api/admin/reviews/${id}/reject`);
+    },
+
+    approveAllReviews(params = {}) {
+        return api.post("/api/admin/reviews/approve-all", null, { params });
+    },
+    
+    clearAllPendingReviews(params = {}) {
+        return api.post("/api/admin/reviews/clear-all", null, { params });
+    },
 };

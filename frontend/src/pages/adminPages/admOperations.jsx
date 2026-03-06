@@ -7,7 +7,7 @@ import { Label, RatingLabel } from '../../utilities/label.jsx';
 import { AnnounceButton, CoursesButton } from '../../components/button.jsx';
 import Subtitle from '../../utilities/subtitle.jsx';
 import { Text, HteLocation } from '../../utilities/tableUtil.jsx';
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { AdminAPI } from "../../api/admin.api";
 import { Check, Download, Save, Upload, X } from 'lucide-react';
@@ -34,7 +34,6 @@ export default function AdmOperations() {
     const [companyLoc, setCompanyLoc] = useState("");
     const [statusValue, setStatusValue] = useState("ACTIVE");
 
-    // ✅ NEW FIELDS (required for proper manual add)
     const [industry, setIndustry] = useState("");
     const [website, setWebsite] = useState("");
 
@@ -43,7 +42,6 @@ export default function AdmOperations() {
     const [contactNumber, setContactNumber] = useState("");
     const [contactEmail, setContactEmail] = useState("");
 
-    // MOA fields
     const [signedAt, setSignedAt] = useState("");     // YYYY-MM-DD
     const [expiresAt, setExpiresAt] = useState("");   // YYYY-MM-DD
     const [validity, setValidity] = useState("");     // months
@@ -53,6 +51,114 @@ export default function AdmOperations() {
     const [logoFile, setLogoFile] = useState(null);
     const [thumbnailFile, setThumbnailFile] = useState(null);
     const [moaFile, setMoaFile] = useState(null);
+
+
+    // =============================
+    // REVIEWS MODERATION STATE
+    // =============================
+    const REVIEW_CRITERIA = [
+        "Learning Experience",
+        "Skill Acquisition",
+        "Adequate Supervisor Support",
+        "Course related",
+        "Others",
+    ];
+
+    const [reviews, setReviews] = useState([]);
+    const [reviewsLoading, setReviewsLoading] = useState(false);
+
+    // Filters
+    const [reviewStatus, setReviewStatus] = useState("PENDING"); // PENDING | APPROVED | REJECTED
+    const [reviewCriteria, setReviewCriteria] = useState("");
+    const [reviewSort, setReviewSort] = useState("newest"); // newest | oldest
+    const [reviewRating, setReviewRating] = useState(""); // 1..5 or ""
+    const [reviewHteName, setReviewHteName] = useState(""); // selected HTE name (optional)
+
+    const fetchReviews = async () => {
+        setReviewsLoading(true);
+        try {
+            const params = {
+                status: reviewStatus,
+                sort: reviewSort,
+            };
+            if (reviewCriteria) params.criteria = reviewCriteria;
+            if (reviewRating) params.rating = reviewRating;
+            if (reviewHteName) params.hte_name = reviewHteName;
+
+            const res = await AdminAPI.getReviews(params);
+            setReviews(res.data || []);
+        } catch (err) {
+            console.error(err);
+            setReviews([]);
+        } finally {
+            setReviewsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchReviews();
+    }, [reviewStatus, reviewCriteria, reviewSort, reviewRating, reviewHteName]);
+
+    const formatDateTime = (iso) => {
+        if (!iso) return "—";
+        try { return new Date(iso).toLocaleString(); } catch { return "—"; }
+    };
+
+    const handleApproveReview = async (id) => {
+        try {
+            await AdminAPI.approveReview(id);
+            fetchReviews();
+        } catch (err) {
+            console.error(err);
+            alert("Failed to approve review");
+        }
+    };
+
+    const handleRejectReview = async (id) => {
+        try {
+            await AdminAPI.rejectReview(id);
+            fetchReviews();
+        } catch (err) {
+            console.error(err);
+            alert("Failed to reject review");
+        }
+    };
+
+    const handleApproveAll = async () => {
+        try {
+            const params = {
+                status: reviewStatus,
+                sort: reviewSort,
+            };
+            if (reviewCriteria) params.criteria = reviewCriteria;
+            if (reviewRating) params.rating = reviewRating;
+            if (reviewHteName) params.hte_name = reviewHteName;
+
+            await AdminAPI.approveAllReviews(params);
+            fetchReviews();
+        } catch (err) {
+            console.error(err);
+            alert("Approve all failed");
+        }
+    };
+
+    const handleClearAll = async () => {
+        try {
+            const params = {
+                status: reviewStatus,
+                sort: reviewSort,
+            };
+            if (reviewCriteria) params.criteria = reviewCriteria;
+            if (reviewRating) params.rating = reviewRating;
+            if (reviewHteName) params.hte_name = reviewHteName;
+
+            await AdminAPI.clearAllPendingReviews(params);
+            fetchReviews();
+        } catch (err) {
+            console.error(err);
+            alert("Clear all failed");
+        }
+    };
 
     // =============================
     // FETCH HTEs
@@ -453,108 +559,168 @@ export default function AdmOperations() {
             </div>
 
             {/* TITLE FOR REVIEW*/}
-            <div className='flex justify-start items-start w-[80%]'>
+            <div className='flex justify-start items-start w-[80%] mt-10'>
                 <Title text={"Reviews Moderation"} />
             </div>
 
-            {/* REVIEW FOR PARENT CONTAINER */}
             <div className='w-[80%] max-h-200 overflow-x-hidden p-5 rounded-3xl bg-admin-element flex flex-col items-center shadow-[0px_0px_10px_rgba(0,0,0,0.5)]'>
 
-                {/* DESCRIPTION WRAPPER */}
-                <div>
-                    <Subtitle text={"Approve or reject student reviews. Approved reviews will be visible on the public HTE profiles."} size='text-[0.9rem]' />
+                <div className="w-full flex flex-col gap-2">
+                    <Subtitle
+                        text={"Approve or reject student reviews. Approved reviews will be visible on the public HTE profiles."}
+                        size='text-[0.9rem]'
+                    />
+                    <Subtitle
+                        text={reviewsLoading ? "Loading reviews..." : `Showing ${reviews.length} review(s)`}
+                        size='text-[0.85rem]'
+                        color="text-[#2D6259]"
+                    />
                 </div>
 
-                {/* CONTENT WRAPPER */}
                 <section className='w-full py-5 flex flex-row justify-evenly items-start font-oasis-text'>
 
-                    {/* CARDS WRAPPER */}
+                    {/* LEFT: REVIEW CARDS */}
                     <div className="w-[50%] h-full grid gap-4 grid-cols-[repeat(auto-fit,minmax(260px,2fr))]">
 
-                        {/* CARD */}
-                        <div className="relative w-full h-fit max-h-100 p-5 bg-white rounded-3xl drop-shadow-[0px_2px_5px_rgba(0,0,0,0.5)] transition duration-300 ease-in-out flex flex-col justify-evenly items-start">
+                        {reviews.length === 0 && !reviewsLoading && (
+                            <div className="w-full p-5 bg-white rounded-3xl drop-shadow-[0px_2px_5px_rgba(0,0,0,0.2)]">
+                                <Subtitle text="No reviews found for the selected filters." size="text-[0.95rem]" />
+                            </div>
+                        )}
 
-                            <section className='w-full flex flex-row justify-between items-center'>
-                                <Subtitle text={"Maria S."} color={"text-[#2D6259]"} size='text-[1.5rem]' weight='font-bold' />
-                                <p className='font-oasis-text text-[0.8rem] italic'>Prima Tech - 22/11/2025, 8:41 PM</p>
-                            </section>
+                        {reviews.map((r) => (
+                            <div
+                                key={r.id}
+                                className="relative w-full h-fit max-h-100 p-5 bg-white rounded-3xl drop-shadow-[0px_2px_5px_rgba(0,0,0,0.5)] transition duration-300 ease-in-out flex flex-col justify-evenly items-start"
+                            >
+                                <section className='w-full flex flex-row justify-between items-center gap-3'>
+                                    <Subtitle
+                                        text={r.reviewer || "Anonymous"}
+                                        color={"text-[#2D6259]"}
+                                        size='text-[1.2rem]'
+                                        weight='font-bold'
+                                    />
+                                    <p className='font-oasis-text text-[0.75rem] italic text-right'>
+                                        {r.hte_name} — {formatDateTime(r.created_at)}
+                                    </p>
+                                </section>
 
-                            <section className='h-[50%] flex flex-col justify-start items-start gap-3 relative overflow-hidden'>
-                                <RatingLabel rating={"5"} />
+                                <section className='h-[50%] flex flex-col justify-start items-start gap-3 relative overflow-hidden mt-2'>
+                                    <RatingLabel rating={String(r.rating)} />
 
-                                {/* REVIEWS DESCRIPTION BELOW */}
-                                <div className='overflow-x-hidden overflow-y-auto'>
-                                    <p className='font-oasis-text text-[0.8rem] text-justify w-full overflow-y-auto'>Prima Tech is such a good company to take an intern job since they have benefits like allowance as well as a healthy environment with supportive and kind employees and mentors! Really had a great time here.Prima Tech is such a good company to take an intern job since they have benefits like allowance as well as a healthy environment with supportive and kind employees and mentors! Really had a great time here.Prima Tech is such a good company to take an intern job since they have benefits like allowance as well as a healthy environment with supportive and kind employees and mentors! Really had a great time here.</p>
-                                </div>
+                                    <div className="w-full flex flex-row justify-start items-center gap-2">
+                                        <Subtitle text="Criteria:" size="text-[0.8rem]" weight="font-bold" />
+                                        <p className="text-[0.8rem]">{r.criteria || "—"}</p>
+                                    </div>
 
-                            </section>
+                                    <div className='overflow-x-hidden overflow-y-auto w-full max-h-35'>
+                                        <p className='font-oasis-text text-[0.8rem] text-justify w-full'>
+                                            {r.message}
+                                        </p>
+                                    </div>
+                                </section>
 
-                            <section className='w-full h-full flex justify-center items-center gap-5 px-5'>
-                                <AnnounceButton
-                                    icon={<Check size={25} />}
-                                    type="submit"
-                                    btnText=''
-                                />
-                                <AnnounceButton
-                                    btnText=""
-                                    type="button"
-                                    isRed={true}
-                                    onClick={resetForm}
-                                    icon={<X size={25} />}
-                                />
-                            </section>
-                        </div>  {/* CARD END */}
-                        {/* CARD */}
-
-                        {/* CARD WRAPPER END */}
+                                <section className='w-full h-full flex justify-center items-center gap-5 px-5 mt-3'>
+                                    <AnnounceButton
+                                        icon={<Check size={25} />}
+                                        type="button"
+                                        btnText=''
+                                        onClick={() => handleApproveReview(r.id)}
+                                    />
+                                    <AnnounceButton
+                                        btnText=""
+                                        type="button"
+                                        isRed={true}
+                                        icon={<X size={25} />}
+                                        onClick={() => handleRejectReview(r.id)}
+                                    />
+                                </section>
+                            </div>
+                        ))}
                     </div>
 
-                    {/* REVIEW FILTERS PARENT */}
+                    {/* RIGHT: FILTERS */}
                     <div className='w-[40%] p-3 flex flex-col justify-start items-start sticky top-0 transiiton-all duration-100 ease-in-out'>
 
-                        <Subtitle text={"Review Criteria"} size={'text-[1rem]'} weight='font-bold' />
-
+                        <Subtitle text={"Status"} size={'text-[1rem]'} weight='font-bold' />
                         <div className='mt-3 mb-5 w-full flex flex-wrap justify-start items-start gap-1'>
-                            <Filter text={'Learning Experience'} />
-                            <Filter text={'Skill Acquisition'} />
-                            <Filter text={'Adequate Supervisor Support'} />
-                            <Filter text={'Course related'} />
+                            <div onClick={() => setReviewStatus("PENDING")} className="cursor-pointer">
+                                <Filter text={'Pending'} isActive={reviewStatus === "PENDING"} />
+                            </div>
+                            <div onClick={() => setReviewStatus("APPROVED")} className="cursor-pointer">
+                                <Filter text={'Approved'} isActive={reviewStatus === "APPROVED"} />
+                            </div>
+                            <div onClick={() => setReviewStatus("REJECTED")} className="cursor-pointer">
+                                <Filter text={'Rejected'} isActive={reviewStatus === "REJECTED"} />
+                            </div>
+                        </div>
+
+                        <Subtitle text={"Review Criteria"} size={'text-[1rem]'} weight='font-bold' />
+                        <div className='mt-3 mb-5 w-full flex flex-wrap justify-start items-start gap-1'>
+                            <div onClick={() => setReviewCriteria("")} className="cursor-pointer">
+                                <Filter text={'All'} isActive={reviewCriteria === ""} />
+                            </div>
+                            {REVIEW_CRITERIA.map(c => (
+                                <div key={c} onClick={() => setReviewCriteria(c)} className="cursor-pointer">
+                                    <Filter text={c} isActive={reviewCriteria === c} />
+                                </div>
+                            ))}
                         </div>
 
                         <Subtitle text={"Date Posted"} size={'text-[1rem]'} weight='font-bold' />
-
                         <div className='mt-3 mb-5 w-full flex flex-wrap justify-start items-start gap-1'>
-                            <Filter text={'Newest'} />
-                            <Filter text={'Oldest'} />
+                            <div onClick={() => setReviewSort("newest")} className="cursor-pointer">
+                                <Filter text={'Newest'} isActive={reviewSort === "newest"} />
+                            </div>
+                            <div onClick={() => setReviewSort("oldest")} className="cursor-pointer">
+                                <Filter text={'Oldest'} isActive={reviewSort === "oldest"} />
+                            </div>
                         </div>
 
                         <Subtitle text={"Ratings"} size={'text-[1rem]'} weight='font-bold' />
-
                         <div className='mt-3 mb-5 w-full flex flex-wrap justify-start items-start gap-1'>
-                            <Filter text={'5 stars'} />
-                            <Filter text={'4 stars'} />
-                            <Filter text={'3 stars'} />
-                            <Filter text={'2 stars'} />
-                            <Filter text={'1 stars'} />
+                            <div onClick={() => setReviewRating("")} className="cursor-pointer">
+                                <Filter text={'All'} isActive={reviewRating === ""} />
+                            </div>
+                            {["5", "4", "3", "2", "1"].map(stars => (
+                                <div key={stars} onClick={() => setReviewRating(stars)} className="cursor-pointer">
+                                    <Filter text={`${stars} stars`} isActive={reviewRating === stars} />
+                                </div>
+                            ))}
                         </div>
 
                         <Subtitle text={"HTE"} size={'text-[1rem]'} weight='font-bold' />
-
                         <div className='mt-3 w-full flex flex-wrap justify-start items-start gap-1'>
-                            <Dropdown categories={hteDropdown} />
+                        <Dropdown
+                            labelText=""
+                            fieldId="reviewHTE"
+                            categories={hteDropdown}
+                            value={reviewHteName}
+                            onChange={setReviewHteName}
+                        />
                         </div>
 
-                        <div className='mt-3 p-5 w-full flex justify-between items-center gap-1'>
-                            <AnnounceButton btnText='Approve All' />
-                            <AnnounceButton btnText='Clear All' />
+                        <div className='mt-3 p-5 w-full flex justify-between items-center gap-2'>
+                            <AnnounceButton btnText='Approve All' onClick={handleApproveAll} />
+                            <AnnounceButton btnText='Clear All' onClick={handleClearAll} />
                         </div>
 
-                        {/* REVIEWS FILTER PARENT END */}
+                        <div className='mt-1 px-5 w-full flex justify-between items-center gap-2'>
+                            <AnnounceButton btnText='Refresh' onClick={fetchReviews} />
+                            <AnnounceButton
+                                btnText='Reset Filters'
+                                onClick={() => {
+                                    setReviewStatus("PENDING");
+                                    setReviewCriteria("");
+                                    setReviewSort("newest");
+                                    setReviewRating("");
+                                    setReviewHteName("");
+                                }}
+                            />
+                        </div>
 
                     </div>
-                    {/* REVIEWS WRAPPER END */}
                 </section>
-
             </div>
 
         </AdminScreen>

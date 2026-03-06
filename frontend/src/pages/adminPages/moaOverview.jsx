@@ -23,7 +23,7 @@ export default function MoaOverview() {
     const [openView, setOpenView] = useState(false);
     const [filePdf, setFilePdf] = useState(null);
 
-    const API_BASE = import.meta.env.VITE_API_BASE_URL;
+    const API_BASE = import.meta.env.VITE_API_URL;
 
     /* ============================
        FETCH DATA
@@ -57,20 +57,54 @@ export default function MoaOverview() {
     const buildFileUrl = (filePath) => {
         if (!filePath) return null;
 
-        // DB usually stores: "uploads/moa/<file>.pdf"
-        const normalized = filePath.startsWith("uploads/")
-            ? filePath
-            : `uploads/${filePath}`;
+        let path = String(filePath).trim();
 
-        // backend serves: GET /uploads/<path>
-        return `${API_BASE}/${normalized}`;
+        if (path.startsWith("/")) {
+            path = path.slice(1);
+        }
+
+        if (path.startsWith("uploads/")) {
+            path = path.replace("uploads/", "");
+        }
+
+        return `${API_BASE}/uploads/${path}`;
     };
 
     const openPdf = (filePath) => {
+        console.log("Original filePath:", filePath);
         const url = buildFileUrl(filePath);
+        console.log("Built URL:", url);
         if (!url) return;
+
         setFilePdf(url);
         setOpenView(true);
+    };
+
+    const downloadMoa = async (filePath, companyName) => {
+        const url = buildFileUrl(filePath);
+        if (!url) return;
+
+        try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+
+            const safeName = companyName
+                .replace(/\s+/g, "_")
+                .replace(/[^\w\-]/g, "");
+
+            const filename = `${safeName}_MOA.pdf`;
+
+            const link = document.createElement("a");
+            link.href = window.URL.createObjectURL(blob);
+            link.download = filename;
+
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+        } catch (err) {
+            console.error("Download MOA failed:", err);
+        }
     };
 
     /* ============================
@@ -113,10 +147,14 @@ export default function MoaOverview() {
             header: "View MOA",
             render: r => {
                 const url = buildFileUrl(r.document_path);
+
                 return url ? (
                     <ViewMoaButton
                         url={url}
                         onClick={() => openPdf(r.document_path)}
+                        onDownload={() =>
+                            downloadMoa(r.document_path, r.hte?.company_name)
+                        }
                     />
                 ) : (
                     <Text text="—" />
@@ -230,11 +268,12 @@ export default function MoaOverview() {
                VIEW MOA MODAL
             ============================ */}
             <ViewModal
-            visible={openView}
-            onClose={() => setOpenView(false)}
-            isDocument={true}
-            resourceTitle="MOA File"
-            file={filePdf}
+                visible={openView}
+                onClose={() => setOpenView(false)}
+                isDocument={true}
+                resourceTitle="MOA File"
+                file={filePdf}
+                filename={`${currentMoas.find(m => buildFileUrl(m.document_path) === filePdf)?.hte?.company_name?.replace(/\s+/g,"_") || "HTE"}_MOA.pdf`}
             />
 
         </AdminScreen>

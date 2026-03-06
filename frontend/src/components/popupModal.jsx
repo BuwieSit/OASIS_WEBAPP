@@ -69,6 +69,7 @@ export function ViewModal({
     isDocument,
     resourceTitle,
     file,
+    filename: filenameProp
 }) {
 
     useEffect(() => {
@@ -162,8 +163,7 @@ export function ViewModal({
                                         const blob = await res.blob();
                                         const blobUrl = URL.createObjectURL(blob);
 
-                                        const filename =
-                                            file.split("/").pop()?.split("?")[0] || "MOA.pdf";
+                                        const filename = filenameProp || "HTE_MOA.pdf";
 
                                         const a = document.createElement("a");
                                         a.href = blobUrl;

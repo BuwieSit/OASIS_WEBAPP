@@ -84,32 +84,37 @@ export default function Admin() {
 
 
     const handlePost = async (e) => {
-        e.preventDefault();
+    e.preventDefault();
 
-        if (!title || !content || !category) {
-            const emptyFields = [];
-            if (!title) emptyFields.push("Title");
-            if (!content) emptyFields.push("Content");
-            if (!category) emptyFields.push("Category");
+    if (!title || !content || !category) {
+        const emptyFields = [];
+        if (!title) emptyFields.push("Title");
+        if (!content) emptyFields.push("Content");
+        if (!category) emptyFields.push("Category");
+        setModalStatus("failed");
+        setFailedFields(emptyFields);
+        return;
+    }
 
-            setModalStatus("failed");
-            setFailedFields(emptyFields);
-            return;
-        }
-
+    try {
         await AdminAPI.createAnnouncement({
-            title,
-            content,
-            category: CATEGORY_TO_ENUM[category] || category
+        title,
+        content,
+        category: CATEGORY_TO_ENUM[category] || category
         });
 
         setTitle("");
         setContent("");
-        setCategory("HTE Related"); // keep UX sane
+        setCategory("HTE Related");
         setModalStatus("success");
 
         const res = await AdminAPI.getAnnouncements();
         setAnnouncements(res.data);
+    } catch (err) {
+        console.error(err);
+        setModalStatus("failed");
+        setFailedFields(["Server error (check backend/API)"]);
+    }
     };
 
     const handleDelete = async (id) => {
@@ -342,7 +347,7 @@ export default function Admin() {
 
                                     <div className="w-[50%] flex flex-row justify-evenly items-center gap-10">
                                         <AnnounceButton btnText="Posted" />
-                                        <AnnounceButton btnText="Delete" onClick={() => handleDelete(a.id)}/>
+                                        <AnnounceButton btnText="Delete" onClick={(e) => { e.stopPropagation(); handleDelete(a.id)}}/>
                                     </div>
                                 </section>
                             ))}

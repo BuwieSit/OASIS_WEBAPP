@@ -7,6 +7,7 @@ from .moa_prospect import MoaProspect
 from .announcement import Announcement
 from .notification import Notification
 from .uploaded_document import UploadedDocument
+from .hte_review import HteReview
 
 
 
