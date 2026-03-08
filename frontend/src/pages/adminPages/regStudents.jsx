@@ -13,7 +13,7 @@ import { AnnounceButton } from '../../components/button.jsx';
 export default function RegStudents() {
   const [registeredStudents, setRegisteredStudents] = useState([]);
   const [archivedStudents, setArchivedStudents] = useState([]);
-  const [activeFilter, setFilter] = useQueryParam("tab", "");
+  const [activeFilter, setFilter] = useQueryParam("tab", "All");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -96,11 +96,11 @@ export default function RegStudents() {
     <AdminScreen>
       <Title text="Registered Students" />
 
-      <div className="w-full flex flex-col gap-10">
+      <div className="w-full flex flex-col gap-10 justify-center items-center">
         <div>
           <Title text="Filter by program" />
 
-          <div className="flex flex-row flex-wrap items-center justify-start gap-5 mt-5">
+          <div className="flex flex-row flex-wrap items-center justify-center gap-5 mt-5">
             {[
               "DIT",
               "DLMOT",
@@ -123,15 +123,15 @@ export default function RegStudents() {
 
             <Subtitle
               text="All"
-              onClick={() => setFilter("")}
-              isActive={activeFilter === ""}
+              onClick={() => setFilter("All")}
+              isActive={activeFilter === "All"}
               isLink
               size="text-[1rem]"
             />
           </div>
         </div>
 
-        <div className="w-full flex flex-col gap-4">
+        <div className="w-full flex flex-col gap-4 justify-center items-center">
           <Title text="Registered Students" />
           <OasisTable
             columns={registeredColumns}
@@ -141,7 +141,7 @@ export default function RegStudents() {
           </OasisTable>
         </div>
 
-        <div className="w-full flex flex-col gap-4">
+        <div className="w-full flex flex-col gap-4 justify-center items-center">
           <Title text="Archived Students" />
           <OasisTable
             columns={archivedColumns}

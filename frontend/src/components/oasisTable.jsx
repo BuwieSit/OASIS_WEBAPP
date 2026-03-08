@@ -30,7 +30,7 @@ export default function OasisTable({ columns = [], data = [], children }) {
           
           {/* HEADER */}
           <thead>
-            <tr className="bg-white border-b border-gray-300">
+            <tr className="bg-white border-b border-gray-300 sticky top-0">
               {columns.map((col, colIndex) => (
                 <th
                   key={colIndex}
