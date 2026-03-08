@@ -1,39 +1,278 @@
-import { Form, Link } from 'react-router-dom'
 import AdminScreen from '../../layouts/adminScreen.jsx';
 import Title from "../../utilities/title.jsx";
-import { Container, Dropdown, Filter } from '../../components/adminComps.jsx';
+import { Container, Dropdown } from '../../components/adminComps.jsx';
 import { FileUploadField, MultiField, SingleField } from '../../components/fieldComp.jsx';
 import { AnnounceButton } from '../../components/button.jsx';
-import { useState } from "react";
-import { Label } from '../../utilities/label.jsx';
-import { useLocalStorage } from '../../hooks/useLocalStorage.jsx';
+import { useEffect, useMemo, useState } from "react";
 import useQueryParam from '../../hooks/useQueryParams.jsx';
-import { Delete, Plus, Save, X } from 'lucide-react';
+import { Plus, Save } from 'lucide-react';
 import Subtitle from '../../utilities/subtitle.jsx';
 import { TreeRenderer } from '../../utilities/TreeRenderer.jsx';
+import { AdminAPI } from '../../api/admin.api.js';
 
 
+const EMPTY_SECTION_STATE = {
+    header: "",
+    description: "",
+    items: []
+};
+
+const SECTION_LABELS = {
+    procedures: "Procedures",
+    moa: "MOA Process",
+    guidelines: "Key Guidelines",
+    forms: "Forms & Templates"
+};
+
+const ITEM_TYPE_OPTIONS = [
+    { label: "Header", value: "header" },
+    { label: "Description", value: "description" },
+    { label: "Numerical List", value: "numerical_list" },
+    { label: "Bulleted List", value: "bulleted_list" },
+    { label: "Alphabetical List", value: "alphabetical_list" },
+    { label: "Document", value: "document" }
+];
+
+function flattenItems(items, depth = 0, result = []) {
+    items.forEach((item) => {
+        result.push({
+            id: item.id,
+            label: `${"— ".repeat(depth)}${item.title}`
+        });
+
+        if (item.children?.length) {
+            flattenItems(item.children, depth + 1, result);
+        }
+    });
+
+    return result;
+}
+
+function insertItemIntoTree(items, newItem) {
+    if (!newItem.parentId) {
+        return [...items, { ...newItem, children: newItem.children || [] }];
+    }
+
+    return items.map((item) => {
+        if (item.id === newItem.parentId) {
+            return {
+                ...item,
+                children: [...(item.children || []), { ...newItem, children: newItem.children || [] }]
+            };
+        }
+
+        if (item.children?.length) {
+            return {
+                ...item,
+                children: insertItemIntoTree(item.children, newItem)
+            };
+        }
+
+        return item;
+    });
+}
+
+function normalizeTreeForSave(items) {
+    return items.map((item) => ({
+        id: item.id,
+        type: item.type,
+        title: item.title,
+        description: item.description || null,
+        parentId: item.parentId || null,
+        file: item.file || null,
+        originalFilename: item.originalFilename || null,
+        children: normalizeTreeForSave(item.children || [])
+    }));
+}
+
+function extractSectionMeta(items) {
+    const headerItem = items.find(
+        (item) => item.parentId === null && item.type === "header" && item.isSectionMeta
+    );
+
+    const descriptionItem = items.find(
+        (item) => item.parentId === null && item.type === "description" && item.isSectionMeta
+    );
+
+    return {
+        header: headerItem?.title || "",
+        description: descriptionItem?.description || descriptionItem?.title || ""
+    };
+}
+
+function buildItemsWithSectionMeta(sectionState) {
+    const metaItems = [];
+
+    if (sectionState.header.trim()) {
+        metaItems.push({
+            id: `section-header-${crypto.randomUUID()}`,
+            type: "header",
+            title: sectionState.header.trim(),
+            description: null,
+            parentId: null,
+            children: [],
+            isSectionMeta: true
+        });
+    }
+
+    if (sectionState.description.trim()) {
+        metaItems.push({
+            id: `section-description-${crypto.randomUUID()}`,
+            type: "description",
+            title: sectionState.description.trim(),
+            description: sectionState.description.trim(),
+            parentId: null,
+            children: [],
+            isSectionMeta: true
+        });
+    }
+
+    return [...metaItems, ...sectionState.items];
+}
+
+function stripMetaItems(items) {
+    return items.filter((item) => !item.isSectionMeta);
+}
 
 export default function DocsUpload() {
     const [activeFilter, setFilter] = useQueryParam("tab", "procedures");
     const [showModal, setShowModal] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    const [sections, setSections] = useState({
+        procedures: { ...EMPTY_SECTION_STATE },
+        moa: { ...EMPTY_SECTION_STATE },
+        guidelines: { ...EMPTY_SECTION_STATE },
+        forms: { ...EMPTY_SECTION_STATE }
+    });
+
+    const activeSectionState = sections[activeFilter] || EMPTY_SECTION_STATE;
+
+    const parentOptions = useMemo(() => {
+        return flattenItems(activeSectionState.items).map((item) => item.label);
+    }, [activeSectionState.items]);
+
+    const parentOptionMap = useMemo(() => {
+        const flat = flattenItems(activeSectionState.items);
+        const map = {};
+        flat.forEach((item) => {
+            map[item.label] = item.id;
+        });
+        return map;
+    }, [activeSectionState.items]);
+
+    useEffect(() => {
+        loadSection(activeFilter);
+    }, [activeFilter]);
+
+    async function loadSection(section) {
+        try {
+            setLoading(true);
+
+            const response = await AdminAPI.getDocuments(section);
+            const backendItems = response?.data?.items || [];
+
+            const meta = extractSectionMeta(backendItems);
+
+            setSections((prev) => ({
+                ...prev,
+                [section]: {
+                    header: meta.header,
+                    description: meta.description,
+                    items: stripMetaItems(backendItems)
+                }
+            }));
+        } catch (error) {
+            console.error(`Failed to load ${section}:`, error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    function updateSectionField(section, key, value) {
+        setSections((prev) => ({
+            ...prev,
+            [section]: {
+                ...prev[section],
+                [key]: value
+            }
+        }));
+    }
+
+    function handleCreateItem(payload) {
+        const itemToInsert = {
+            id: crypto.randomUUID(),
+            type: payload.type,
+            title: payload.title,
+            description: payload.description || null,
+            parentId: payload.parentId || null,
+            file: payload.file || null,
+            originalFilename: payload.originalFilename || null,
+            children: []
+        };
+
+        setSections((prev) => ({
+            ...prev,
+            [activeFilter]: {
+                ...prev[activeFilter],
+                items: insertItemIntoTree(prev[activeFilter].items, itemToInsert)
+            }
+        }));
+
+        setShowModal(false);
+    }
+
+    async function handleSaveSection() {
+        try {
+            setSaving(true);
+
+            const payloadItems = buildItemsWithSectionMeta(activeSectionState);
+            const normalizedItems = normalizeTreeForSave(payloadItems);
+
+            await AdminAPI.saveDocuments(activeFilter, normalizedItems);
+            await loadSection(activeFilter);
+        } catch (error) {
+            console.error("Failed to save section:", error);
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    async function handleClearSection() {
+        try {
+            setSaving(true);
+            await AdminAPI.clearDocuments(activeFilter);
+
+            setSections((prev) => ({
+                ...prev,
+                [activeFilter]: { ...EMPTY_SECTION_STATE }
+            }));
+        } catch (error) {
+            console.error("Failed to clear section:", error);
+        } finally {
+            setSaving(false);
+        }
+    }
 
     return (
         <AdminScreen>
-           {showModal &&
-                <DocsAddModal 
+            {showModal && (
+                <DocsAddModal
+                    section={activeFilter}
+                    parents={parentOptions}
+                    parentOptionMap={parentOptionMap}
                     onClick={() => setShowModal(false)}
+                    onCreate={handleCreateItem}
                 />
-            }
+            )}
 
             <div>
                 <Title text={"Documents Upload"} />
             </div>
 
             <Container column={true}>
-                {/* FILTERS */}
                 <section className="w-full flex flex-row justify-start items-center gap-5 mb-10">
-                    {/* VINCENT - filtering lng to kung ano nalabas sa forms */}
                     <Subtitle
                         size='text-[0.9rem]'
                         isLink={true}
@@ -42,6 +281,7 @@ export default function DocsUpload() {
                         onClick={() => setFilter("procedures")}
                     />
                     <Subtitle text={"|"} size='text-[0.9rem]'/>
+
                     <Subtitle
                         size='text-[0.9rem]'
                         isLink={true}
@@ -50,6 +290,7 @@ export default function DocsUpload() {
                         onClick={() => setFilter("moa")}
                     />
                     <Subtitle text={"|"} size='text-[0.9rem]'/>
+
                     <Subtitle
                         size='text-[0.9rem]'
                         isLink={true}
@@ -58,6 +299,7 @@ export default function DocsUpload() {
                         onClick={() => setFilter("guidelines")}
                     />
                     <Subtitle text={"|"} size='text-[0.9rem]'/>
+
                     <Subtitle
                         size='text-[0.9rem]'
                         isLink={true}
@@ -65,43 +307,77 @@ export default function DocsUpload() {
                         isActive={activeFilter === "forms"}
                         onClick={() => setFilter("forms")}
                     />
-
                 </section>
 
-
-                {/* CONTENT */}
-                
-                <div className='w-full flex flex-row p-3 gap-3 justify-evenly items-center'>
-                    
-                    <section className='w-[40%] p-5 sticky top-0 flex flex-wrap gap-2 justify-center items-center transition duration-200 ease-in-out'>
+                <div className='w-full flex flex-row p-3 gap-3 justify-evenly items-start'>
+                    <section className='w-[40%] p-5 sticky top-0 flex flex-col gap-4 justify-start items-stretch transition duration-200 ease-in-out'>
                         <div onClick={() => setShowModal(true)}>
-                            <AnnounceButton textSize='text-[1rem]' btnText='Add Items' icon={<Plus size={25} />}/>
+                            <AnnounceButton
+                                textSize='text-[1rem]'
+                                btnText='Add Items'
+                                icon={<Plus size={25} />}
+                            />
                         </div>
-                        
+
+                        <div className="w-full mt-4">
+                            <Subtitle
+                                text={`${SECTION_LABELS[activeFilter]} Preview`}
+                                size="text-[1rem]"
+                            />
+                            <div className="mt-3">
+                                <TreeRenderer
+                                    items={[
+                                        ...buildItemsWithSectionMeta(activeSectionState)
+                                    ]}
+                                />
+                            </div>
+                        </div>
                     </section>
 
-                    {activeFilter === "procedures" && <Procedures/>}
-                    {activeFilter === "moa" && <MoaProcess/>}
-                    {activeFilter === "guidelines" && <KeyGuidelines/>}
-                    {activeFilter === "forms" && <FormsTemplates/>}
+                    <div className="w-full">
+                        <SectionForm
+                            section={activeFilter}
+                            label={SECTION_LABELS[activeFilter]}
+                            state={activeSectionState}
+                            loading={loading}
+                            saving={saving}
+                            onHeaderChange={(value) => updateSectionField(activeFilter, "header", value)}
+                            onDescriptionChange={(value) => updateSectionField(activeFilter, "description", value)}
+                            onSave={handleSaveSection}
+                            onClear={handleClearSection}
+                        />
+                    </div>
                 </div>
-
             </Container>
         </AdminScreen>
     );
 }
 
-
 export function DocsAddModal({
+    section,
     onClick,
     onCreate,
-    parents = []
+    parents = [],
+    parentOptionMap = {}
 }) {
-
     const [itemType, setItemType] = useState("");
     const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
     const [parent, setParent] = useState("");
     const [isChecked, setIsChecked] = useState(false);
+    const [file, setFile] = useState(null);
+    const [uploading, setUploading] = useState(false);
+
+    const itemTypeLabels = ITEM_TYPE_OPTIONS
+        .filter((option) => section === "forms" ? true : option.value !== "document")
+        .map((option) => option.label);
+
+    const labelToValueMap = ITEM_TYPE_OPTIONS.reduce((acc, option) => {
+        acc[option.label] = option.value;
+        return acc;
+    }, {});
+
+    const selectedTypeValue = labelToValueMap[itemType] || "";
 
     const handleCheckbox = (e) => {
         const checked = e.target.checked;
@@ -113,46 +389,56 @@ export function DocsAddModal({
     };
 
     const isCreateEnabled =
-        itemType !== "" &&
+        selectedTypeValue !== "" &&
         title.trim() !== "" &&
-        (!isChecked || parent !== "");
+        (!isChecked || parent !== "") &&
+        (selectedTypeValue !== "document" || file !== null);
 
-    const handleCreate = () => {
+    const handleCreate = async (e) => {
+        e.preventDefault();
 
         if (!isCreateEnabled) return;
 
-        onCreate({
-            id: crypto.randomUUID(),
-            type: itemType,
-            title,
-            parentId: isChecked ? parent : null,
-            children: []
-        });
+        try {
+            let uploadedFile = null;
 
-        setItemType("");
-        setTitle("");
-        setParent("");
-        setIsChecked(false);
+            if (selectedTypeValue === "document") {
+                setUploading(true);
+                const response = await AdminAPI.uploadDocument(section, title.trim(), file);
+                uploadedFile = response?.data || null;
+            }
+
+            onCreate({
+                type: selectedTypeValue,
+                title: title.trim(),
+                description: description.trim() || null,
+                parentId: isChecked ? parentOptionMap[parent] || null : null,
+                file: uploadedFile?.file || null,
+                originalFilename: uploadedFile?.originalFilename || null
+            });
+
+            setItemType("");
+            setTitle("");
+            setDescription("");
+            setParent("");
+            setIsChecked(false);
+            setFile(null);
+        } catch (error) {
+            console.error("Failed to create item:", error);
+        } finally {
+            setUploading(false);
+        }
     };
 
     return (
         <div className="w-full h-screen fixed top-0 left-0 flex items-center justify-center bg-black/50 z-110 pointer-events-none">
-
             <div className="min-w-[30%] p-10 backdrop-blur-2xl bg-oasis-gradient border border-gray-500 rounded-3xl drop-shadow-lg flex flex-col gap-5 pointer-events-auto">
-
-                <form className="w-full flex flex-col gap-5">
-
+                <form className="w-full flex flex-col gap-5" onSubmit={handleCreate}>
                     <Subtitle size="text-[1.5rem]" text="Add new item"/>
 
                     <Dropdown
                         placeholder="Select Item type"
-                        categories={[
-                            "Header",
-                            "Description",
-                            "Numerical List",
-                            "Bulleted List",
-                            "Alphabetical List"
-                        ]}
+                        categories={itemTypeLabels}
                         value={itemType}
                         onChange={setItemType}
                     />
@@ -163,6 +449,22 @@ export function DocsAddModal({
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                     />
+
+                    <MultiField
+                        labelText="Description (Optional)"
+                        fieldHolder="Enter item description..."
+                        fieldId="itemDescription"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                    />
+
+                    {selectedTypeValue === "document" && (
+                        <FileUploadField
+                            labelText="Upload Document *"
+                            fieldId="documentFile"
+                            onChange={(e) => setFile(e.target.files?.[0] || null)}
+                        />
+                    )}
 
                     <label className="flex gap-3 items-center cursor-pointer">
                         <Subtitle size="text-[1rem]" text="Nest under a parent?"/>
@@ -183,123 +485,86 @@ export function DocsAddModal({
                     />
 
                     <div className="flex justify-end gap-3 w-full">
-                        <AnnounceButton btnText="Cancel" onClick={onClick}/>
+                        <AnnounceButton btnText="Cancel" onClick={onClick} type="button" />
                         <AnnounceButton
-                            btnText="Create"
-                            disabled={!isCreateEnabled}
-                            onClick={handleCreate}
+                            btnText={uploading ? "Creating..." : "Create"}
+                            disabled={!isCreateEnabled || uploading}
+                            type="submit"
                         />
                     </div>
-
                 </form>
             </div>
         </div>
     );
 }
 
-export function FormLayout({ children }) {
-    return(
-        <>
-            <form className='w-full flex flex-col items-start justify-evenly gap-5'>
-                {children}
-                <div className='flex flex-row gap-5'>
-                    <AnnounceButton icon={<Save/>} btnText='Save'/>
-                    <AnnounceButton btnText='Clear all'/>
-                </div>
-                
-            </form>
-        </>
-    )
+export function FormLayout({
+    children,
+    onSave,
+    onClear,
+    saving = false
+}) {
+    return (
+        <form
+            className='w-full flex flex-col items-start justify-evenly gap-5'
+            onSubmit={(e) => {
+                e.preventDefault();
+                onSave?.();
+            }}
+        >
+            {children}
+            <div className='flex flex-row gap-5'>
+                <AnnounceButton
+                    icon={<Save/>}
+                    btnText={saving ? 'Saving...' : 'Save'}
+                    type="submit"
+                    disabled={saving}
+                />
+                <AnnounceButton
+                    btnText='Clear all'
+                    type="button"
+                    onClick={onClear}
+                    disabled={saving}
+                />
+            </div>
+        </form>
+    );
 }
 
-
-export function Procedures() {
+export function SectionForm({
+    section,
+    label,
+    state,
+    loading,
+    saving,
+    onHeaderChange,
+    onDescriptionChange,
+    onSave,
+    onClear
+}) {
     return (
-        <>
-            <FormLayout>
-                <section className='w-full flex flex-col items-start justify-start'>
-                    <SingleField 
-                        labelText={"Procedures Header *"} 
-                        fieldHolder={"Enter upload title..."} 
-                        fieldId={"uploadHead"}
-                    />
-                    <MultiField 
-                        labelText={"Description"} 
-                        fieldHolder={"Enter upload description..."}    
-                        fieldId={"uploadDesc"}
-                    />
-                </section>
+        <FormLayout onSave={onSave} onClear={onClear} saving={saving}>
+            <section className='w-full flex flex-col items-start justify-start'>
+                <SingleField
+                    labelText={`${label} Header *`}
+                    fieldHolder={`Enter ${label} header...`}
+                    fieldId={`${section}-uploadHead`}
+                    value={state.header}
+                    onChange={(e) => onHeaderChange(e.target.value)}
+                    disabled={loading}
+                />
 
-
-            </FormLayout>
-        </>
-    )
-}
-export function MoaProcess() {
-    return (
-        <>
-            <FormLayout>
-                <section className='w-full flex flex-col items-start justify-start'>
-                    <SingleField 
-                        labelText={"MOA Process Header *"} 
-                        fieldHolder={"Enter upload title..."} 
-                        fieldId={"uploadHead"}
-                    />
-                    <MultiField 
-                        labelText={"Description"} 
-                        fieldHolder={"Enter upload description..."}    
-                        fieldId={"uploadDesc"}
-                    />
-                </section>
-
-            </FormLayout>
-        </>
-    )
-}
-
-export function KeyGuidelines() {
-    return (
-        <>
-            <FormLayout>
-                <section className='w-full flex flex-col items-start justify-start'>
-                    <SingleField 
-                        labelText={"Key Guidelines Header *"} 
-                        fieldHolder={"Enter upload title..."} 
-                        fieldId={"uploadHead"}
-                    />
-                    <MultiField 
-                        labelText={"Description"} 
-                        fieldHolder={"Enter upload description..."}    
-                        fieldId={"uploadDesc"}
-                    />
-                </section>
-
-            </FormLayout>
-        </>
-    )
-}
-
-export function FormsTemplates() {
-    return (
-        <>
-            <FormLayout>
-                <section className='w-full flex flex-col items-start justify-start'>
-                    <SingleField 
-                        labelText={"Document Template Header *"} 
-                        fieldHolder={"Enter upload title..."} 
-                        fieldId={"uploadHead"}
-                    />
-                    <MultiField 
-                        labelText={"Description"} 
-                        fieldHolder={"Enter upload description..."}    
-                        fieldId={"uploadDesc"}
-                    />
-                    <FileUploadField labelText={"Upload Document"} fieldId={"documentFile"}/>
-                </section>
-
-            </FormLayout>
-        </>
-    )
+                <MultiField
+                    labelText={"Description"}
+                    fieldHolder={`Enter ${label} description...`}
+                    fieldId={`${section}-uploadDesc`}
+                    value={state.description}
+                    onChange={(e) => onDescriptionChange(e.target.value)}
+                    disabled={loading}
+                />
+            </section>
+        </FormLayout>
+    );
 }
 
 

@@ -8,6 +8,7 @@ from .announcement import Announcement
 from .notification import Notification
 from .uploaded_document import UploadedDocument
 from .hte_review import HteReview
+from .document_item import DocumentItem
 
 
 

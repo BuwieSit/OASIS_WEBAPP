@@ -81,4 +81,42 @@ export const AdminAPI = {
     clearAllPendingReviews(params = {}) {
         return api.post("/api/admin/reviews/clear-all", null, { params });
     },
+
+    getDocuments(section) {
+        return api.get(`/api/documents/admin/${section}`);
+    },
+
+    saveDocuments(section, items) {
+        return api.post("/api/documents/admin/save", {
+            section,
+            items
+        });
+    },
+
+    clearDocuments(section) {
+        return api.delete(`/api/documents/admin/${section}/clear`);
+    },
+
+    uploadDocument(section, title, file) {
+        const formData = new FormData();
+
+        formData.append("section", section);
+        formData.append("title", title);
+        formData.append("file", file);
+
+        return api.post("/api/documents/admin/upload", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data"
+            }
+        });
+    },
+
+    archiveStudent(id) {
+        return api.patch(`/api/admin/students/${id}/archive`);
+    },
+
+    unarchiveStudent(id) {
+        return api.patch(`/api/admin/students/${id}/unarchive`);
+    },
 };
+

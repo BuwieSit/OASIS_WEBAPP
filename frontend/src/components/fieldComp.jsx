@@ -1,5 +1,5 @@
-import { AdminField, ContentField, UploadField } from "../utilities/inputField"
-import { Label } from "../utilities/label"
+import { AdminField, ContentField, UploadField } from "../utilities/inputField";
+import { Label } from "../utilities/label";
 
 export function SingleField({
   labelText,
@@ -9,7 +9,8 @@ export function SingleField({
   value,
   hasBorder,
   onChange,
-  icon
+  icon,
+  disabled = false
 }) {
   return (
     <div className="w-full">
@@ -21,6 +22,7 @@ export function SingleField({
         id={fieldId}
         value={value}
         onChange={onChange}
+        disabled={disabled}
       />
     </div>
   );
@@ -32,7 +34,8 @@ export function MultiField({
   fieldHolder,
   value,
   onChange,
-  max
+  max,
+  disabled = false
 }) {
   return (
     <div className="w-full">
@@ -43,29 +46,26 @@ export function MultiField({
         value={value}
         onChange={onChange}
         maxNum={max}
+        disabled={disabled}
       />
     </div>
   );
 }
 
-
-export function FileUploadField( {labelText, fieldId, accept, onChange} ) {
-    return (
-        <>
-        <div>
-          <Label fieldId={fieldId} labelText={labelText}/>
-          <UploadField accept={accept} onChange={onChange}/>
-        </div>
-         
-        </>
-    )
+export function FileUploadField({ labelText, fieldId, accept, onChange, disabled = false }) {
+  return (
+    <div>
+      <Label fieldId={fieldId} labelText={labelText} />
+      <UploadField
+        id={fieldId}
+        accept={accept}
+        onChange={onChange}
+        disabled={disabled}
+      />
+    </div>
+  );
 }
 
-export function BulletField( { labelText, fieldId }) {
-    return(
-        <>
-            
-        
-        </>
-    )
+export function BulletField({ labelText, fieldId }) {
+  return <></>;
 }

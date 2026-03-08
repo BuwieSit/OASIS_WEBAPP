@@ -3,17 +3,19 @@
 ####################################
 .DS_Store
 Thumbs.db
+Desktop.ini
 *.log
 *.tmp
 *.swp
 *.swo
 
 ####################################
-# ENVIRONMENT VARIABLES
+# ENVIRONMENT VARIABLES / SECRETS
 ####################################
 .env
 .env.*
 !.env.example
+.flaskenv
 
 ####################################
 # NODE / FRONTEND (Vite + React)
@@ -28,11 +30,15 @@ yarn-error.log*
 pnpm-debug.log*
 
 ####################################
-# FRONTEND BUILD ARTIFACTS
+# FRONTEND-SPECIFIC
 ####################################
 frontend/node_modules/
 frontend/dist/
+frontend/dist-ssr/
 frontend/.vite/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
 
 ####################################
 # PYTHON / BACKEND (Flask)
@@ -53,24 +59,60 @@ env/
 ENV/
 
 ####################################
-# FLASK / BACKEND RUNTIME
+# BACKEND-SPECIFIC
 ####################################
 backend/__pycache__/
-backend/migrations/versions/__pycache__/
-instance/
-.flaskenv
+backend/**/*.pyc
+backend/**/*.pyo
+backend/**/*.pyd
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/instance/
 
 ####################################
-# DATABASE
+# FLASK / RUNTIME / CACHE
+####################################
+instance/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+####################################
+# DATABASE / DUMPS
 ####################################
 *.sql
 *.dump
 *.backup
 
 ####################################
-# UPLOADED FILES (IMPORTANT)
+# MIGRATIONS CACHE ONLY
 ####################################
+backend/migrations/versions/__pycache__/
 
+####################################
+# UPLOADED FILES / GENERATED FILES
+####################################
+uploads/
+backend/uploads/
+backend/app/static/uploads/
+backend/static/uploads/
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+
+####################################
+# ARCHIVES / LOCAL PROJECT FILES
+####################################
+*.zip
+*.rar
+*.7z
 
 ####################################
 # IDE / EDITORS
@@ -78,15 +120,3 @@ instance/
 .vscode/
 .idea/
 *.iml
-
-####################################
-# TEST / COVERAGE
-####################################
-.coverage
-htmlcov/
-.pytest_cache/
-
-####################################
-# OS
-####################################
-Desktop.ini
