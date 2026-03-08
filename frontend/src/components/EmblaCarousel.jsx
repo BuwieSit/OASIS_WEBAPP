@@ -17,7 +17,7 @@ export function CarouselItem({ thumbnail, hteName = "Name of HTE", hteAddress = 
 
                     {/* IMAGE WRAPPER */}
                     <div className="w-full h-full bg-center bg-cover py-5 flex items-end" style={{ backgroundImage: `url(${thumbnail})`}}>
-                        <div className='w-full flex flex-col items-start p-3 backdrop-blur-md bg-white/30 shadow-lg text-white'>
+                        <div className='w-full flex flex-col items-start p-3 backdrop-blur-md bg-white/30 shadow-lg text-white select-none'>
                             <Subtitle text={hteName} weight={"font-bold"} size={"text-[1.2rem]"}/>
 
                             <section className='w-full flex flex-row justify-start items-center gap-3'>
@@ -59,7 +59,7 @@ const EmblaCarousel = (props) => {
   return (
     <section className="embla">
       {/* TOP CURVE */}
-      <div className="absolute top-[-40%] left-1/2 -translate-x-1/2 w-[150vw] h-50 rounded-[100%] pointer-events-none bg-page-white z-30"/>
+      <div className="absolute top-[-35%] left-1/2 -translate-x-1/2 w-[150vw] h-50 rounded-[100%] pointer-events-none bg-page-white z-30"/>
 
       {/* BOTTOM CURVE */}
       <div className="absolute bottom-[-25%] left-1/2 -translate-x-1/2 w-[150vw] h-50 rounded-[100%] pointer-events-none bg-page-white z-30"/>

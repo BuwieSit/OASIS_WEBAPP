@@ -10,8 +10,9 @@ import { Text, HteLocation } from '../../utilities/tableUtil.jsx';
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { AdminAPI } from "../../api/admin.api";
-import { Check, Download, Save, Upload, X } from 'lucide-react';
+import { Check, Download, FileCheck, Save, Upload, X } from 'lucide-react';
 import { useRef } from "react";
+import { ConfirmModal, GeneralPopupModal } from '../../components/popupModal.jsx';
 
 export default function AdmOperations() {
 
@@ -52,6 +53,8 @@ export default function AdmOperations() {
     const [thumbnailFile, setThumbnailFile] = useState(null);
     const [moaFile, setMoaFile] = useState(null);
 
+    const [confirmClear, setConfirmClear] = useState(false);
+    const [actionCompleted, setActionCompleted] = useState(false);
 
     // =============================
     // REVIEWS MODERATION STATE
@@ -142,6 +145,7 @@ export default function AdmOperations() {
         }
     };
 
+
     const handleClearAll = async () => {
         try {
             const params = {
@@ -211,6 +215,8 @@ export default function AdmOperations() {
         setLogoFile(null);
         setThumbnailFile(null);
         setMoaFile(null);
+
+        setConfirmClear(false);
     };
 
     const formatDate = (d) =>
@@ -329,6 +335,28 @@ export default function AdmOperations() {
 
     return (
         <AdminScreen>
+            {/* CONFIRM FOR CLEARING */}
+            {confirmClear && 
+                <ConfirmModal 
+                    confText='clear all?' 
+                    onCancel={() => setConfirmClear(false)}
+                    onConfirm={
+                        () => {
+                            setActionCompleted(true);
+                            resetForm();
+                        }
+                    }
+                />
+            }
+            {actionCompleted && 
+                <GeneralPopupModal 
+                    time={3000} 
+                    isNeutral = {true}
+                    icon={<FileCheck/>}
+                    title={"Action Completed."}
+                    text={"HTE Information Cleared."}
+                />
+            }
 
             {/* =============================
                 HEADER
@@ -390,6 +418,8 @@ export default function AdmOperations() {
             {/* =============================
                 ADD / UPDATE HTE FORM
             ============================== */}
+
+
             {/* TITLE */}
             <div className='flex justify-start items-start w-[80%]'>
                 <Title text={"Add HTE"} />
@@ -447,9 +477,9 @@ export default function AdmOperations() {
                             <div className="w-full h-full flex justify-start items-end gap-5 px-5">
                                 <AnnounceButton icon={<Save size={15} />} btnText="Save" type="submit" />
                                 <AnnounceButton
-                                    btnText="Cancel"
+                                    btnText="Clear all"
                                     type="button"
-                                    onClick={resetForm}
+                                    onClick={() => setConfirmClear(true)}
                                 />
                             </div>
                         </div>

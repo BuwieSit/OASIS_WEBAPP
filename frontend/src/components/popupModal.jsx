@@ -11,8 +11,9 @@ export function GeneralPopupModal({
     text, 
     title,
     icon = <Check/>,
-    isSuccess = true,
+    isSuccess,
     isFailed,
+    isNeutral = true
 }) {
     const [visible, setVisible] = useState(true);
 
@@ -30,8 +31,9 @@ export function GeneralPopupModal({
     return (
         <div 
             className={`fixed top-0 translate-y-5 w-[30%] p-3 rounded-3xl flex flex-col items-center justify-center font-oasis-text font-bold text-[1.3rem] duration-300 transition ease-in-out z-100 
-            ${isSuccess ? "text-oasis-button-dark drop-shadow-[0px_0px_2px_rgba(45,98,89,1)]" : "text-black"} 
-            ${isFailed ? "text-oasis-red drop-shadow-[0px_0px_2px_rgba(128,0,32,1)]": "text-black "} 
+            ${isSuccess && "text-oasis-button-dark drop-shadow-[0px_0px_2px_rgba(45,98,89,1)]"} 
+            ${isFailed && "text-oasis-red drop-shadow-[0px_0px_2px_rgba(128,0,32,1)]"} 
+            ${isNeutral && "text-[#36454F] drop-shadow-[0px_0px_2px_rgba(54,69,79,1)]"} 
         `}>
             <div className="bg-white rounded-t-2xl p-1 min-w-[100px] flex justify-center items-center">
                 {icon}
@@ -59,7 +61,7 @@ export function ConfirmModal({ confText = "complete action?", onCancel, onLogOut
                     border border-gray-300 rounded-3xl drop-shadow-lg flex flex-col items-center justify-center gap-5 font-oasis-text font-bold text-[1.3rem] duration-300 transition ease-in-out pointer-events-auto
                 `}>
 
-                    <Subtitle text={`Do you want to ${confText}`} size="text-[1rem]" weight="font-bold"/>
+                    <Subtitle text={`Do you want to ${confText}`} size="text-[1rem]" weight="font-bold" isCenter={true}/>
                     <div className="flex flex-row gap-3">
                         <AnnounceButton btnText="Confirm" onClick={onLogOut || onConfirm}/>
                         <AnnounceButton btnText="Cancel" onClick={onCancel}/>

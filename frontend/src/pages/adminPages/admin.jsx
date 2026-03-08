@@ -203,7 +203,7 @@ export default function Admin() {
                     <Title text={"Admin Dashboard"} />
                 </div>
 
-                <section className='p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'>
+                <section className="p-5 gap-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     <Link to={"/admStudents"}>
                         <AdmCard
                             cardTitle="Total Students"
