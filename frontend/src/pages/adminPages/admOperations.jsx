@@ -7,15 +7,13 @@ import { Label, RatingLabel } from '../../utilities/label.jsx';
 import { AnnounceButton, CoursesButton } from '../../components/button.jsx';
 import Subtitle from '../../utilities/subtitle.jsx';
 import { Text, HteLocation } from '../../utilities/tableUtil.jsx';
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { AdminAPI } from "../../api/admin.api";
 import { Check, Download, FileCheck, Save, Upload, X } from 'lucide-react';
-import { useRef } from "react";
 import { ConfirmModal, GeneralPopupModal } from '../../components/popupModal.jsx';
 
 export default function AdmOperations() {
-
     const [data, setData] = useState([]);
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -23,13 +21,12 @@ export default function AdmOperations() {
     const categories = ["ACTIVE", "EXPIRED", "PENDING"];
     const hteDropdown = data.map(h => h.company_name);
 
-    const status = searchParams.get("status"); // ACTIVE | EXPIRED | null
+    const status = searchParams.get("status");
     const uploadRef = useRef(null);
 
     // =============================
     // ADD HTE FORM STATE
     // =============================
-
     const [companyName, setCompanyName] = useState("");
     const [companyAbout, setCompanyAbout] = useState("");
     const [companyLoc, setCompanyLoc] = useState("");
@@ -43,9 +40,8 @@ export default function AdmOperations() {
     const [contactNumber, setContactNumber] = useState("");
     const [contactEmail, setContactEmail] = useState("");
 
-    const [signedAt, setSignedAt] = useState("");     // YYYY-MM-DD
-    const [expiresAt, setExpiresAt] = useState("");   // YYYY-MM-DD
-    const [validity, setValidity] = useState("");     // months
+    const [signedAt, setSignedAt] = useState("");
+    const [validity, setValidity] = useState(""); // months
 
     const [eligibleCourses, setEligibleCourses] = useState([]);
 
@@ -70,12 +66,11 @@ export default function AdmOperations() {
     const [reviews, setReviews] = useState([]);
     const [reviewsLoading, setReviewsLoading] = useState(false);
 
-    // Filters
-    const [reviewStatus, setReviewStatus] = useState("PENDING"); // PENDING | APPROVED | REJECTED
+    const [reviewStatus, setReviewStatus] = useState("PENDING");
     const [reviewCriteria, setReviewCriteria] = useState("");
-    const [reviewSort, setReviewSort] = useState("newest"); // newest | oldest
-    const [reviewRating, setReviewRating] = useState(""); // 1..5 or ""
-    const [reviewHteName, setReviewHteName] = useState(""); // selected HTE name (optional)
+    const [reviewSort, setReviewSort] = useState("newest");
+    const [reviewRating, setReviewRating] = useState("");
+    const [reviewHteName, setReviewHteName] = useState("");
 
     const fetchReviews = async () => {
         setReviewsLoading(true);
@@ -104,7 +99,11 @@ export default function AdmOperations() {
 
     const formatDateTime = (iso) => {
         if (!iso) return "—";
-        try { return new Date(iso).toLocaleString(); } catch { return "—"; }
+        try {
+            return new Date(iso).toLocaleString();
+        } catch {
+            return "—";
+        }
     };
 
     const handleApproveReview = async (id) => {
@@ -145,7 +144,6 @@ export default function AdmOperations() {
         }
     };
 
-
     const handleClearAll = async () => {
         try {
             const params = {
@@ -176,14 +174,56 @@ export default function AdmOperations() {
     // =============================
     // HELPERS
     // =============================
-    const calcValidity = (moa) => {
-        if (!moa?.signed_at || !moa?.expires_at) return "—";
-        const start = new Date(moa.signed_at);
-        const end = new Date(moa.expires_at);
-        const years = Math.floor(
-            (end - start) / (1000 * 60 * 60 * 24 * 365)
-        );
-        return `${years} year${years !== 1 ? "s" : ""}`;
+    const getDisplayStatus = (row) => {
+        const backendStatus = row?.moa?.status || row?.moa_status || "NO MOA";
+        const expiry = row?.moa?.expires_at || row?.moa_expiry_date;
+
+        if (!expiry) return backendStatus;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const expiryDate = new Date(expiry);
+        if (Number.isNaN(expiryDate.getTime())) return backendStatus;
+
+        expiryDate.setHours(0, 0, 0, 0);
+
+        if (today > expiryDate) return "EXPIRED";
+        return backendStatus;
+    };
+
+    const calcValidity = (row) => {
+        const rawValidity =
+            row?.moa?.validity_years ??
+            row?.moa_validity_years ??
+            row?.moa_validity ??
+            null;
+
+        if (rawValidity !== null && rawValidity !== undefined && rawValidity !== "") {
+            const num = Number(rawValidity);
+            if (!Number.isNaN(num)) {
+                return `${num % 1 === 0 ? num.toFixed(0) : num.toFixed(2)} year${num !== 1 ? "s" : ""}`;
+            }
+        }
+
+        const signed = row?.moa?.signed_at || row?.moa_signed_at;
+        const expiry = row?.moa?.expires_at || row?.moa_expiry_date;
+
+        if (!signed || !expiry) return "—";
+
+        const start = new Date(signed);
+        const end = new Date(expiry);
+
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "—";
+
+        const months =
+            (end.getFullYear() - start.getFullYear()) * 12 +
+            (end.getMonth() - start.getMonth());
+
+        if (months <= 0) return "—";
+
+        const years = months / 12;
+        return `${years % 1 === 0 ? years.toFixed(0) : years.toFixed(2)} year${years !== 1 ? "s" : ""}`;
     };
 
     const toggleCourse = (course) => {
@@ -200,7 +240,6 @@ export default function AdmOperations() {
         setCompanyLoc("");
         setStatusValue("ACTIVE");
 
-        // ✅ reset new fields
         setIndustry("");
         setWebsite("");
         setContactPerson("");
@@ -208,7 +247,6 @@ export default function AdmOperations() {
         setContactNumber("");
         setContactEmail("");
         setSignedAt("");
-        setExpiresAt("");
         setValidity("");
 
         setEligibleCourses([]);
@@ -219,8 +257,7 @@ export default function AdmOperations() {
         setConfirmClear(false);
     };
 
-    const formatDate = (d) =>
-        d ? new Date(d).toLocaleDateString() : "—";
+    const formatDate = (d) => d ? new Date(d).toLocaleDateString() : "—";
 
     // =============================
     // TABLE COLUMNS
@@ -229,16 +266,15 @@ export default function AdmOperations() {
         { header: "HTE Name", render: r => <Text text={r.company_name} /> },
         { header: "Industry", render: r => <Text text={r.industry} /> },
         { header: "Location", render: r => <HteLocation address={r.address} /> },
-        { header: "Status", render: r => <Text text={r.moa?.status || "NO MOA"} /> },
-        { header: "MOA Validity", render: r => <Text text={calcValidity(r.moa)} /> },
-        { header: "Signed Date", render: r => <Text text={formatDate(r.moa?.signed_at)} /> },
-        { header: "Expiry Date", render: r => <Text text={formatDate(r.moa?.expires_at)} /> },
+        { header: "Status", render: r => <Text text={getDisplayStatus(r)} /> },
+        { header: "MOA Validity", render: r => <Text text={calcValidity(r)} /> },
+        { header: "Signed Date", render: r => <Text text={formatDate(r.moa?.signed_at || r.moa_signed_at)} /> },
+        { header: "Expiry Date", render: r => <Text text={formatDate(r.moa?.expires_at || r.moa_expiry_date)} /> },
     ];
 
     const handleSaveHTE = async (e) => {
         e.preventDefault();
 
-        // ✅ Minimal frontend validation (keeps design, avoids silent fails)
         if (!companyName || !industry || !companyLoc || !contactPerson || !contactPosition || !contactNumber || !contactEmail) {
             alert("Please fill required fields: Company Name, Industry, Location, Contact Person, Position, Contact Number, Email Address.");
             return;
@@ -250,7 +286,6 @@ export default function AdmOperations() {
         formData.append("address", companyLoc);
         formData.append("status", statusValue);
 
-        // ✅ New fields (backend expects these)
         formData.append("industry", industry);
         formData.append("website", website);
 
@@ -259,15 +294,10 @@ export default function AdmOperations() {
         formData.append("contact_number", contactNumber);
         formData.append("contact_email", contactEmail);
 
-        // MOA fields (optional, but enables MOA row creation)
         if (signedAt) formData.append("signed_at", signedAt);
-        if (expiresAt) formData.append("expires_at", expiresAt);
         if (validity) formData.append("validity", validity);
 
-        formData.append(
-            "eligible_courses",
-            JSON.stringify(eligibleCourses)
-        );
+        formData.append("eligible_courses", JSON.stringify(eligibleCourses));
 
         if (logoFile) formData.append("logo", logoFile);
         if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
@@ -335,35 +365,32 @@ export default function AdmOperations() {
 
     return (
         <AdminScreen>
-            {/* CONFIRM FOR CLEARING */}
-            {confirmClear && 
-                <ConfirmModal 
-                    confText='clear all?' 
+            {confirmClear &&
+                <ConfirmModal
+                    confText='clear all?'
                     onCancel={() => setConfirmClear(false)}
-                    onConfirm={
-                        () => {
-                            setActionCompleted(true);
-                            resetForm();
-                        }
-                    }
-                />
-            }
-            {actionCompleted && 
-                <GeneralPopupModal 
-                    time={3000} 
-                    isNeutral = {true}
-                    icon={<FileCheck/>}
-                    title={"Action Completed."}
-                    text={"HTE Information Cleared."}
+                    onConfirm={() => {
+                        setActionCompleted(true);
+                        resetForm();
+                    }}
                 />
             }
 
-            {/* =============================
-                HEADER
-            ============================== */}
+            {actionCompleted &&
+                <GeneralPopupModal
+                    time={3000}
+                    isNeutral={true}
+                    icon={<FileCheck />}
+                    title={"Action Completed."}
+                    text={"HTE Information Cleared."}
+                    onClose={() => setActionCompleted(false)}
+                />
+            }
+
             <div className='mb-10'>
                 <Title text={"Admin Operations"} />
             </div>
+
             <input
                 ref={uploadRef}
                 type="file"
@@ -372,20 +399,13 @@ export default function AdmOperations() {
                 onChange={handleUploadFile}
             />
 
-            {/* =============================
-                HTE TABLE
-            ============================== */}
-
-            {/* TITLE */}
             <div className='flex justify-start items-start w-[80%]'>
                 <Title text={"HTE Overview"} />
             </div>
 
             <OasisTable columns={columns} data={data}>
                 <div className="w-full flex flex-row justify-between items-center gap-4 mt-4">
-
                     <div className='flex flex-row gap-3 items-center justify-start'>
-
                         <Subtitle
                             text="All"
                             isLink
@@ -415,22 +435,13 @@ export default function AdmOperations() {
                 </div>
             </OasisTable>
 
-            {/* =============================
-                ADD / UPDATE HTE FORM
-            ============================== */}
-
-
-            {/* TITLE */}
             <div className='flex justify-start items-start w-[80%]'>
                 <Title text={"Add HTE"} />
             </div>
-            <div className="w-[80%] p-5 rounded-3xl bg-admin-element flex flex-col gap-5 shadow-[0px_0px_10px_rgba(0,0,0,0.5)]">
 
-                {/* FORM FOR ADD HTE*/}
+            <div className="w-[80%] p-5 rounded-3xl bg-admin-element flex flex-col gap-5 shadow-[0px_0px_10px_rgba(0,0,0,0.5)]">
                 <form className="w-full flex flex-col gap-5" onSubmit={handleSaveHTE}>
-                    {/* CONTAINER */}
                     <div className="w-full grid grid-cols-2 p-2 text-oasis-button-dark">
-                        {/* FIRST COLUMN LOGO & THUMBNAIL*/}
                         <div className="w-full px-2 py-3 flex flex-col gap-5">
                             <FileUploadField
                                 labelText="Upload Logo"
@@ -448,7 +459,6 @@ export default function AdmOperations() {
                                 onChange={e => setMoaFile(e.target.files[0])}
                             />
 
-                            {/* ✅ NEW MOA FIELDS (keeps same form flow, just adds below files) */}
                             <SingleField
                                 labelText="Date Notarized (Signed Date)"
                                 fieldHolder="YYYY-MM-DD"
@@ -458,22 +468,13 @@ export default function AdmOperations() {
                             />
 
                             <SingleField
-                                labelText="Validity (months)"
-                                fieldHolder="e.g. 12"
+                                labelText="Validity"
+                                fieldHolder="Enter years or months"
                                 fieldId="validity"
                                 value={validity}
                                 onChange={e => setValidity(e.target.value)}
                             />
 
-                            {/* <SingleField
-                                labelText="Expiry Date"
-                                fieldHolder="YYYY-MM-DD"
-                                fieldId="expiresAt"
-                                value={expiresAt}
-                                onChange={e => setExpiresAt(e.target.value)}
-                            /> */}
-
-                            {/* SAVE HTE BUTTONS */}
                             <div className="w-full h-full flex justify-start items-end gap-5 px-5">
                                 <AnnounceButton icon={<Save size={15} />} btnText="Save" type="submit" />
                                 <AnnounceButton
@@ -484,7 +485,6 @@ export default function AdmOperations() {
                             </div>
                         </div>
 
-                        {/* SECOND COLUMN FIELDS */}
                         <div className="w-full p-2 flex flex-col justify-start gap-5">
                             <div className="w-full p-2 flex flex-col gap-3">
                                 <SingleField
@@ -495,7 +495,6 @@ export default function AdmOperations() {
                                     onChange={e => setCompanyName(e.target.value)}
                                 />
 
-                                {/* ✅ NEW REQUIRED FIELD */}
                                 <SingleField
                                     labelText="Nature of Business (Industry)"
                                     fieldHolder="Enter nature of business"
@@ -528,7 +527,6 @@ export default function AdmOperations() {
                                     onChange={e => setCompanyLoc(e.target.value)}
                                 />
 
-                                {/* ✅ CONTACT FIELDS */}
                                 <SingleField
                                     labelText="Contact Person"
                                     fieldHolder="Enter contact person"
@@ -579,22 +577,17 @@ export default function AdmOperations() {
                                         />
                                     )}
                                 </section>
-
                             </div>
                         </div>
-
                     </div>
                 </form>
-                {/* ADD / EDIT HTE FORM END */}
             </div>
 
-            {/* TITLE FOR REVIEW*/}
             <div className='flex justify-start items-start w-[80%] mt-10'>
                 <Title text={"Reviews Moderation"} />
             </div>
 
             <div className='w-[95%] max-w-[1800px] max-h-200 overflow-x-hidden p-5 rounded-3xl bg-admin-element flex flex-col items-center shadow-[0px_0px_10px_rgba(0,0,0,0.5)]'>
-
                 <div className="w-full flex flex-col gap-2">
                     <Subtitle
                         text={"Approve or reject student reviews. Approved reviews will be visible on the public HTE profiles."}
@@ -608,11 +601,7 @@ export default function AdmOperations() {
                 </div>
 
                 <section className='w-full py-5 flex flex-row gap-6 justify-between items-start font-oasis-text'>
-
-                    {/* LEFT: REVIEW CARDS */}
-                    <div className="flex-1 h-full grid gap-4 
-                        grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
-
+                    <div className="flex-1 h-full grid gap-4 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
                         {reviews.length === 0 && !reviewsLoading && (
                             <div className="w-full p-5 bg-white rounded-3xl drop-shadow-[0px_2px_5px_rgba(0,0,0,0.2)]">
                                 <Subtitle text="No reviews found for the selected filters." size="text-[0.95rem]" />
@@ -670,9 +659,7 @@ export default function AdmOperations() {
                         ))}
                     </div>
 
-                    {/* RIGHT: FILTERS */}
                     <div className='w-[40%] p-3 flex flex-col justify-start items-start sticky top-0 transiiton-all duration-100 ease-in-out'>
-
                         <Subtitle text={"Status"} size={'text-[1rem]'} weight='font-bold' />
                         <div className='mt-3 mb-5 w-full flex flex-wrap justify-start items-start gap-1'>
                             <div onClick={() => setReviewStatus("PENDING")} className="cursor-pointer">
@@ -722,13 +709,13 @@ export default function AdmOperations() {
 
                         <Subtitle text={"HTE"} size={'text-[1rem]'} weight='font-bold' />
                         <div className='mt-3 w-full flex flex-wrap justify-start items-start gap-1'>
-                        <Dropdown
-                            labelText=""
-                            fieldId="reviewHTE"
-                            categories={hteDropdown}
-                            value={reviewHteName}
-                            onChange={setReviewHteName}
-                        />
+                            <Dropdown
+                                labelText=""
+                                fieldId="reviewHTE"
+                                categories={hteDropdown}
+                                value={reviewHteName}
+                                onChange={setReviewHteName}
+                            />
                         </div>
 
                         <div className='mt-3 p-5 w-full flex justify-between items-center gap-2'>
@@ -749,11 +736,9 @@ export default function AdmOperations() {
                                 }}
                             />
                         </div>
-
                     </div>
                 </section>
             </div>
-
         </AdminScreen>
     );
 }

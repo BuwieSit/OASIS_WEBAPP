@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, send_file
+from flask import Blueprint, jsonify, request, send_file, current_app
 from flask_jwt_extended import jwt_required, get_jwt
 from sqlalchemy.orm import aliased
 from datetime import date, datetime
@@ -7,7 +7,6 @@ import os
 import uuid
 from werkzeug.utils import secure_filename
 from openpyxl import Workbook, load_workbook
-from flask import current_app
 
 from app.extensions import db
 from app.models import HostTrainingEstablishment, MemorandumOfAgreement
@@ -35,16 +34,18 @@ EXCEL_HEADERS = [
     "LINKE TO SCANNED MOA",
 ]
 
+
 def _admin_only():
     claims = get_jwt()
     return claims.get("role") == UserRole.ADMIN.value
+
 
 def _parse_date(val):
     """
     Supports:
     - Excel datetime/date
-    - 'MM/DD/YYYY'
-    - 'YYYY-MM-DD'
+    - MM/DD/YYYY
+    - YYYY-MM-DD
     - empty
     """
     if val is None or val == "":
@@ -61,17 +62,95 @@ def _parse_date(val):
             pass
     return None
 
-def _parse_int(val):
+
+def _parse_number(val):
     if val is None or val == "":
         return None
     try:
-        return int(float(val))
+        return float(val)
     except Exception:
         return None
+
+
+def _compute_validity_years(signed_at, expires_at):
+    """
+    Fallback computation from dates.
+    """
+    if not signed_at or not expires_at:
+        return None
+
+    delta_days = (expires_at - signed_at).days
+    if delta_days < 0:
+        return None
+
+    return round(delta_days / 365, 2)
+
+
+def _compute_validity_years_from_months(validity_months):
+    """
+    Main computation for manual HTE add:
+    months -> years
+    """
+    if validity_months is None:
+        return None
+
+    try:
+        validity_months = float(validity_months)
+    except Exception:
+        return None
+
+    if validity_months < 0:
+        return None
+
+    return round(validity_months / 12, 2)
+
+
+def _compute_expiry_date_from_months(signed_at, validity_months):
+    """
+    Main computation for manual HTE add:
+    signed_at + months -> expiry date
+    """
+    if not signed_at or validity_months is None:
+        return None
+
+    try:
+        validity_months = int(float(validity_months))
+    except Exception:
+        return None
+
+    if validity_months < 0:
+        return None
+
+    year = signed_at.year
+    month = signed_at.month + validity_months
+
+    year += (month - 1) // 12
+    month = ((month - 1) % 12) + 1
+
+    # Keep existing convention to avoid invalid dates
+    day = min(signed_at.day, 28)
+    return date(year, month, day)
+
+
+def _resolve_moa_dates_and_validity(signed_at=None, expires_at=None, validity_months=None, validity_years=None):
+    """
+    Priority:
+    1. signed_at + validity_months => compute expires_at and validity_years
+    2. signed_at + expires_at => compute validity_years
+    """
+    if signed_at and validity_months is not None:
+        expires_at = _compute_expiry_date_from_months(signed_at, validity_months)
+        validity_years = _compute_validity_years_from_months(validity_months)
+    elif signed_at and expires_at and validity_years is None:
+        validity_years = _compute_validity_years(signed_at, expires_at)
+
+    return signed_at, expires_at, validity_years
+
 
 def _save_upload(file_storage, upload_root, subdir, allowed_ext=None):
     if not file_storage:
         return None
+
     filename = secure_filename(file_storage.filename or "")
     if not filename:
         return None
@@ -89,6 +168,7 @@ def _save_upload(file_storage, upload_root, subdir, allowed_ext=None):
     file_storage.save(out_path)
 
     return f"uploads/{subdir}/{out_name}"
+
 
 def _overview_query(status):
     latest_moa = (
@@ -117,23 +197,32 @@ def _overview_query(status):
 
     return query.order_by(HostTrainingEstablishment.company_name)
 
+
 @admin_hte_bp.get("")
 @jwt_required()
 def get_htes():
     if not _admin_only():
         return jsonify({"error": "forbidden"}), 403
 
-    status = request.args.get("status")  # ALL | ACTIVE | EXPIRED | PENDING
+    status = request.args.get("status")
 
     rows = _overview_query(status).all()
 
     results = []
     for hte, moa in rows:
+        signed_at = moa.signed_at if moa and moa.signed_at else hte.moa_signed_at
+        expires_at = moa.expires_at if moa and moa.expires_at else hte.moa_expiry_date
+        validity_years = hte.moa_validity
+
+        # fallback only if stored validity is missing
+        if signed_at and expires_at and validity_years is None:
+            validity_years = _compute_validity_years(signed_at, expires_at)
+
         results.append({
             "hte_id": hte.id,
             "company_name": hte.company_name,
             "industry": hte.industry,
-            "address": hte.address,  # ✅ fixed key
+            "address": hte.address,
             "description": hte.description,
             "website": hte.website,
             "contact_person": hte.contact_person,
@@ -145,13 +234,16 @@ def get_htes():
             "moa": None if not moa else {
                 "id": moa.id,
                 "status": moa.status,
-                "signed_at": moa.signed_at.isoformat() if moa.signed_at else None,
-                "expires_at": moa.expires_at.isoformat() if moa.expires_at else None,
+                "signed_at": signed_at.isoformat() if signed_at else None,
+                "expires_at": expires_at.isoformat() if expires_at else None,
+                "validity_years": validity_years,
                 "document_path": moa.document_path,
-            }
+            },
+            "moa_validity_years": validity_years
         })
 
     return jsonify(results), 200
+
 
 @admin_hte_bp.get("/export")
 @jwt_required()
@@ -159,7 +251,7 @@ def export_htes_excel():
     if not _admin_only():
         return jsonify({"error": "forbidden"}), 403
 
-    status = request.args.get("status")  # optional
+    status = request.args.get("status")
 
     rows = _overview_query(status).all()
 
@@ -170,6 +262,13 @@ def export_htes_excel():
     ws.append(EXCEL_HEADERS)
 
     for hte, moa in rows:
+        signed_at = moa.signed_at if moa and moa.signed_at else hte.moa_signed_at
+        expires_at = moa.expires_at if moa and moa.expires_at else hte.moa_expiry_date
+        validity_years = hte.moa_validity
+
+        if signed_at and expires_at and validity_years is None:
+            validity_years = _compute_validity_years(signed_at, expires_at)
+
         ws.append([
             hte.company_name,
             hte.industry,
@@ -180,9 +279,9 @@ def export_htes_excel():
             hte.address,
             (moa.status if moa else hte.moa_status),
             hte.course or "",
-            (moa.signed_at.strftime("%m/%d/%Y") if moa and moa.signed_at else (hte.moa_signed_at.strftime("%m/%d/%Y") if hte.moa_signed_at else "")),
-            (hte.moa_validity if hte.moa_validity is not None else ""),
-            (moa.expires_at.strftime("%m/%d/%Y") if moa and moa.expires_at else (hte.moa_expiry_date.strftime("%m/%d/%Y") if hte.moa_expiry_date else "")),
+            (signed_at.strftime("%m/%d/%Y") if signed_at else ""),
+            (validity_years if validity_years is not None else ""),
+            (expires_at.strftime("%m/%d/%Y") if expires_at else ""),
             (moa.document_path if moa else hte.moa_file_path) or "",
         ])
 
@@ -197,6 +296,7 @@ def export_htes_excel():
         download_name=filename,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
 
 @admin_hte_bp.post("/import")
 @jwt_required()
@@ -214,7 +314,6 @@ def import_htes_excel():
     wb = load_workbook(f, data_only=True)
     ws = wb.active
 
-    # Map headers -> column index
     header_row = [str(c.value).strip() if c.value is not None else "" for c in next(ws.iter_rows(min_row=1, max_row=1))]
     header_to_idx = {h: i for i, h in enumerate(header_row)}
 
@@ -249,9 +348,19 @@ def import_htes_excel():
         moa_status = (get("MOA STATUS") or "PENDING")
         course = (get("COURSE") or "")
         signed_at = _parse_date(get("DATE NOTARIZED"))
-        validity = _parse_int(get("VALIDITY"))
+        validity_months = _parse_number(get("VALIDITY"))
         expires_at = _parse_date(get("EXPIRY DATE"))
         moa_link = (get("LINKE TO SCANNED MOA") or "")
+
+        if validity_months is not None:
+            signed_at, expires_at, validity_years = _resolve_moa_dates_and_validity(
+                signed_at=signed_at,
+                expires_at=None,
+                validity_months=validity_months,
+                validity_years=None
+            )
+        else:
+            validity_years = _compute_validity_years(signed_at, expires_at)
 
         try:
             moa_status = str(moa_status).strip().upper()
@@ -260,7 +369,6 @@ def import_htes_excel():
         except Exception:
             moa_status = "PENDING"
 
-        # Upsert HTE by company_name
         hte = HostTrainingEstablishment.query.filter_by(company_name=str(company_name).strip()).first()
         if not hte:
             hte = HostTrainingEstablishment(
@@ -276,7 +384,7 @@ def import_htes_excel():
                 moa_status=moa_status,
                 course=str(course) if course else None,
                 moa_signed_at=signed_at,
-                moa_validity=validity,
+                moa_validity=validity_years,
                 moa_expiry_date=expires_at,
                 moa_file_path=str(moa_link) if moa_link else None,
             )
@@ -284,7 +392,6 @@ def import_htes_excel():
             db.session.flush()
             created_htes += 1
         else:
-            # Update fields
             hte.industry = str(industry) if industry else hte.industry
             hte.address = str(address) if address else hte.address
             hte.contact_person = str(contact_person) if contact_person else hte.contact_person
@@ -294,13 +401,12 @@ def import_htes_excel():
             hte.course = str(course) if course else hte.course
             hte.moa_status = moa_status
             hte.moa_signed_at = signed_at
-            hte.moa_validity = validity
+            hte.moa_validity = validity_years
             hte.moa_expiry_date = expires_at
             if moa_link:
                 hte.moa_file_path = str(moa_link)
             updated_htes += 1
 
-        # Create/update MOA record (only if dates exist)
         if signed_at and expires_at:
             existing_moa = (
                 MemorandumOfAgreement.query
@@ -331,6 +437,7 @@ def import_htes_excel():
         "updated_moas": updated_moas,
         "failed_rows": failed_rows
     }), 200
+
 
 @admin_hte_bp.post("")
 @jwt_required()
@@ -370,28 +477,43 @@ def create_hte_manual():
     if status not in ("ACTIVE", "PENDING", "EXPIRED"):
         status = "PENDING"
 
-    signed_at = _parse_date(form.get("signed_at"))     # YYYY-MM-DD
-    expires_at = _parse_date(form.get("expires_at"))   # YYYY-MM-DD
-    validity_months = _parse_int(form.get("validity")) # months
+    signed_at = _parse_date(form.get("signed_at"))
+    validity_months = _parse_number(form.get("validity"))  # input is in months
 
-    # If validity is given and expiry missing, compute expiry
-    if signed_at and not expires_at and validity_months:
-        y = signed_at.year
-        m = signed_at.month + validity_months
-        y += (m - 1) // 12
-        m = ((m - 1) % 12) + 1
+    expires_at = None
+    validity_years = None
 
-        d = min(signed_at.day, 28)
-        expires_at = datetime(y, m, d).date()
+    if signed_at and validity_months is not None:
+        try:
+            validity_months_int = int(float(validity_months))
+            expires_at = _compute_expiry_date_from_months(signed_at, validity_months_int)
+            validity_years = _compute_validity_years_from_months(validity_months_int)
+        except Exception:
+            return jsonify({
+                "error": "validation_error",
+                "message": "Invalid validity value"
+            }), 400
 
     logo = request.files.get("logo")
     thumbnail = request.files.get("thumbnail")
     moa_file = request.files.get("moa_file")
 
     try:
-        logo_path = _save_upload(logo, upload_root, "hte_logos", allowed_ext={".png", ".jpg", ".jpeg", ".webp"}) if logo else None
-        thumbnail_path = _save_upload(thumbnail, upload_root, "hte_thumbnails", allowed_ext={".png", ".jpg", ".jpeg", ".webp"}) if thumbnail else None
-        moa_path = _save_upload(moa_file, upload_root, "moa", allowed_ext={".pdf"}) if moa_file else None
+        logo_path = _save_upload(
+            logo, upload_root, "hte_logos",
+            allowed_ext={".png", ".jpg", ".jpeg", ".webp"}
+        ) if logo else None
+
+        thumbnail_path = _save_upload(
+            thumbnail, upload_root, "hte_thumbnails",
+            allowed_ext={".png", ".jpg", ".jpeg", ".webp"}
+        ) if thumbnail else None
+
+        moa_path = _save_upload(
+            moa_file, upload_root, "moa",
+            allowed_ext={".pdf"}
+        ) if moa_file else None
+
     except ValueError as e:
         return jsonify({"error": "validation_error", "message": str(e)}), 400
 
@@ -411,7 +533,7 @@ def create_hte_manual():
         course=course_value,
 
         moa_signed_at=signed_at,
-        moa_validity=validity_months,
+        moa_validity=validity_years,
         moa_expiry_date=expires_at,
 
         moa_file_path=moa_path,
@@ -438,5 +560,9 @@ def create_hte_manual():
 
     return jsonify({
         "message": "created",
-        "hte_id": hte.id
+        "hte_id": hte.id,
+        "signed_at": signed_at.isoformat() if signed_at else None,
+        "validity_months": validity_months,
+        "validity_years": validity_years,
+        "expires_at": expires_at.isoformat() if expires_at else None
     }), 201

@@ -24,9 +24,10 @@ export default function RegStudents() {
     try {
       setLoading(true);
 
-      const program = activeFilter ? activeFilter.toUpperCase() : "";
+      const normalizedFilter = activeFilter === "All" ? "" : activeFilter.toUpperCase();
+
       const res = await AdminAPI.getStudents({
-        program,
+        program: normalizedFilter,
       });
 
       setRegisteredStudents(res?.data?.registered || []);
@@ -59,9 +60,9 @@ export default function RegStudents() {
   }
 
   const registeredColumns = [
-    { header: "Name", render: row => <Text text={row.name} /> },
-    { header: "Section", render: row => <Text text={row.section || "—"} /> },
-    { header: "Student Webmail", render: row => <Text text={row.student_webmail || "—"} /> },
+    { header: "Name", render: row => <Text text={row.name || "—"} /> },
+    { header: "Section", render: row => <Text text={row.studentSection || row.section || "—"} /> },
+    { header: "Student Webmail", render: row => <Text text={row.email || row.student_webmail || "—"} /> },
     { header: "Program", render: row => <Text text={row.program || "—"} /> },
     { header: "OJT Adviser", render: row => <Text text={row.ojt_adviser || "—"} /> },
     {
@@ -76,9 +77,9 @@ export default function RegStudents() {
   ];
 
   const archivedColumns = [
-    { header: "Name", render: row => <Text text={row.name} /> },
-    { header: "Section", render: row => <Text text={row.section || "—"} /> },
-    { header: "Student Webmail", render: row => <Text text={row.student_webmail || "—"} /> },
+    { header: "Name", render: row => <Text text={row.name || "—"} /> },
+    { header: "Section", render: row => <Text text={row.studentSection || row.section || "—"} /> },
+    { header: "Student Webmail", render: row => <Text text={row.email || row.student_webmail || "—"} /> },
     { header: "Program", render: row => <Text text={row.program || "—"} /> },
     { header: "OJT Adviser", render: row => <Text text={row.ojt_adviser || "—"} /> },
     {

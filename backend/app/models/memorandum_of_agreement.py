@@ -1,5 +1,6 @@
 from app.extensions import db
 
+
 class MemorandumOfAgreement(db.Model):
     __tablename__ = "memoranda_of_agreement"
 
