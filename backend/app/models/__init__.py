@@ -10,12 +10,17 @@ from .uploaded_document import UploadedDocument
 from .hte_review import HteReview
 from .document_item import DocumentItem
 
-
-
-
 __all__ = [
     "User",
     "UserRole",
     "StudentProfile",
     "AdminProfile",
+    "HostTrainingEstablishment",
+    "MemorandumOfAgreement",
+    "MoaProspect",
+    "Announcement",
+    "Notification",
+    "UploadedDocument",
+    "HteReview",
+    "DocumentItem",
 ]

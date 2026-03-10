@@ -140,7 +140,7 @@ export function Header({ admin = false }) {
                         { text: "Log out" },
                     ]}
                 />}
-            {open && <Notifications open={open} />}
+            {open && <Notifications open={open} onClose={() => setOpen(false)} />}
 
         </>
     )

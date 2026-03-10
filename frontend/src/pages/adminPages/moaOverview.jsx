@@ -4,7 +4,6 @@ import OasisTable from '../../components/oasisTable.jsx';
 import {
     Text,
     HteLocation,
-    ActionButtons,
     ViewMoaButton
 } from "../../utilities/tableUtil.jsx";
 import { ViewModal } from '../../components/popupModal';
@@ -14,7 +13,6 @@ import Subtitle from '../../utilities/subtitle.jsx';
 import { AdminAPI } from "../../api/admin.api";
 
 export default function MoaOverview() {
-
     const [activeFilter, setFilter] = useQueryParam("tab", "overview");
 
     const [currentMoas, setCurrentMoas] = useState([]);
@@ -22,37 +20,52 @@ export default function MoaOverview() {
 
     const [openView, setOpenView] = useState(false);
     const [filePdf, setFilePdf] = useState(null);
+    const [loadingProspects, setLoadingProspects] = useState(false);
+    const [processingId, setProcessingId] = useState(null);
 
     const API_BASE = import.meta.env.VITE_API_URL;
 
-    /* ============================
-       FETCH DATA
-    ============================ */
+    const prospectStatusOptions = [
+        "EMAILED_TO_HTE",
+        "FOR_SIGNATURE",
+        "ULCO",
+        "RETRIEVED_FROM_ULCO",
+        "APPROVED",
+        "CANCELLED",
+    ];
+
     useEffect(() => {
-        // MOA Overview
         if (activeFilter === "overview") {
-            AdminAPI.getMoas()
-                .then(res => {
-                    setCurrentMoas(res.data || []);
-                })
-                .catch(err => {
-                    console.error("MOA overview fetch error:", err);
-                    setCurrentMoas([]);
-                });
+            loadCurrentMoas();
         }
 
-        // MOA Prospect Submissions
         if (activeFilter === "submissions") {
-            AdminAPI.getMoaProspects()
-                .then(res => {
-                    setProspectMoas(res.data || []);
-                })
-                .catch(err => {
-                    console.error("MOA prospects fetch error:", err);
-                    setProspectMoas([]);
-                });
+            loadProspects();
         }
     }, [activeFilter]);
+
+    const loadCurrentMoas = async () => {
+        try {
+            const res = await AdminAPI.getMoas();
+            setCurrentMoas(res.data || []);
+        } catch (err) {
+            console.error("MOA overview fetch error:", err);
+            setCurrentMoas([]);
+        }
+    };
+
+    const loadProspects = async () => {
+        try {
+            setLoadingProspects(true);
+            const res = await AdminAPI.getMoaProspects();
+            setProspectMoas(res.data || []);
+        } catch (err) {
+            console.error("MOA prospects fetch error:", err);
+            setProspectMoas([]);
+        } finally {
+            setLoadingProspects(false);
+        }
+    };
 
     const buildFileUrl = (filePath) => {
         if (!filePath) return null;
@@ -71,9 +84,7 @@ export default function MoaOverview() {
     };
 
     const openPdf = (filePath) => {
-        console.log("Original filePath:", filePath);
         const url = buildFileUrl(filePath);
-        console.log("Built URL:", url);
         if (!url) return;
 
         setFilePdf(url);
@@ -88,7 +99,7 @@ export default function MoaOverview() {
             const res = await fetch(url);
             const blob = await res.blob();
 
-            const safeName = companyName
+            const safeName = (companyName || "HTE")
                 .replace(/\s+/g, "_")
                 .replace(/[^\w\-]/g, "");
 
@@ -101,15 +112,34 @@ export default function MoaOverview() {
             document.body.appendChild(link);
             link.click();
             link.remove();
-
         } catch (err) {
             console.error("Download MOA failed:", err);
         }
     };
 
-    /* ============================
-       COLUMNS – EXISTING MOAs
-    ============================ */
+    const handleStatusChange = async (id, status) => {
+        try {
+            setProcessingId(id);
+            await AdminAPI.updateMoaProspectStatus(id, status);
+            await Promise.all([loadProspects(), loadCurrentMoas()]);
+        } catch (err) {
+            console.error("Update MOA prospect status failed:", err);
+            alert(
+                err?.response?.data?.message ||
+                err?.response?.data?.error ||
+                "Failed to update MOA prospect status."
+            );
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const formatProspectStatus = (status) => {
+        if (!status) return "PENDING";
+        if (status === "CANCELLED") return "REJECTED";
+        return status;
+    };
+
     const currentMoaColumns = [
         {
             header: "HTE Name",
@@ -163,10 +193,6 @@ export default function MoaOverview() {
         }
     ];
 
-    /* ============================
-       COLUMNS – MOA PROSPECTS
-       (Actions: do nothing yet)
-    ============================ */
     const prospectMoaColumns = [
         {
             header: "HTE Name",
@@ -185,8 +211,20 @@ export default function MoaOverview() {
             render: r => <Text text={r.contact_person || "—"} />
         },
         {
+            header: "Position",
+            render: r => <Text text={r.contact_position || "—"} />
+        },
+        {
+            header: "Email",
+            render: r => <Text text={r.contact_email || "—"} />
+        },
+        {
             header: "Contact Number",
             render: r => <Text text={r.contact_number || "—"} />
+        },
+        {
+            header: "Status",
+            render: r => <Text text={formatProspectStatus(r.status)} />
         },
         {
             header: "MOA File",
@@ -196,6 +234,9 @@ export default function MoaOverview() {
                     <ViewMoaButton
                         url={url}
                         onClick={() => openPdf(r.moa_file_path)}
+                        onDownload={() =>
+                            downloadMoa(r.moa_file_path, r.company_name)
+                        }
                     />
                 ) : (
                     <Text text="—" />
@@ -204,16 +245,38 @@ export default function MoaOverview() {
         },
         {
             header: "Actions",
-            render: r => <ActionButtons onReject rowId={r.id} />
+            render: r => (
+                <select
+                    className="border rounded-md px-3 py-2 text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    value={r.status || "EMAILED_TO_HTE"}
+                    onChange={(e) => handleStatusChange(r.id, e.target.value)}
+                    disabled={
+                        processingId === r.id ||
+                        r.status === "APPROVED" ||
+                        r.status === "CANCELLED"
+                    }
+                >
+                    {prospectStatusOptions.map((status) => (
+                        <option key={status} value={status}>
+                            {status === "CANCELLED" ? "REJECTED" : status}
+                        </option>
+                    ))}
+                </select>
+            )
         }
     ];
 
+    const activeFileName =
+        activeFilter === "submissions"
+            ? `${prospectMoas
+                .find(m => buildFileUrl(m.moa_file_path) === filePdf)
+                ?.company_name?.replace(/\s+/g, "_") || "HTE"}_MOA.pdf`
+            : `${currentMoas
+                .find(m => buildFileUrl(m.document_path) === filePdf)
+                ?.hte?.company_name?.replace(/\s+/g, "_") || "HTE"}_MOA.pdf`;
+
     return (
         <AdminScreen>
-
-            {/* ============================
-               TABS
-            ============================ */}
             <div className='flex flex-row gap-3 w-[80%]'>
                 <Subtitle
                     text="MOA Overview"
@@ -232,9 +295,6 @@ export default function MoaOverview() {
                 />
             </div>
 
-            {/* ============================
-               EXISTING MOAs
-            ============================ */}
             {activeFilter === "overview" && (
                 <>
                     <div className='flex justify-start items-start w-[80%]'>
@@ -248,34 +308,33 @@ export default function MoaOverview() {
                 </>
             )}
 
-            {/* ============================
-               MOA PROSPECTS
-            ============================ */}
             {activeFilter === "submissions" && (
                 <>
                     <div className='flex justify-start items-start w-[80%]'>
                         <Title text="MOA Prospect Submissions" />
                     </div>
 
-                    <OasisTable
-                        columns={prospectMoaColumns}
-                        data={prospectMoas}
-                    />
+                    {loadingProspects ? (
+                        <div className="w-[80%]">
+                            <Subtitle text="Loading MOA prospect submissions..." />
+                        </div>
+                    ) : (
+                        <OasisTable
+                            columns={prospectMoaColumns}
+                            data={prospectMoas}
+                        />
+                    )}
                 </>
             )}
 
-            {/* ============================
-               VIEW MOA MODAL
-            ============================ */}
             <ViewModal
                 visible={openView}
                 onClose={() => setOpenView(false)}
                 isDocument={true}
                 resourceTitle="MOA File"
                 file={filePdf}
-                filename={`${currentMoas.find(m => buildFileUrl(m.document_path) === filePdf)?.hte?.company_name?.replace(/\s+/g,"_") || "HTE"}_MOA.pdf`}
+                filename={activeFileName}
             />
-
         </AdminScreen>
     );
 }

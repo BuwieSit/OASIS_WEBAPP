@@ -23,7 +23,7 @@ class MoaProspect(db.Model):
     contact_email = db.Column(db.String(255), nullable=False)
     contact_number = db.Column(db.String(50), nullable=False)
 
-    moa_file_path = db.Column(db.String(255), nullable=False)
+    moa_file_path = db.Column(db.String(255), nullable=True)
 
     status = db.Column(
         db.Enum(

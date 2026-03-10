@@ -16,6 +16,10 @@ export function downloadMOA(hteId) {
   });
 }
 
+export function getMOAFileUrl(hteId) {
+  return `${import.meta.env.VITE_API_URL}/api/student/htes/${hteId}/moa`;
+}
+
 export function submitMoaProspect(formData) {
   return api.post("/api/student/moa-prospects", formData, {
     headers: {

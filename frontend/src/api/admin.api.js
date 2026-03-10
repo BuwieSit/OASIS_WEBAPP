@@ -39,12 +39,25 @@ export const AdminAPI = {
         headers: { "Content-Type": "multipart/form-data" }
         });
     },
+    
     getMoas() {
         return api.get("/api/admin/moas");
     },
 
     getMoaProspects() {
         return api.get("/api/admin/moa-prospects");
+    },
+
+    updateMoaProspectStatus(id, status) {
+        return api.patch(`/api/admin/moa-prospects/${id}/status`, { status });
+    },
+
+    approveMoaProspect(id) {
+        return api.patch(`/api/admin/moa-prospects/${id}/approve`);
+    },
+
+    rejectMoaProspect(id) {
+        return api.patch(`/api/admin/moa-prospects/${id}/reject`);
     },
 
     downloadHTEsExcel(status) {

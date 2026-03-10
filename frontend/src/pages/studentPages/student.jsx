@@ -17,8 +17,8 @@ import api from "../../api/axios";
 export default function Student() {
 
     const [tableData, setTableData] = useState([]);
-    const [user, setUser] = useState(null); // ✅ Fixed: Changed from userName to user
-    const [profile, setProfile] = useState(null); // ✅ Added profile state
+    const [user, setUser] = useState(null); 
+    const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const filteredHtes = tableData.filter((hte) =>
@@ -30,7 +30,7 @@ export default function Student() {
             try {
                 const res = await api.get("/api/student/me");
                 setUser(res.data.user);
-                setProfile(res.data.profile); // ✅ Get profile data too
+                setProfile(res.data.profile); 
             } catch (err) {
                 console.error("Failed to fetch user data", err);
             }

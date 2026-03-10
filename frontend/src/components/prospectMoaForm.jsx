@@ -64,8 +64,8 @@ export default function ProspectMoaForm() {
             bg: "bg-[#4A9B8E]"
         }
     ];
-    
-    const [formData, setFormData] = useState({
+
+    const initialFormData = {
         company_name: "",
         industry: "",
         address: "",
@@ -74,69 +74,85 @@ export default function ProspectMoaForm() {
         contact_email: "",
         contact_number: "",
         moa_file: null,
-    });
+    };
+
+    const [formData, setFormData] = useState(initialFormData);
 
     const handleChange = (field) => (e) => {
-        setFormData({
-            ...formData,
+        setFormData((prev) => ({
+            ...prev,
             [field]: e.target.value,
-        });
+        }));
     };
 
     const handleFileChange = (e) => {
-        setFormData({
-            ...formData,
-            moa_file: e.target.files[0],
-        });
+        setFormData((prev) => ({
+            ...prev,
+            moa_file: e.target.files?.[0] || null,
+        }));
     };
+
+    const requiredFields = [
+        "company_name",
+        "industry",
+        "address",
+        "contact_person",
+        "contact_position",
+        "contact_email",
+        "contact_number",
+    ];
+
+    const emptyFields = requiredFields.filter(
+        (field) => !String(formData[field] || "").trim()
+    );
+
+    const readableFields = emptyFields.map((field) =>
+        field.replaceAll("_", " ")
+    );
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        if (emptyFields.length > 0) {
+            return;
+        }
+
         const payload = new FormData();
-        payload.append("company_name", formData.company_name);
-        payload.append("industry", formData.industry);
-        payload.append("address", formData.address);
-        payload.append("contact_person", formData.contact_person);
-        payload.append("contact_position", formData.contact_position);
-        payload.append("contact_email", formData.contact_email);
-        payload.append("contact_number", formData.contact_number);
-        
+        payload.append("company_name", formData.company_name.trim());
+        payload.append("industry", formData.industry.trim());
+        payload.append("address", formData.address.trim());
+        payload.append("contact_person", formData.contact_person.trim());
+        payload.append("contact_position", formData.contact_position.trim());
+        payload.append("contact_email", formData.contact_email.trim());
+        payload.append("contact_number", formData.contact_number.trim());
+
         if (formData.moa_file) {
             payload.append("moa_file", formData.moa_file);
         }
-        
 
         try {
             await submitMoaProspect(payload);
             alert("MOA Prospect submitted successfully.");
 
-            setFormData({
-                company_name: "",
-                industry: "",
-                address: "",
-                contact_person: "",
-                contact_position: "",
-                contact_email: "",
-                contact_number: "",
-                moa_file: null,
-            });
+            setFormData(initialFormData);
+
+            const fileInput = document.getElementById("moa_file");
+            if (fileInput) {
+                fileInput.value = "";
+            }
         } catch (err) {
             console.error("MOA Prospect submission failed", err);
-            alert("Failed to submit MOA Prospect.");
+
+            const errorMessage =
+                err?.response?.data?.error ||
+                "Failed to submit MOA Prospect.";
+
+            alert(errorMessage);
         }
     };
 
-    const emptyFields = Object.entries(formData)
-        .filter(([key, value]) => key !== "moa_file" && !value)
-        .map(([key]) => key);
-    const readableFields = emptyFields.map(field =>
-        field.replaceAll("_", " ")
-        );
-
     return (
         <>
-            {/* PARENT CONTAINER */}
             <div
                 id="prospectForm"
                 className="relative w-full px-5 py-10 flex flex-col gap-2 justify-center items-center shadow-[inset_0_0_50px_rgba(0,0,0,1)]"
@@ -153,17 +169,14 @@ export default function ProspectMoaForm() {
                 </section>
 
                 <section className="w-full grid md:grid-cols-2 lg:grid-cols-2 place-items-start justify-items-center gap-5 z-10">
-                    
-                    {/* MOA PROCESS STEPS */}
                     <div className="bg-oasis-gradient hidden w-[450px] p-10 md:flex lg:flex flex-col justify-center items-start shadow-[3px_3px_2px_rgba(0,0,0,0.4)] rounded-3xl">
-                        <Subtitle size={"text-[1.2rem]"} color={"text-black"} weight={"font-bold"} text={"MOA Process Flow"}/>
+                        <Subtitle size={"text-[1.2rem]"} color={"text-black"} weight={"font-bold"} text={"MOA Process Flow"} />
 
                         <div className="mt-5 w-full font-oasis-text text-[0.85rem] flex flex-col gap-4">
-                            <MOAStepList steps={moaSteps}/> 
+                            <MOAStepList steps={moaSteps} />
                         </div>
                     </div>
 
-                    {/* FORM */}
                     <div className="w-full max-w-[600px] px-4 sm:px-6 lg:px-0">
                         <form
                             onSubmit={handleSubmit}
@@ -185,8 +198,8 @@ export default function ProspectMoaForm() {
                             />
 
                             <SingleField
-                                labelText={"Nature of Business"}
-                                fieldHolder={"Enter nature of business"}
+                                labelText={"Nature of Business / Industry"}
+                                fieldHolder={"Enter nature of business / industry"}
                                 fieldId={"industry"}
                                 value={formData.industry}
                                 onChange={handleChange("industry")}
@@ -201,7 +214,8 @@ export default function ProspectMoaForm() {
                             />
 
                             <FileUploadField
-                                labelText={"Upload filled-up MOA"}
+                                labelText={"MOA Document (Optional)"}
+                                fieldId={"moa_file"}
                                 onChange={handleFileChange}
                             />
 
@@ -244,7 +258,7 @@ export default function ProspectMoaForm() {
                                 value={formData.contact_number}
                                 onChange={handleChange("contact_number")}
                             />
-                                
+
                             {readableFields.length > 0 && (
                                 <Subtitle
                                     color="text-red-600"
@@ -253,23 +267,20 @@ export default function ProspectMoaForm() {
                                     text={`${readableFields.join(", ")} ${readableFields.length > 1 ? "are" : "is"} required`}
                                 />
                             )}
-                                
+
                             <div className="w-full col-span-2 flex justify-center">
-                                
                                 <AnnounceButton
                                     isFullWidth={true}
                                     btnText="Submit MOA Prospect"
                                     type="submit"
                                 />
                             </div>
-                            
                         </form>
-                     </div>
-
+                    </div>
                 </section>
             </div>
         </>
-   );
+    );
 }
 
 export function MOAStepList({ steps }) {
@@ -285,23 +296,22 @@ export function MOAStepList({ steps }) {
             Math.floor(Math.random() * oasisBgClasses.length)
         ];
     };
+
     return (
         <div className="flex flex-col gap-6">
-
             {steps.map((step, index) => (
                 <div key={index} className="flex gap-3 items-start">
-
-                    {/* Step Number Badge */}
-                    <div className={`
+                    <div
+                        className={`
                         shrink-0 w-10 h-10 rounded-full
                         flex items-center justify-center
                         text-white font-bold shadow-md
                         ${step.bg || getRandomBg()}
-                    `}>
+                    `}
+                    >
                         {(index + 1).toString().padStart(2, "0")}
                     </div>
 
-                    {/* Content */}
                     <div>
                         <h3 className="font-bold text-[0.95rem] mb-1">
                             {step.title}
@@ -311,10 +321,8 @@ export function MOAStepList({ steps }) {
                             {step.description}
                         </p>
                     </div>
-
                 </div>
             ))}
-
         </div>
     );
 }
