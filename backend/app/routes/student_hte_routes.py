@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, send_file
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt
 import os
 from flask import current_app, send_from_directory
@@ -43,6 +43,7 @@ def hte_dashboard():
                 if hte.moa_expiry_date else None
             ),
             "course": hte.course,
+            "moa_file_path": hte.moa_file_path,
         }
         for hte in htes
     ]), 200
@@ -98,7 +99,8 @@ def list_htes():
                 "moa_expiry_date": (
                     hte.moa_expiry_date.isoformat()
                     if hte.moa_expiry_date else None
-                )
+                ),
+                "moa_file_path": hte.moa_file_path,
             }
             for hte in htes
         ]
@@ -152,7 +154,7 @@ def get_hte_detail(hte_id):
 
 
 # ======================================================
-# MOA DOWNLOAD
+# MOA VIEW / DOWNLOAD
 # ======================================================
 @student_hte_bp.route("/<int:hte_id>/moa", methods=["GET"])
 @jwt_required()
@@ -177,8 +179,10 @@ def download_moa(hte_id):
     )
     filename = os.path.basename(relative_path)
 
+    should_download = request.args.get("download") == "1"
+
     return send_from_directory(
         directory,
         filename,
-        as_attachment=True
+        as_attachment=should_download
     )

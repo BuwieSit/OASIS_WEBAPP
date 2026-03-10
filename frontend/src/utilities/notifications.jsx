@@ -1,6 +1,6 @@
 import { Filter } from "../components/adminComps";
 import Subtitle from "./subtitle";
-import { CircleX } from "lucide-react";
+import { CircleX, Bookmark, BookmarkCheck } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { NotificationAPI } from "../api/notification.api";
 
@@ -11,6 +11,7 @@ export default function Notifications({ open, onClose }) {
     const [notifications, setNotifications] = useState([]);
     const [activeFilter, setActiveFilter] = useState("All");
     const [loading, setLoading] = useState(false);
+    const [processingId, setProcessingId] = useState(null);
 
     useEffect(() => {
         if (open) {
@@ -52,19 +53,85 @@ export default function Notifications({ open, onClose }) {
         }
     };
 
+    const parseNotificationDate = (dateString) => {
+        if (!dateString) return null;
+
+        if (dateString.endsWith("Z")) {
+            return new Date(dateString);
+        }
+
+        return new Date(`${dateString}Z`);
+    };
+
+    const handleMarkAsRead = async (notificationId) => {
+        try {
+            const res = await NotificationAPI.markAsRead(notificationId);
+            const updated = res?.data?.notification;
+
+            if (!updated) return;
+
+            setNotifications((prev) =>
+                prev.map((item) =>
+                    item.id === notificationId ? updated : item
+                )
+            );
+        } catch (err) {
+            console.error("Failed to mark notification as read:", err);
+        }
+    };
+
+    const handleToggleSave = async (e, notificationId) => {
+        e.stopPropagation();
+
+        try {
+            setProcessingId(notificationId);
+
+            const res = await NotificationAPI.toggleSave(notificationId);
+            const updated = res?.data?.notification;
+
+            if (!updated) return;
+
+            setNotifications((prev) =>
+                prev.map((item) =>
+                    item.id === notificationId ? updated : item
+                )
+            );
+        } catch (err) {
+            console.error("Failed to toggle save notification:", err);
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const handleNotificationClick = async (item) => {
+        await handleMarkAsRead(item.id);
+    };
+
     const filteredNotifications = useMemo(() => {
         if (activeFilter === "Unread") {
-            return notifications.filter((item) => !item.is_read);
+            return notifications.filter((item) => !item.is_read && !item.is_saved);
         }
-        return notifications;
+
+        if (activeFilter === "Saved") {
+            return notifications.filter((item) => item.is_saved);
+        }
+
+        return notifications.filter((item) => !item.is_saved);
     }, [notifications, activeFilter]);
 
     const formatRelativeTime = (dateString) => {
         if (!dateString) return "";
 
-        const createdDate = new Date(dateString);
+        const createdDate = parseNotificationDate(dateString);
+
+        if (!createdDate || Number.isNaN(createdDate.getTime())) {
+            return "";
+        }
+
         const now = new Date();
-        const diffMs = now - createdDate;
+        const diffMs = now.getTime() - createdDate.getTime();
+
+        if (diffMs < 0) return "Just now";
 
         const minutes = Math.floor(diffMs / (1000 * 60));
         const hours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -73,9 +140,15 @@ export default function Notifications({ open, onClose }) {
         if (minutes < 1) return "Just now";
         if (minutes < 60) return `${minutes}m ago`;
         if (hours < 24) return `${hours}h ago`;
-        if (days < 30) return `${days}d ago`;
+        if (days < 7) return `${days}d ago`;
 
         return createdDate.toLocaleDateString();
+    };
+
+    const getEmptyStateText = () => {
+        if (activeFilter === "Unread") return "No unread notifications.";
+        if (activeFilter === "Saved") return "No saved notifications.";
+        return "No notifications yet.";
     };
 
     const handleClose = () => {
@@ -100,6 +173,10 @@ export default function Notifications({ open, onClose }) {
                     <Filter text={"Unread"} isActive={activeFilter === "Unread"} />
                 </div>
 
+                <div onClick={() => setActiveFilter("Saved")}>
+                    <Filter text={"Saved"} isActive={activeFilter === "Saved"} />
+                </div>
+
                 <CircleX
                     className="absolute right-[5%] cursor-pointer"
                     color="#54A194"
@@ -115,32 +192,43 @@ export default function Notifications({ open, onClose }) {
                     </div>
                 ) : filteredNotifications.length === 0 ? (
                     <div className="w-full p-3 rounded-2xl shadow-[0px_0px_5px_rgba(0,0,0,0.5)] bg-white">
-                        <Subtitle
-                            text={
-                                activeFilter === "Unread"
-                                    ? "No unread notifications."
-                                    : "No notifications yet."
-                            }
-                        />
+                        <Subtitle text={getEmptyStateText()} />
                     </div>
                 ) : (
                     filteredNotifications.map((item) => (
                         <div
                             key={item.id}
-                            className={`w-full p-3 rounded-2xl flex flex-col gap-3 mt-3 shadow-[0px_0px_5px_rgba(0,0,0,0.5)] mb-3 ${
+                            onClick={() => handleNotificationClick(item)}
+                            className={`w-full p-3 rounded-2xl flex flex-col gap-3 mt-3 shadow-[0px_0px_5px_rgba(0,0,0,0.5)] mb-3 cursor-pointer transition-all ${
                                 item.is_read ? "bg-white" : "bg-[#EAF7F4]"
                             }`}
                         >
-                            <section className="flex w-full justify-between items-center gap-3">
-                                <Subtitle
-                                    text={item.title || "Notification"}
-                                    weight={"font-bold"}
-                                    size={"text-[0.9rem]"}
-                                />
-                                <Subtitle
-                                    text={formatRelativeTime(item.created_at)}
-                                    size={"text-[0.75rem]"}
-                                />
+                            <section className="flex w-full justify-between items-start gap-3">
+                                <div className="flex-1">
+                                    <Subtitle
+                                        text={item.title || "Notification"}
+                                        weight={"font-bold"}
+                                        size={"text-[0.9rem]"}
+                                    />
+                                    <Subtitle
+                                        text={formatRelativeTime(item.created_at)}
+                                        size={"text-[0.75rem]"}
+                                    />
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={(e) => handleToggleSave(e, item.id)}
+                                    disabled={processingId === item.id}
+                                    className="cursor-pointer p-1 rounded-lg hover:bg-gray-100 transition"
+                                    title={item.is_saved ? "Unsave notification" : "Save notification"}
+                                >
+                                    {item.is_saved ? (
+                                        <BookmarkCheck size={18} color="#54A194" />
+                                    ) : (
+                                        <Bookmark size={18} color="#54A194" />
+                                    )}
+                                </button>
                             </section>
 
                             <Subtitle

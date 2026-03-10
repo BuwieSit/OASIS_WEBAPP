@@ -143,8 +143,33 @@ export default function ProspectMoaForm() {
         } catch (err) {
             console.error("MOA Prospect submission failed", err);
 
+            const data = err?.response?.data;
+            const duplicateType = data?.duplicate_type;
+            const existingRecord = data?.existing_record;
+
+            if (duplicateType === "APPROVED_HTE") {
+                alert(
+                    `"${existingRecord?.company_name || formData.company_name}" is already an approved HTE.` +
+                    (existingRecord?.moa_status
+                        ? ` Current MOA status: ${existingRecord.moa_status}.`
+                        : "")
+                );
+                return;
+            }
+
+            if (duplicateType === "EXISTING_MOA_PROSPECT") {
+                alert(
+                    `"${existingRecord?.company_name || formData.company_name}" already exists as an MOA prospect.` +
+                    (existingRecord?.status
+                        ? ` Current status: ${existingRecord.status}.`
+                        : "")
+                );
+                return;
+            }
+
             const errorMessage =
-                err?.response?.data?.error ||
+                data?.message ||
+                data?.error ||
                 "Failed to submit MOA Prospect.";
 
             alert(errorMessage);

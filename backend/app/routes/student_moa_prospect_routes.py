@@ -3,14 +3,21 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 import os
 import uuid
 from werkzeug.utils import secure_filename
+from sqlalchemy import func
+
 from app.extensions import db
 from app.models.moa_prospect import MoaProspect
+from app.models.host_training_establishment import HostTrainingEstablishment
 
 student_moa_prospect_bp = Blueprint(
     "student_moa_prospect",
     __name__,
     url_prefix="/api/student/moa-prospects"
 )
+
+
+def _normalize_company_name(value):
+    return " ".join((value or "").strip().lower().split())
 
 
 @student_moa_prospect_bp.route("", methods=["POST"])
@@ -46,6 +53,55 @@ def submit_moa_prospect():
             "error": "Missing required fields",
             "missing_fields": missing_fields
         }), 400
+
+    normalized_company_name = _normalize_company_name(company_name)
+
+    existing_hte = (
+        HostTrainingEstablishment.query
+        .filter(
+            func.lower(func.trim(HostTrainingEstablishment.company_name))
+            == normalized_company_name
+        )
+        .first()
+    )
+
+    if existing_hte:
+        return jsonify({
+            "error": "duplicate_hte",
+            "message": f'"{company_name}" already exists as an approved HTE.',
+            "duplicate_type": "APPROVED_HTE",
+            "existing_record": {
+                "id": existing_hte.id,
+                "company_name": existing_hte.company_name,
+                "moa_status": existing_hte.moa_status,
+            }
+        }), 409
+
+    existing_prospect = (
+        MoaProspect.query
+        .filter(
+            func.lower(func.trim(MoaProspect.company_name))
+            == normalized_company_name,
+            MoaProspect.status != "CANCELLED"
+        )
+        .order_by(MoaProspect.created_at.desc())
+        .first()
+    )
+
+    if existing_prospect:
+        return jsonify({
+            "error": "duplicate_moa_prospect",
+            "message": (
+                f'"{company_name}" already exists as an MOA prospect '
+                f'with status {existing_prospect.status}.'
+            ),
+            "duplicate_type": "EXISTING_MOA_PROSPECT",
+            "existing_record": {
+                "id": existing_prospect.id,
+                "company_name": existing_prospect.company_name,
+                "status": existing_prospect.status,
+            }
+        }), 409
 
     file = request.files.get("moa_file")
     saved_file_path = ""

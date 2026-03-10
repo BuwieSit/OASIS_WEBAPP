@@ -5,7 +5,7 @@ from datetime import datetime, date
 from app.extensions import db
 from app.models import MoaProspect, HostTrainingEstablishment, MemorandumOfAgreement
 from app.models.notification import Notification
-from app.models.user import UserRole
+from app.models.user import User, UserRole
 
 admin_moa_prospect_bp = Blueprint(
     "admin_moa_prospect_bp",
@@ -102,6 +102,32 @@ def _create_status_notification(prospect, status):
     return notification
 
 
+def _notify_all_students_about_approved_hte(prospect, hte):
+    students = User.query.filter(
+        User.role == UserRole.STUDENT,
+        User.is_active.is_(True),
+        User.id != int(prospect.student_id)
+    ).all()
+
+    title = "NEWLY APPROVED HTE"
+    message = (
+        f"{hte.company_name} has been newly approved as a Host Training Establishment. "
+        f"Industry: {hte.industry}. Address: {hte.address}. "
+        f"It is now available in the HTE listings."
+    )
+
+    for student in students:
+        notification = Notification(
+            user_id=student.id,
+            type="ANNOUNCEMENT",
+            reference_id=hte.id,
+            title=title,
+            message=message,
+            is_read=False
+        )
+        db.session.add(notification)
+
+
 def _approve_and_create_hte(prospect, admin_user_id):
     existing_hte = _find_existing_hte(prospect)
 
@@ -156,6 +182,7 @@ def _approve_and_create_hte(prospect, admin_user_id):
     db.session.flush()
 
     _create_status_notification(prospect, "APPROVED")
+    _notify_all_students_about_approved_hte(prospect, hte)
 
     return {
         "hte_id": hte.id,
