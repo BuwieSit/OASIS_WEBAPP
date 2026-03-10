@@ -11,7 +11,7 @@ export async function fetchHTEById(hteId) {
 }
 
 export function downloadMOA(hteId) {
-  return api.get(`/api/student/htes/${hteId}/moa`, {
+  return api.get(`/api/student/htes/${hteId}/moa?download=1`, {
     responseType: "blob",
   });
 }

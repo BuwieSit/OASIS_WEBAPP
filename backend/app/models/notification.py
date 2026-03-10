@@ -29,8 +29,18 @@ class Notification(db.Model):
     message = db.Column(db.Text, nullable=False)
 
     is_read = db.Column(db.Boolean, default=False, nullable=False)
+    is_saved = db.Column(db.Boolean, default=False, nullable=False)
+
+    read_at = db.Column(db.DateTime, nullable=True)
+    saved_at = db.Column(db.DateTime, nullable=True)
+    last_interacted_at = db.Column(db.DateTime, nullable=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def _to_utc_iso(self, value):
+        if not value:
+            return None
+        return value.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     def to_dict(self):
         return {
@@ -40,5 +50,9 @@ class Notification(db.Model):
             "title": self.title,
             "message": self.message,
             "is_read": self.is_read,
-            "created_at": self.created_at.isoformat(),
+            "is_saved": self.is_saved,
+            "read_at": self._to_utc_iso(self.read_at),
+            "saved_at": self._to_utc_iso(self.saved_at),
+            "last_interacted_at": self._to_utc_iso(self.last_interacted_at),
+            "created_at": self._to_utc_iso(self.created_at),
         }
