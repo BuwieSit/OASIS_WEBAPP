@@ -54,7 +54,7 @@ export function Dropdown({
                     id={fieldId}
                     value={value}
                     onChange={handleChange}
-                    className={`w-full min-w-50 p-3 bg-white rounded text-[0.8rem] font-oasis-text disabled:cursor-not-allowed ${textColor}`}
+                    className={`w-full p-3 bg-white rounded text-[0.8rem] font-oasis-text disabled:cursor-not-allowed ${textColor}`}
                     disabled={disabled}
                 >
                     <option value="" disabled className="text-black">

@@ -156,47 +156,55 @@ export default function RegStudents() {
             isSuccess
           />
       )}
-      <Title text="Students Overview" />
+      <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b py-5'>
+        <Title text="Students Overview" size='text-[2rem]'/>
+        <Subtitle text={"Oversee and Archive Registered Students."}/>
+      </div>
+ 
 
       <div className="w-full flex flex-col gap-10 justify-center items-center">
-        
-        <div className='flex justify-start items-center w-[80%] gap-5'>
+        <div className='flex justify-start items-center w-[90%] gap-5 border-b pb-5'>
             <div className='flex justify-start items-center w-full gap-5'>
                 <Subtitle
-                  text="Registered"
+                  text="Registered Students"
                   onClick={() => setActiveTable("registered")}
                   isActive={activeTable === "registered"}
                   isLink
                   size="text-[1.1rem]"
                   weight={"font-bold"}
+                  className={"rounded-2xl"}
                 />
                 <Subtitle
-                  text="|"
-                  size="text-[1.1rem]"
-                  weight={"font-bold"}
-                />
-                <Subtitle
-                  text="Archived"
+                  text="Archived Students"
                   onClick={() => setActiveTable("archived")}
                   isActive={activeTable === "archived"}
                   isLink
                   size="text-[1.1rem]"
                   weight={"font-bold"}
+                  className={"rounded-2xl"}
                 />
+
             </div>
         </div>
+
         
+
         <div className="w-full flex flex-col gap-4 justify-center items-center">
           {activeTable === "registered" && 
             <>
-              <Title text="Registered Students" />
-              <div className='flex justify-evenly items-center w-[80%] gap-5'>
+              <div className='w-[80%] flex justify-start items-start'>
+                <Subtitle size={"1rem"} text={"Filter by program:"}/>
+              </div>
+
+              <div className='flex justify-start items-start w-[80%] gap-5'>
                   <Subtitle
                     text="All"
                     onClick={() => setFilter("All")}
                     isActive={activeFilter === "All"}
                     isLink
                     size="text-[1rem]"
+                    className={"border rounded-2xl"}
+                    weight={"font-bold"}
                     
                   />
                   {sectionCodes.map(code => (
@@ -207,6 +215,8 @@ export default function RegStudents() {
                       isActive={activeFilter === code.toLowerCase()}
                       isLink
                       size="text-[1rem]"
+                      className={"border rounded-2xl"}
+                      weight={"font-bold"}
                     />
                   ))}
               </div>
@@ -218,16 +228,22 @@ export default function RegStudents() {
               </OasisTable>
             </>
           }
+
           {activeTable === "archived" && 
             <>
-              <Title text="Archived Students" />
-              <div className='flex justify-center items-center w-full gap-5'>
+              <div className='w-[80%] flex justify-start items-start'>
+                <Subtitle size={"1rem"} text={"Filter by program:"}/>
+              </div>
+              <div className='flex justify-start items-start w-[80%] gap-5'>
                   <Subtitle
                     text="All"
                     onClick={() => setFilter("All")}
                     isActive={activeFilter === "All"}
                     isLink
                     size="text-[1rem]"
+                    className={"border rounded-[5px]"}
+                    weight={"font-bold"}
+                    
                   />
                   {sectionCodes.map(code => (
                     <Subtitle
@@ -237,6 +253,8 @@ export default function RegStudents() {
                       isActive={activeFilter === code.toLowerCase()}
                       isLink
                       size="text-[1rem]"
+                      className={"border rounded-[5px]"}
+                      weight={"font-bold"}
                     />
                   ))}
               </div>
@@ -249,8 +267,6 @@ export default function RegStudents() {
             </>
           }
         
-          
-
         </div>
 
 

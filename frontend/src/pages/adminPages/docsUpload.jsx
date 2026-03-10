@@ -286,8 +286,9 @@ export default function DocsUpload() {
                 <GeneralPopupModal isSuccess time={3000} title={"Action Completed"} text={"Section Fields Cleared"}/>
             }
             
-            <div>
-                <Title text={"Documents Upload"} />
+            <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b-2 py-5'>
+                <Title text="Documents Upload" size='text-[2rem]'/>
+                <Subtitle text={"Upload and Manage Guidelines, Procedures, MOA Process, and Forms & Templates"}/>
             </div>
 
             <Container column={true}>
@@ -298,8 +299,8 @@ export default function DocsUpload() {
                         text="Procedures"
                         isActive={activeFilter === "procedures"}
                         onClick={() => setFilter("procedures")}
+                        className={"rounded-2xl"}
                     />
-                    <Subtitle text={"|"} size='text-[0.9rem]'/>
 
                     <Subtitle
                         size='text-[0.9rem]'
@@ -307,8 +308,8 @@ export default function DocsUpload() {
                         text="MOA Process"
                         isActive={activeFilter === "moa"}
                         onClick={() => setFilter("moa")}
+                        className={"rounded-2xl"}
                     />
-                    <Subtitle text={"|"} size='text-[0.9rem]'/>
 
                     <Subtitle
                         size='text-[0.9rem]'
@@ -316,8 +317,8 @@ export default function DocsUpload() {
                         text="Key Guidelines"
                         isActive={activeFilter === "guidelines"}
                         onClick={() => setFilter("guidelines")}
+                        className={"rounded-2xl"}
                     />
-                    <Subtitle text={"|"} size='text-[0.9rem]'/>
 
                     <Subtitle
                         size='text-[0.9rem]'
@@ -325,6 +326,7 @@ export default function DocsUpload() {
                         text="Forms & Templates"
                         isActive={activeFilter === "forms"}
                         onClick={() => setFilter("forms")}
+                        className={"rounded-2xl"}
                     />
                 </section>
 

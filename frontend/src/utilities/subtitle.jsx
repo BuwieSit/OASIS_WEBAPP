@@ -26,7 +26,7 @@ const Subtitle = forwardRef(({
         ${isCenter ? "text-center" : "text-start"}
         ${size}
         ${color}
-        ${isActive ? "font-bold underline underline-offset-2" : ""}
+        ${isActive ? "font-bold border-0 border-b-5 border-b-oasis-header px-2" : "px-2"}
         ${isUnderlined ? "underline underline-offset-2" : ""}
         ${isItalic ? "italic" : ""}
         transition ease-in-out duration-500
@@ -57,29 +57,4 @@ const Subtitle = forwardRef(({
 
 export default Subtitle;
 
-
-// export default function Subtitle({  isCenter = false , text, color, size = ('text-xs'), weight = ('font-normal'), isUnderlined = false, isLink = false, isAnimated = false, link, id, className, onClick, isActive, isItalic, ref, ariaLive}) {
-
-//     return (
-//         <>
-//         {isLink ? 
-//             <a href={link} className={`${isAnimated ? "animate__animated animate__fadeInDown" : ""} font-oasis-text ${weight} ${isCenter ? "text-center" : "text-start"} ${size} text-center ${color} ${isActive ? "font-bold underline underline-offset-2":""} transition ease-in-out duration-500 ${isUnderlined ? "underline underline-offset-2": ""} hover:underline underline-offset-2 cursor-pointer hidden lg:flex`} 
-//             onClick={onClick} target="_blank">
-//                 {text}
-//             </a> 
-//         : 
-//             <p 
-//                 className={`${isAnimated ? "animate__animated animate__fadeInDown" : ""} font-oasis-text ${weight} ${isCenter ? "text-center" : "text-start"} ${size} text-center ${color} ${isActive ? "font-bold underline underline-offset-2":""} transition ease-in-out duration-500 ${isUnderlined ? "underline underline-offset-2": ""} hidden lg:flex ${className}`} 
-//                 id={id} 
-//                 onClick={onClick}
-//                 ref={ref}
-//                 aria-live={ariaLive}
-//             >
-//                 {text}
-//             </p>
-//         }
-            
-//         </>
-//     )
-// }
 

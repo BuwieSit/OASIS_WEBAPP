@@ -28,7 +28,8 @@
   --color-oasis-red: rgba(128,0,32, 1);
   --font-oasis-text: "Poppins";
   --font-oasis-title: "Heavitas";
-
+  
+  --text-table-text-size: 0.85rem;
   --background-oasis-gradient: linear-gradient(
     170deg,
     var(--color-oasis-button-light) 0%,

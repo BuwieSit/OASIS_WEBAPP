@@ -210,24 +210,27 @@ export default function MoaOverview() {
         {
             header: "Status",
             render: r => (
-                <Dropdown 
-                    value={r.status || "EMAILED_TO_HTE"}
-                    placeholder="Set status"
-                    currentValueColor={prospectStatusColors}
-                    onChange={(value) => {
-                            handleStatusChange(r.id, value);
-                            setAction(value);
-                            setLastStatus(r.status);
-                            setSuccessModal(true);
+                <div className='w-30'>
+                    <Dropdown 
+                        value={r.status || "EMAILED_TO_HTE"}
+                        placeholder="Set status"
+                        currentValueColor={prospectStatusColors}
+                        onChange={(value) => {
+                                handleStatusChange(r.id, value);
+                                setAction(value);
+                                setLastStatus(r.status);
+                                setSuccessModal(true);
+                            }
                         }
-                    }
-                    disabled={
-                        processingId === r.id ||
-                        r.status === "APPROVED" ||
-                        r.status === "CANCELLED"
-                    }
-                    categories={prospectStatusOptions}
-                />
+                        disabled={
+                            processingId === r.id ||
+                            r.status === "APPROVED" ||
+                            r.status === "CANCELLED"
+                        }
+                        categories={prospectStatusOptions}
+                    />
+                </div>
+                
             )
         },   
         {
@@ -300,14 +303,19 @@ export default function MoaOverview() {
                     isSuccess
                 />
             }
-            
-            <div className='flex flex-row gap-3 w-[80%]'>
+            <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b-2 py-5'>
+                <Title text="MOA Overview and Submissions" size='text-[2rem]'/>
+                <Subtitle text={"Overview MOA Information and set status to MOA Prospect Submissions"}/>
+            </div>
+
+            <div className='flex flex-row gap-3 w-[90%]'>
                 <Subtitle
                     text="MOA Overview"
                     onClick={() => setFilter("overview")}
                     isActive={activeFilter === "overview"}
                     isLink
                     size="text-[1rem]"
+                    className={"rounded-2xl"}
                 />
                 <Subtitle text="|" size="text-[1rem]" />
                 <Subtitle
@@ -316,14 +324,12 @@ export default function MoaOverview() {
                     isActive={activeFilter === "submissions"}
                     isLink
                     size="text-[1rem]"
+                    className={"rounded-2xl"}
                 />
             </div>
 
             {activeFilter === "overview" && (
                 <>
-                    <div className='flex justify-start items-start w-[80%]'>
-                        <Title text="MOA Overview" />
-                    </div>
 
                     <OasisTable
                         columns={currentMoaColumns}
@@ -334,9 +340,7 @@ export default function MoaOverview() {
 
             {activeFilter === "submissions" && (
                 <>
-                    <div className='flex justify-start items-start w-[80%]'>
-                        <Title text="MOA Prospect Submissions" />
-                    </div>
+
 
                     {loadingProspects ? (
                         <div className="w-[80%]">

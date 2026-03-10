@@ -388,8 +388,9 @@ export default function AdmOperations() {
                 />
             }
 
-            <div className='mb-10'>
-                <Title text={"Admin Operations"} />
+            <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b-2 py-5'>
+                <Title text="Admin Operations" size='text-[2rem]'/>
+                <Subtitle text={"Overview and Management of HTEs, upload or export HTE tables, and Moderate Student Reviews."}/>
             </div>
 
             <input
@@ -399,10 +400,6 @@ export default function AdmOperations() {
                 style={{ display: "none" }}
                 onChange={handleUploadFile}
             />
-
-            <div className='flex justify-start items-start w-[80%]'>
-                <Title text={"HTE Overview"} />
-            </div>
 
             <OasisTable columns={columns} data={data}>
                 <div className="w-full flex flex-row justify-between items-center gap-4 mt-4">
@@ -416,6 +413,7 @@ export default function AdmOperations() {
                                 setActiveFilter("All")
                             }}
                             size="text-[1rem]"
+                            className={"rounded-2xl"}
                         />
                         <Subtitle text={"|"} size='text-[1rem]' />
                         <Subtitle
@@ -427,6 +425,7 @@ export default function AdmOperations() {
                                 setActiveFilter("Active")
                             }}
                             size="text-[1rem]"
+                            className={"rounded-2xl"}
                         />
                         <Subtitle text={"|"} size='text-[1rem]' />
                         <Subtitle
@@ -438,6 +437,7 @@ export default function AdmOperations() {
                                 setActiveFilter("Expired")
                             }}
                             size="text-[1rem]"
+                            className={"rounded-2xl"}
                         />
                     </div>
 

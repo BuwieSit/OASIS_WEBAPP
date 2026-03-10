@@ -8,7 +8,7 @@ export function Text({ text, isGray }) {
     return(
         <>
             <p 
-            className={`font-oasis-text text-[1rem] truncate ${isGray ? "italic text-gray-500" : ""}`}>{text}</p>
+            className={`font-oasis-text text-table-text-size truncate ${isGray ? "italic text-gray-500" : ""}`}>{text}</p>
         </>      
     )
 }
@@ -215,7 +215,7 @@ export function HteLocation({ address, mapUrl}) {
             {/* HTE Location, it's an address text but when the text is too long, it will have ... and when hovered, the full address will popup up top of that text address. If clicked, a mapbox or Google maps will show the location */}
             <div className="relative group max-w-[180px] mx-auto">
 
-                <p onClick={() => mapUrl && window.open(mapUrl, "_blank")} className="text-[1rem] truncate cursor-pointer text-oasis-header hover:underline">
+                <p onClick={() => mapUrl && window.open(mapUrl, "_blank")} className="text-table-text-size truncate cursor-pointer text-oasis-header hover:underline">
                     {address}
                 </p>
 
