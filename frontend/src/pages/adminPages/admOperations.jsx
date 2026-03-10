@@ -24,6 +24,7 @@ export default function AdmOperations() {
     const status = searchParams.get("status");
     const uploadRef = useRef(null);
 
+    const [activeFilter, setActiveFilter] = useState("");
     // =============================
     // ADD HTE FORM STATE
     // =============================
@@ -409,21 +410,33 @@ export default function AdmOperations() {
                         <Subtitle
                             text="All"
                             isLink
-                            onClick={() => navigate("/admOperations")}
+                            isActive={activeFilter === "All"}
+                            onClick={() => {
+                                navigate("/admOperations")
+                                setActiveFilter("All")
+                            }}
                             size="text-[1rem]"
                         />
                         <Subtitle text={"|"} size='text-[1rem]' />
                         <Subtitle
                             text="ACTIVE"
                             isLink
-                            onClick={() => navigate("/admOperations?status=ACTIVE")}
+                            isActive={activeFilter === "Active"}
+                            onClick={() => {
+                                navigate("/admOperations?status=ACTIVE")
+                                setActiveFilter("Active")
+                            }}
                             size="text-[1rem]"
                         />
                         <Subtitle text={"|"} size='text-[1rem]' />
                         <Subtitle
                             text="EXPIRED"
+                            isActive={activeFilter === "Expired"}
                             isLink
-                            onClick={() => navigate("/admOperations?status=EXPIRED")}
+                            onClick={() => {
+                                navigate("/admOperations?status=EXPIRED")
+                                setActiveFilter("Expired")
+                            }}
                             size="text-[1rem]"
                         />
                     </div>

@@ -6,11 +6,12 @@ import {
     HteLocation,
     ViewMoaButton
 } from "../../utilities/tableUtil.jsx";
-import { ViewModal } from '../../components/popupModal';
+import { GeneralPopupModal, ViewModal } from '../../components/popupModal';
 import useQueryParam from '../../hooks/useQueryParams.jsx';
 import { useEffect, useState } from 'react';
 import Subtitle from '../../utilities/subtitle.jsx';
 import { AdminAPI } from "../../api/admin.api";
+import { Dropdown } from '../../components/adminComps.jsx';
 
 export default function MoaOverview() {
     const [activeFilter, setFilter] = useQueryParam("tab", "overview");
@@ -23,6 +24,10 @@ export default function MoaOverview() {
     const [loadingProspects, setLoadingProspects] = useState(false);
     const [processingId, setProcessingId] = useState(null);
 
+    const [successModal, setSuccessModal] = useState(false);
+    const [action, setAction] = useState("");
+    const [lastStatus, setLastStatus] = useState("");
+
     const API_BASE = import.meta.env.VITE_API_URL;
 
     const prospectStatusOptions = [
@@ -33,6 +38,14 @@ export default function MoaOverview() {
         "APPROVED",
         "CANCELLED",
     ];
+    const prospectStatusColors = {
+        EMAILED_TO_HTE: "text-oasis-aqua",
+        FOR_SIGNATURE: "text-oasis-blue",
+        ULCO: "text-oasis-header",
+        RETRIEVED_FROM_ULCO: "text-oasis-button-light",
+        APPROVED: "text-green-500",
+        CANCELLED: "text-red-500"
+    };
 
     useEffect(() => {
         if (activeFilter === "overview") {
@@ -195,6 +208,29 @@ export default function MoaOverview() {
 
     const prospectMoaColumns = [
         {
+            header: "Status",
+            render: r => (
+                <Dropdown 
+                    value={r.status || "EMAILED_TO_HTE"}
+                    placeholder="Set status"
+                    currentValueColor={prospectStatusColors}
+                    onChange={(value) => {
+                            handleStatusChange(r.id, value);
+                            setAction(value);
+                            setLastStatus(r.status);
+                            setSuccessModal(true);
+                        }
+                    }
+                    disabled={
+                        processingId === r.id ||
+                        r.status === "APPROVED" ||
+                        r.status === "CANCELLED"
+                    }
+                    categories={prospectStatusOptions}
+                />
+            )
+        },   
+        {
             header: "HTE Name",
             render: r => <Text text={r.company_name || "—"} />
         },
@@ -223,10 +259,6 @@ export default function MoaOverview() {
             render: r => <Text text={r.contact_number || "—"} />
         },
         {
-            header: "Status",
-            render: r => <Text text={formatProspectStatus(r.status)} />
-        },
-        {
             header: "MOA File",
             render: r => {
                 const url = buildFileUrl(r.moa_file_path);
@@ -242,28 +274,11 @@ export default function MoaOverview() {
                     <Text text="—" />
                 );
             }
-        },
-        {
-            header: "Actions",
-            render: r => (
-                <select
-                    className="border rounded-md px-3 py-2 text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    value={r.status || "EMAILED_TO_HTE"}
-                    onChange={(e) => handleStatusChange(r.id, e.target.value)}
-                    disabled={
-                        processingId === r.id ||
-                        r.status === "APPROVED" ||
-                        r.status === "CANCELLED"
-                    }
-                >
-                    {prospectStatusOptions.map((status) => (
-                        <option key={status} value={status}>
-                            {status === "CANCELLED" ? "REJECTED" : status}
-                        </option>
-                    ))}
-                </select>
-            )
-        }
+        }, 
+        // {
+        //     header: "Status",
+        //     render: r => <Text text={formatProspectStatus(r.status)} />
+        // },
     ];
 
     const activeFileName =
@@ -277,6 +292,15 @@ export default function MoaOverview() {
 
     return (
         <AdminScreen>
+            {successModal &&
+                <GeneralPopupModal
+                    title={`Status changed`}
+                    text={`Status set from ${lastStatus} to ${action}`}
+                    onClose={() => setSuccessModal(false)}
+                    isSuccess
+                />
+            }
+            
             <div className='flex flex-row gap-3 w-[80%]'>
                 <Subtitle
                     text="MOA Overview"

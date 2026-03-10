@@ -33,6 +33,7 @@ export function Filter({ text, size, isActive = false, onClick, icon }) {
 
 export function Dropdown({
     labelText,
+    currentValueColor = {},
     fieldId,
     categories = [],
     value = "",
@@ -43,6 +44,7 @@ export function Dropdown({
     const handleChange = (e) => {
         onChange?.(e.target.value); 
     };
+    const textColor = currentValueColor[value] || "text-black";
 
     return (
         <>
@@ -52,18 +54,23 @@ export function Dropdown({
                     id={fieldId}
                     value={value}
                     onChange={handleChange}
-                    className="w-full p-3 bg-white rounded text-[0.8rem] font-oasis-text disabled:cursor-not-allowed"
+                    className={`w-full min-w-50 p-3 bg-white rounded text-[0.8rem] font-oasis-text disabled:cursor-not-allowed ${textColor}`}
                     disabled={disabled}
                 >
-                    <option value="" disabled>
+                    <option value="" disabled className="text-black">
                         {`${placeholder}`}
                     </option>
 
-                    {categories.map((option, index) => (
-                        <option key={index} value={option}>
-                            {option}
-                        </option>
-                    ))}
+                    {categories.map((option, index) => {
+                        const value = typeof option === "string" ? option : option.value;
+                        const label = typeof option === "string" ? option : option.label;
+
+                        return (
+                            <option key={index} value={value} className="text-black">
+                                {label}
+                            </option>
+                        );
+                    })}
                 </select>
             </div>
             

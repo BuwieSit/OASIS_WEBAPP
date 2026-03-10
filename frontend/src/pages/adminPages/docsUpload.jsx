@@ -509,13 +509,6 @@ export function DocsAddModal({
                                 onChange={(e) => setTitle(e.target.value)}
                             />
 
-                            <MultiField
-                                labelText="Description (Optional)"
-                                fieldHolder="Enter item description..."
-                                fieldId="itemDescription"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                            />
                         </>
                     )}
 

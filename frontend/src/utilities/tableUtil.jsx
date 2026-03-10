@@ -4,11 +4,11 @@ import { AnnounceButton } from "../components/button";
 import Subtitle from "./subtitle";
 import { useState } from "react";
 
-export function Text({ text }) {
+export function Text({ text, isGray }) {
     return(
         <>
-
-            <p className="font-oasis-text text-[1rem] truncate">{text}</p>
+            <p 
+            className={`font-oasis-text text-[1rem] truncate ${isGray ? "italic text-gray-500" : ""}`}>{text}</p>
         </>      
     )
 }

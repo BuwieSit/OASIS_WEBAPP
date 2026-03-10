@@ -6,48 +6,67 @@ import { Link } from "react-router-dom";
 import PdfViewer from "../utilities/pdfViewer";
 
 export function GeneralPopupModal({ 
-    time = 5000, 
+    time = 2000, 
     onClose, 
     text, 
     title,
-    icon = <Check/>,
+    icon = <Check size={35}/>,
     isSuccess,
     isFailed,
     isNeutral = true
 }) {
     const [visible, setVisible] = useState(true);
+    const [isExiting, setIsExiting] = useState(false);
+    const exitDuration = 500; 
 
     useEffect(() => {
-        const timer = setTimeout(() => {
+        const exitTimer = setTimeout(() => {
+            setIsExiting(true);
+        }, time - exitDuration);
+
+        const removeTimer = setTimeout(() => {
             setVisible(false);
-            onClose?.(); 
+            onClose?.();
         }, time);
 
-        return () => clearTimeout(timer);
+        return () => {
+            clearTimeout(exitTimer);
+            clearTimeout(removeTimer);
+        };
     }, [time, onClose]);
 
     if (!visible) return null;
 
     return (
-        <div 
-            className={`fixed top-0 translate-y-5 w-[30%] p-3 rounded-3xl flex flex-col items-center justify-center font-oasis-text font-bold text-[1.3rem] duration-300 transition ease-in-out z-100 
-            ${isSuccess && "text-oasis-button-dark drop-shadow-[0px_0px_2px_rgba(45,98,89,1)]"} 
-            ${isFailed && "text-oasis-red drop-shadow-[0px_0px_2px_rgba(128,0,32,1)]"} 
-            ${isNeutral && "text-[#36454F] drop-shadow-[0px_0px_2px_rgba(54,69,79,1)]"} 
+        <div className={`animate__animated animate__faster ${isExiting ? "animate__fadeOutUp" : "animate__fadeInDown"} fixed top-0 translate-y-5 min-w-[30%] p-3 pl-5 rounded-[5px] flex items-center justify-center font-oasis-text font-bold duration-300 transition ease-in-out z-100 border bg-white
+            ${isSuccess && "text-oasis-button-dark border-oasis-button-dark"}
+            ${isFailed && "text-oasis-red border-oasis-red"} 
+            ${isNeutral && "text-[#36454F] border-gray-400"}
         `}>
-            <div className="bg-white rounded-t-2xl p-1 min-w-[100px] flex justify-center items-center">
-                {icon}
+            {icon}
+            <div className="rounded-2xl p-3 w-full flex flex-col justify-center items-start">
+                <Subtitle text={title} size="text-[1.3rem]" weight="font-bold"/>
+                <Subtitle color={"text-black"} text={text} size="text-[0.8rem]"/>
             </div>
-            <div className="bg-white rounded-2xl p-3 w-full flex flex-col justify-center items-center">
-                <Subtitle text={title} size="text-[1rem]" weight="font-bold"/>
-                <Subtitle text={text} size="text-[0.8rem]"/>
-            </div>
-            
         </div>
 
     );
 }
-
+        // <div 
+        //     className={`fixed top-0 translate-y-5 w-[30%] p-3 rounded-3xl flex flex-col items-center justify-center font-oasis-text font-bold text-[1.3rem] duration-300 transition ease-in-out z-100 
+        //     ${isSuccess && "text-oasis-button-dark drop-shadow-[0px_0px_2px_rgba(45,98,89,1)]"} 
+        //     ${isFailed && "text-oasis-red drop-shadow-[0px_0px_2px_rgba(128,0,32,1)]"} 
+        //     ${isNeutral && "text-[#36454F] drop-shadow-[0px_0px_2px_rgba(54,69,79,1)]"} 
+        // `}>
+        //     <div className="bg-white rounded-t-2xl p-1 min-w-[100px] flex justify-center items-center">
+        //         {icon}
+        //     </div>
+        //     <div className="bg-white rounded-2xl p-3 w-full flex flex-col justify-center items-center">
+        //         <Subtitle text={title} size="text-[1rem]" weight="font-bold"/>
+        //         <Subtitle text={text} size="text-[0.8rem]"/>
+        //     </div>
+            
+        // </div>
 
 
 export function ConfirmModal({ confText = "complete action?", onCancel, onLogOut, onConfirm}) {

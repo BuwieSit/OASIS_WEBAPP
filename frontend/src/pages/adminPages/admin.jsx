@@ -24,15 +24,17 @@ export default function Admin() {
 
     const [activeFilter, setActiveFilter] = useState("All");
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+
+    // POPUPS
+    const [popup, setPopup] = useState(null);
     const [deleteModalShow, setDeleteModalShow] = useState(false);
     const [announcementToDelete, setAnnouncementToDelete] = useState(null);
     const [lastPostedTitle, setLastPostedTitle] = useState("");
 
+    
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [category, setCategory] = useState("HTE Related");
-    const [modalStatus, setModalStatus] = useState(null);
-    const [failedFields, setFailedFields] = useState([]);
 
     const categories = [
         "HTE Related",
@@ -91,8 +93,16 @@ export default function Admin() {
             if (!content) emptyFields.push("Content");
             if (!category) emptyFields.push("Category");
 
-            setModalStatus("failed");
-            setFailedFields(emptyFields);
+            if (emptyFields.length > 0) {
+                setPopup({
+                    title: "Failed",
+                    text: `Please fill the following field(s): ${emptyFields.join(", ")}`,
+                    icon: <X size={50} />,
+                    type: "failed",
+                    time: 2000
+                });
+                return;
+            }
             return;
         }
 
@@ -106,20 +116,42 @@ export default function Admin() {
             setTitle("");
             setContent("");
             setCategory("HTE Related");
-            setModalStatus("success");
+            setPopup({
+                title: "Success",
+                text: `Posted announcement: ${lastPostedTitle}`,
+                icon: <Check size={50} />,
+                type: "success",
+                time: 2000
+            });
 
             const res = await AdminAPI.getAnnouncements();
             setAnnouncements(res.data);
         } catch (err) {
             console.error(err);
-            setModalStatus("failed");
-            setFailedFields(["Server error (check backend/API)"]);
+            setPopup({
+                title: "Failed",
+                text: `Server error (check backend/API)`,
+                icon: <X size={50} />,
+                type: "failed",
+                time: 2000
+            });
         }
     };
 
     const handleDelete = async (id) => {
         await AdminAPI.deleteAnnouncement(id);
         setAnnouncements(prev => prev.filter(a => a.id !== id));
+
+        const deletedAnnouncement = announcementToDelete?.title || "announcement";
+
+        // Trigger deletion popup
+        setPopup({
+            title: "Deleted Announcement",
+            text: `Successfully deleted ${deletedAnnouncement}`,
+            icon: <Trash size={50} />,
+            type: "failed", 
+            time: 2000
+        });
     };
 
     const matchesFilter = (a) => {
@@ -161,45 +193,37 @@ export default function Admin() {
                 {...selectedAnnouncement}
             />
 
-            {deleteModalShow && announcementToDelete && (
-                <ConfirmModal
-                    onConfirm={() => {
-                        handleDelete(announcementToDelete.id);
-                        setDeleteModalShow(false);
-                        setAnnouncementToDelete(null);
-                    }}
-                    onCancel={() => {
-                        setDeleteModalShow(false);
-                        setAnnouncementToDelete(null);
-                    }}
-                    confText={`delete "${announcementToDelete.title}"?`}
-                />
-            )}
+        {popup && (
+            <GeneralPopupModal
+                icon={popup.icon}
+                time={popup.time}
+                title={popup.title}
+                text={popup.text}
+                onClose={() => setPopup(null)}
+                isSuccess={popup.type === "success"}
+                isFailed={popup.type === "failed"}
+                isNeutral={popup.type === "neutral"}
+            />
+        )}
 
-            {modalStatus === "success" && lastPostedTitle && (
-                <GeneralPopupModal
-                    icon={<Check size={35} />}
-                    time={2000}
-                    onClose={() => setModalStatus(null)}
-                    title="Success"
-                    text={`Posted announcement: ${lastPostedTitle}`}
-                    isSuccess={true}
-                />
-            )}
-
-            {modalStatus === "failed" && (
-                <GeneralPopupModal
-                    icon={<X size={35} />}
-                    time={2000}
-                    onClose={() => setModalStatus(null)}
-                    title={"Failed"}
-                    text={`Please fill the following field(s)\n: ${failedFields.join(", ")}`}
-                    isFailed={true}
-                />
-            )}
+        {/* Confirm delete modal */}
+        {deleteModalShow && announcementToDelete && (
+            <ConfirmModal
+                onConfirm={() => {
+                    handleDelete(announcementToDelete.id);
+                    setDeleteModalShow(false);
+                    setAnnouncementToDelete(null);
+                }}
+                onCancel={() => {
+                    setDeleteModalShow(false);
+                    setAnnouncementToDelete(null);
+                }}
+                confText={`delete "${announcementToDelete.title}"?`}
+            />
+        )}
 
             <div className='w-full flex flex-col gap-10 items-center justify-center rounded-3xl drop-shadow-[0_5px_10px_rgba(0,0,0,0.25)]'>
-                <div>
+                <div className='w-[80%] flex justify-start items-center'>
                     <Title text={"Admin Dashboard"} />
                 </div>
 
@@ -337,7 +361,7 @@ export default function Admin() {
                     <Title text={"Post Announcements"} />
                 </div>
 
-                <section className='p-5 w-[90%] flex flex-row justify-between items-start gap-5 font-oasis-text text-oasis-button-dark'>
+                <section className='p-5 w-[90%]  flex flex-row justify-between items-start gap-5 font-oasis-text text-oasis-button-dark'>
                     <form
                         className='w-[70%] min-h-24 p-10 bg-admin-element flex flex-col items-start justify-center gap-5 text-black rounded-3xl'
                         onSubmit={(e) => {
@@ -396,39 +420,45 @@ export default function Admin() {
                             />
                         </div>
 
-                        {filteredAnnouncements.map(a => (
-                            <section
-                                key={a.id}
-                                className="w-full bg-white rounded-3xl p-5 flex flex-row items-center justify-evenly"
-                            >
-                                <div className="p-5 w-full text-black rounded-2xl">
-                                    <p className="text-[0.8rem] text-gray-500 italic font-normal mb-5">
-                                        {a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"}
-                                    </p>
-                                    <h3 className="text-[1rem] font-bold">{a.title}</h3>
-                                    <p className="text-[0.8rem] font-medium line-clamp-2">{a.content}</p>
-                                </div>
+                        <div className='w-full flex flex-col gap-3 max-h-100 overflow-y-auto p-5'>
+                            {filteredAnnouncements.map(a => (
+                                <section
+                                    key={a.id}
+                                    className="w-full bg-oasis-gradient rounded-3xl px-5 flex flex-row items-center justify-evenly shadow-[2px_2px_2px_rgba(0,0,0,1)]"
+                                >
+                                    <div className="p-5 w-full text-black rounded-2xl">
+                                        <p className="text-[0.8rem] text-black italic font-normal mb-5">
+                                            {a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"}
+                                        </p>
+                                        <h3 className="text-[1rem] font-bold">{a.title}</h3>
+                                        <p className="text-[0.8rem] font-medium line-clamp-2">{a.content}</p>
+                                    </div>
 
-                                <div className="w-[50%] flex flex-row gap-10">
-                                    <AnnounceButton
-                                        icon={<Eye />}
-                                        btnText="View"
-                                        onClick={() => setSelectedAnnouncement(a)}
-                                    />
-                                    <AnnounceButton
-                                        btnText="Delete"
-                                        onClick={() => {
-                                            setAnnouncementToDelete(a);
-                                            setDeleteModalShow(true);
-                                        }}
-                                    />
-                                </div>
-                            </section>
-                        ))}
+                                    <div className="w-[50%] flex flex-row gap-10">
+                                        <AnnounceButton
+                                            icon={<Eye />}
+                                            btnText="View"
+                                            onClick={() => setSelectedAnnouncement(a)}
+                                        />
+                                        <AnnounceButton
+                                            btnText="Delete"
+                                            onClick={() => {
+                                                setAnnouncementToDelete(a);
+                                                setDeleteModalShow(true);
+                                            }}
+                                        />
+                                    </div>
+                                </section>
+                            ))}
+                        </div>
+                        
                     </form>
 
-                    <div id='notifications' className='w-[25%] rounded-3xl min-h-24 p-10 bg-admin-element'>
-                        <p className='text-[0.8rem] mb-5 font-black'>Notifications</p>
+                    <div id='notifications' className='w-[25%] rounded-3xl min-h-24 max-h-screen px-10 overflow-y-auto bg-admin-element'>
+                        <div className='sticky top-0 bg-admin-element w-full'>
+                            <p className='text-[0.8rem] mb-5 font-black py-5'>Notifications</p>
+                        </div>
+                        
 
                         {alerts.length === 0 && (
                             <p className="text-[0.7rem] text-gray-500">No alerts</p>

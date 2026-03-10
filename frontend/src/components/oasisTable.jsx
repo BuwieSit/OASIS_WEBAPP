@@ -6,8 +6,9 @@ export default function OasisTable({ columns = [], data = [], children }) {
   return (
     <div
       className={`
-        w-full xl:w-[90%] 2xl:w-[80%]
+        w-full xl:w-[80%] 2xl:w-[80%]
         max-h-[600px]
+        max-w-[1200px]
         p-4 sm:p-5
         bg-admin-element
         rounded-2xl
@@ -25,12 +26,12 @@ export default function OasisTable({ columns = [], data = [], children }) {
       )}
 
       {/* TABLE WRAPPER (SCROLL FIX) */}
-      <div className="w-full overflow-x-auto overflow-y-auto mt-5">
+      <div className="w-full max-w-screen overflow-x-auto overflow-y-auto mt-5">
         <table className="min-w-[900px] w-full border-collapse">
           
           {/* HEADER */}
           <thead>
-            <tr className="bg-white border-b border-gray-300 sticky top-0">
+            <tr className="bg-white border-b border-gray-300 sticky top-0 z-40">
               {columns.map((col, colIndex) => (
                 <th
                   key={colIndex}
