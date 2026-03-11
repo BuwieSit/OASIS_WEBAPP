@@ -63,6 +63,22 @@ export default function Student() {
             });
     }, [search]);
     
+    const buildFileUrl = (filePath) => {
+        if (!filePath) return null;
+
+        let path = String(filePath).trim();
+
+        if (path.startsWith("/")) {
+            path = path.slice(1);
+        }
+
+        if (path.startsWith("uploads/")) {
+            path = path.replace("uploads/", "");
+        }
+
+        return `${API_BASE}/uploads/${path}`;
+    };
+
     const columns = [
         {header: "HTE Name", render: row => <Text text={row.hteName}/>},
         {header: "Nature of Business", render: row => <Text text={row.industry}/>},
@@ -71,11 +87,21 @@ export default function Student() {
         {header: "MOA Status", render: row => <StatusView value={row.moaStatus}/>},
         {
             header: "MOA File",
-            render: row => (
-                <ViewMoaButton
-                    onClick={() => handleDownloadMOA(row.id)}
-                />
-            )
+            render: row => {
+                const url = buildFileUrl(row.document_path);
+
+                return url ? (
+                    <ViewMoaButton
+                        url={url}
+                        onClick={() => openPdf(row.document_path)}
+                        onDownload={() =>
+                            downloadMoa(row.document_path, row.hte?.company_name)
+                        }
+                    />
+                ) : (
+                    <Text text="—" />
+                );
+            }
         }
     ]
     

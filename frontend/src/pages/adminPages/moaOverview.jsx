@@ -28,7 +28,7 @@ export default function MoaOverview() {
     const [action, setAction] = useState("");
     const [lastStatus, setLastStatus] = useState("");
 
-    const API_BASE = import.meta.env.VITE_API_URL;
+    const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
     const prospectStatusOptions = [
         "EMAILED_TO_HTE",
@@ -92,8 +92,10 @@ export default function MoaOverview() {
         if (path.startsWith("uploads/")) {
             path = path.replace("uploads/", "");
         }
+        console.log(`Filepath: ${API_BASE}/uploads/${path}`);
 
         return `${API_BASE}/uploads/${path}`;
+        
     };
 
     const openPdf = (filePath) => {
@@ -194,7 +196,10 @@ export default function MoaOverview() {
                 return url ? (
                     <ViewMoaButton
                         url={url}
-                        onClick={() => openPdf(r.document_path)}
+                        onClick={() => {
+                            openPdf(r.document_path);
+                            console.log(`Path: ${r.document_path}`)
+                        }}
                         onDownload={() =>
                             downloadMoa(r.document_path, r.hte?.company_name)
                         }
@@ -268,7 +273,10 @@ export default function MoaOverview() {
                 return url ? (
                     <ViewMoaButton
                         url={url}
-                        onClick={() => openPdf(r.moa_file_path)}
+                        onClick={() => {
+                            openPdf(r.moa_file_path);
+                            console.log(`Path: ${r.moa_file_path}`)
+                        }}
                         onDownload={() =>
                             downloadMoa(r.moa_file_path, r.company_name)
                         }
@@ -303,6 +311,14 @@ export default function MoaOverview() {
                     isSuccess
                 />
             }
+            <ViewModal
+                visible={openView}
+                onClose={() => setOpenView(false)}
+                isDocument={true}
+                resourceTitle="MOA File"
+                file={filePdf}
+                filename={activeFileName}
+            />
             <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b border-gray-400 py-5'>
                 <Title text="MOA Overview and Submissions" size='text-[2rem]'/>
                 <Subtitle text={"Overview MOA Information and set status to MOA Prospect Submissions"}/>
@@ -354,14 +370,7 @@ export default function MoaOverview() {
                 </>
             )}
 
-            <ViewModal
-                visible={openView}
-                onClose={() => setOpenView(false)}
-                isDocument={true}
-                resourceTitle="MOA File"
-                file={filePdf}
-                filename={activeFileName}
-            />
+
         </AdminScreen>
     );
 }

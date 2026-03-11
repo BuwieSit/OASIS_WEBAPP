@@ -1,5 +1,4 @@
 import { X } from "lucide-react";
-import close from "../assets/icons/close.png"
 
 export default function UserModal({ children }) { 
     return (

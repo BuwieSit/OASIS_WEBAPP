@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { ConfirmModal } from "./popupModal";
 import testPfp from "../assets/testprofile.png"
 import { useScrollTop } from "../hooks/useScrollToTop.jsx";
+import { NotificationAPI } from "../api/notification.api";
 
 const API_BASE = api.defaults.baseURL;
 
