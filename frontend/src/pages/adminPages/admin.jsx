@@ -223,11 +223,13 @@ export default function Admin() {
                 />
             )}
 
-            <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b-2 py-5'>
+            {/* TITLE */}
+            <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b border-gray-400 py-5'>
                 <Title text="Admin Dashboard" size='text-[2rem]'/>
                 <Subtitle text={"Overview of admin information, and management of announcements."}/>
             </div>
 
+            {/* CARDS */}
             <section className="w-[90%] p-5 gap-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
                 <Link to={"/admStudents"}>
                     <AdmCard
@@ -248,6 +250,8 @@ export default function Admin() {
 
                 <Link to={"/admMoaOverview"}>
                     <AdmCard
+                        hasRibbon={true}
+                        ribbonColor={"bg-green-500"}
                         cardTitle="Active MOAs"
                         cardIcon={<Book color="#377268" />}
                         cardNumber={
@@ -265,6 +269,8 @@ export default function Admin() {
 
                 <Link to={"/admMoaOverview"}>
                     <AdmCard
+                        hasRibbon={true}
+                        ribbonColor={"bg-red-800"}
                         cardTitle="Expired MOAs"
                         cardIcon={<BookAlert color="#377268" />}
                         cardNumber={
@@ -358,7 +364,7 @@ export default function Admin() {
                     />
                 </a> */}
             </section>
-
+            
             <div className='flex justify-start items-start w-[90%]'>
                 <Title text={"Post Announcements"} />
             </div>

@@ -156,14 +156,14 @@ export default function RegStudents() {
             isSuccess
           />
       )}
-      <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b py-5'>
+      <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b border-gray-400 py-5'>
         <Title text="Students Overview" size='text-[2rem]'/>
         <Subtitle text={"Oversee and Archive Registered Students."}/>
       </div>
  
 
       <div className="w-full flex flex-col gap-10 justify-center items-center">
-        <div className='flex justify-start items-center w-[90%] gap-5 border-b pb-5'>
+        <div className='flex justify-start items-center w-[90%] gap-5 border-b border-gray-400 pb-5'>
             <div className='flex justify-start items-center w-full gap-5'>
                 <Subtitle
                   text="Registered Students"
@@ -193,7 +193,7 @@ export default function RegStudents() {
           {activeTable === "registered" && 
             <>
               <div className='w-[80%] flex justify-start items-start'>
-                <Subtitle size={"1rem"} text={"Filter by program:"}/>
+                <Subtitle size={"text-table-text-size"} text={"Filter by program:"}/>
               </div>
 
               <div className='flex justify-start items-start w-[80%] gap-5'>
@@ -217,6 +217,7 @@ export default function RegStudents() {
                       size="text-[1rem]"
                       className={"border rounded-2xl"}
                       weight={"font-bold"}
+                      
                     />
                   ))}
               </div>
@@ -232,7 +233,7 @@ export default function RegStudents() {
           {activeTable === "archived" && 
             <>
               <div className='w-[80%] flex justify-start items-start'>
-                <Subtitle size={"1rem"} text={"Filter by program:"}/>
+                <Subtitle size={"text-table-text-size"} text={"Filter by program:"}/>
               </div>
               <div className='flex justify-start items-start w-[80%] gap-5'>
                   <Subtitle
@@ -241,7 +242,7 @@ export default function RegStudents() {
                     isActive={activeFilter === "All"}
                     isLink
                     size="text-[1rem]"
-                    className={"border rounded-[5px]"}
+                    className={"border rounded-2xl"}
                     weight={"font-bold"}
                     
                   />
@@ -253,7 +254,7 @@ export default function RegStudents() {
                       isActive={activeFilter === code.toLowerCase()}
                       isLink
                       size="text-[1rem]"
-                      className={"border rounded-[5px]"}
+                      className={"border rounded-2xl"}
                       weight={"font-bold"}
                     />
                   ))}

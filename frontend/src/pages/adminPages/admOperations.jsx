@@ -388,7 +388,7 @@ export default function AdmOperations() {
                 />
             }
 
-            <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b-2 py-5'>
+            <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b border-gray-400 py-5'>
                 <Title text="Admin Operations" size='text-[2rem]'/>
                 <Subtitle text={"Overview and Management of HTEs, upload or export HTE tables, and Moderate Student Reviews."}/>
             </div>
@@ -414,6 +414,7 @@ export default function AdmOperations() {
                             }}
                             size="text-[1rem]"
                             className={"rounded-2xl"}
+                            weight={"font-bold"}
                         />
                         <Subtitle text={"|"} size='text-[1rem]' />
                         <Subtitle
@@ -426,6 +427,7 @@ export default function AdmOperations() {
                             }}
                             size="text-[1rem]"
                             className={"rounded-2xl"}
+                            weight={"font-bold"}
                         />
                         <Subtitle text={"|"} size='text-[1rem]' />
                         <Subtitle
@@ -438,6 +440,7 @@ export default function AdmOperations() {
                             }}
                             size="text-[1rem]"
                             className={"rounded-2xl"}
+                            weight={"font-bold"}
                         />
                     </div>
 

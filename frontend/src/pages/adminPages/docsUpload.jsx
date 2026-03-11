@@ -286,7 +286,7 @@ export default function DocsUpload() {
                 <GeneralPopupModal isSuccess time={3000} title={"Action Completed"} text={"Section Fields Cleared"}/>
             }
             
-            <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b-2 py-5'>
+            <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b border-gray-400 py-5'>
                 <Title text="Documents Upload" size='text-[2rem]'/>
                 <Subtitle text={"Upload and Manage Guidelines, Procedures, MOA Process, and Forms & Templates"}/>
             </div>
@@ -300,6 +300,7 @@ export default function DocsUpload() {
                         isActive={activeFilter === "procedures"}
                         onClick={() => setFilter("procedures")}
                         className={"rounded-2xl"}
+                        weight={"font-bold"}
                     />
 
                     <Subtitle
@@ -309,6 +310,7 @@ export default function DocsUpload() {
                         isActive={activeFilter === "moa"}
                         onClick={() => setFilter("moa")}
                         className={"rounded-2xl"}
+                        weight={"font-bold"}
                     />
 
                     <Subtitle
@@ -318,6 +320,7 @@ export default function DocsUpload() {
                         isActive={activeFilter === "guidelines"}
                         onClick={() => setFilter("guidelines")}
                         className={"rounded-2xl"}
+                        weight={"font-bold"}
                     />
 
                     <Subtitle
@@ -327,6 +330,7 @@ export default function DocsUpload() {
                         isActive={activeFilter === "forms"}
                         onClick={() => setFilter("forms")}
                         className={"rounded-2xl"}
+                        weight={"font-bold"}
                     />
                 </section>
 

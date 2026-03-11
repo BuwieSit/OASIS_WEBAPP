@@ -28,7 +28,7 @@ export default function OasisTable({ columns = [], data = [], children }) {
         )}
 
         {/* TABLE WRAPPER (SCROLL FIX) */}
-        <div className="w-full max-w-screen overflow-x-auto  mt-5">
+        <div className="w-full max-w-screen overflow-x-auto mt-5 min-h-[420px]">
             <table className="min-w-[900px] w-full border-collapse rounded-2xl overflow-hidden">
             
             {/* HEADER */}

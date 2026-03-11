@@ -303,7 +303,7 @@ export default function MoaOverview() {
                     isSuccess
                 />
             }
-            <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b-2 py-5'>
+            <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b border-gray-400 py-5'>
                 <Title text="MOA Overview and Submissions" size='text-[2rem]'/>
                 <Subtitle text={"Overview MOA Information and set status to MOA Prospect Submissions"}/>
             </div>
@@ -314,6 +314,7 @@ export default function MoaOverview() {
                     onClick={() => setFilter("overview")}
                     isActive={activeFilter === "overview"}
                     isLink
+                    weight={"font-bold"}
                     size="text-[1rem]"
                     className={"rounded-2xl"}
                 />
@@ -323,6 +324,7 @@ export default function MoaOverview() {
                     onClick={() => setFilter("submissions")}
                     isActive={activeFilter === "submissions"}
                     isLink
+                    weight={"font-bold"}
                     size="text-[1rem]"
                     className={"rounded-2xl"}
                 />
@@ -330,7 +332,6 @@ export default function MoaOverview() {
 
             {activeFilter === "overview" && (
                 <>
-
                     <OasisTable
                         columns={currentMoaColumns}
                         data={currentMoas}
@@ -340,8 +341,6 @@ export default function MoaOverview() {
 
             {activeFilter === "submissions" && (
                 <>
-
-
                     {loadingProspects ? (
                         <div className="w-[80%]">
                             <Subtitle text="Loading MOA prospect submissions..." />
