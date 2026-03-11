@@ -70,6 +70,9 @@ export function Header({ admin = false }) {
         fetchProfile();
     }, []);
 
+    const [notifications, setNotifications] = useState([]);
+    const hasUnread = notifications.some(n => !n.is_read && !n.is_saved);
+    const unreadCount = notifications.filter(n => !n.is_read && !n.is_saved).length;
     useEffect(() => {
         loadNotifications();
 
@@ -89,8 +92,8 @@ export function Header({ admin = false }) {
         }
     };
 
-    const [notifications, setNotifications] = useState([]);
-    const hasUnread = notifications.some(n => !n.is_read && !n.is_saved);
+
+
 
     if (!admin && (!user || !profile)) return null;
 
@@ -128,11 +131,17 @@ export function Header({ admin = false }) {
 
                     <HoverLift onClick={handleNotifClick}>
                         {!admin && (
-                            <div>
+                            <div className="relative">
                                 {hasUnread ? (
-                                    <BellDot className="hidden md:block lg:block" size={28} color="#54A194" />
+                                    <BellDot className="hidden md:block lg:block" size={28} color="#800020"/>
                                 ) : (
                                     <Bell className="hidden md:block lg:block" size={28} color="#54A194" />
+                                )}
+
+                                {unreadCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full">
+                                        {unreadCount > 99 ? "99+" : unreadCount}
+                                    </span>
                                 )}
                             </div>
                         )}
@@ -164,7 +173,14 @@ export function Header({ admin = false }) {
                         { text: "Log out" },
                     ]}
                 />}
-            {open && <Notifications open={open} onClose={() => setOpen(false)}/>}
+           {open && (
+                <Notifications
+                    open={open}
+                    onClose={() => setOpen(false)}
+                    notifications={notifications}
+                    setNotifications={setNotifications}
+                />
+            )}
 
         </>
     )

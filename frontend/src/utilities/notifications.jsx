@@ -4,11 +4,16 @@ import { CircleX, Bookmark, BookmarkCheck } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { NotificationAPI } from "../api/notification.api";
 
-export default function Notifications({ open, onClose }) {
+export default function Notifications({ 
+    open,
+    onClose,
+    notifications,
+    setNotifications 
+}) {
     const [show, setShow] = useState(false);
     const [animationClass, setAnimationClass] = useState("");
 
-    const [notifications, setNotifications] = useState([]);
+    // const [notifications, setNotifications] = useState([]);
     const [activeFilter, setActiveFilter] = useState("All");
     const [loading, setLoading] = useState(false);
     const [processingId, setProcessingId] = useState(null);
@@ -28,30 +33,30 @@ export default function Notifications({ open, onClose }) {
         }
     }, [open]);
 
-    useEffect(() => {
-        if (!open) return;
+    // useEffect(() => {
+    //     if (!open) return;
 
-        loadNotifications();
+    //     loadNotifications();
 
-        const interval = setInterval(() => {
-            loadNotifications(false);
-        }, 5000);
+    //     const interval = setInterval(() => {
+    //         loadNotifications(false);
+    //     }, 5000);
 
-        return () => clearInterval(interval);
-    }, [open]);
+    //     return () => clearInterval(interval);
+    // }, [open]);
 
-    const loadNotifications = async (showLoader = true) => {
-        try {
-            if (showLoader) setLoading(true);
-            const res = await NotificationAPI.getStudentNotifications();
-            setNotifications(res.data || []);
-        } catch (err) {
-            console.error("Failed to load notifications:", err);
-            setNotifications([]);
-        } finally {
-            if (showLoader) setLoading(false);
-        }
-    };
+    // const loadNotifications = async (showLoader = true) => {
+    //     try {
+    //         if (showLoader) setLoading(true);
+    //         const res = await NotificationAPI.getStudentNotifications();
+    //         setNotifications(res.data || []);
+    //     } catch (err) {
+    //         console.error("Failed to load notifications:", err);
+    //         setNotifications([]);
+    //     } finally {
+    //         if (showLoader) setLoading(false);
+    //     }
+    // };
 
     const parseNotificationDate = (dateString) => {
         if (!dateString) return null;
