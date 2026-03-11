@@ -165,7 +165,7 @@ export default function ProspectMoaForm() {
 
             if (duplicateType === "EXISTING_MOA_PROSPECT") {
                 setErrMsg(
-                    `"${existingRecord?.company_name || formData.company_name}" already exists as an MOA prospect.` +
+                    `"${existingRecord?.company_name || formData.company_name}" already exists as a MOA prospect.` +
                     (existingRecord?.status
                         ? ` Current status: ${existingRecord.status}.`
                         : "")
