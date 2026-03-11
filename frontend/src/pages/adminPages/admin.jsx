@@ -389,8 +389,13 @@ export default function Admin() {
                 </a> */}
             </section>
             
-            <section className='w-[90%] p-5 flex gap-3 justify-center items-center bg-red-500'>
-                    <PieChart/>
+            <section className='w-[90%] p-5 flex gap-3 justify-center items-center'>
+                   <PieChart
+                        items={[
+                            { label: "Active MOA", value: 18, color: "#16a34a" },
+                            { label: "Expired MOA", value: 7, color: "#dc2626" },
+                        ]}
+                    />
             </section>
 
             <div className='flex justify-start items-start w-[90%]'>
