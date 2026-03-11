@@ -25,3 +25,4 @@ dist-ssr
 
 # txt
 /rules.txt
+/src/api/axios.jsx

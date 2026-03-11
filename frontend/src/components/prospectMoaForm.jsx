@@ -5,6 +5,8 @@ import { AnnounceButton } from "./button";
 import { FileUploadField, SingleField } from "./fieldComp";
 import imgBg from "../assets/fallbackImage.jpg";
 import { submitMoaProspect } from "../api/student.service";
+import { GeneralPopupModal } from "./popupModal";
+import { X } from "lucide-react";
 
 export default function ProspectMoaForm() {
     const moaSteps = [
@@ -64,6 +66,9 @@ export default function ProspectMoaForm() {
             bg: "bg-[#4A9B8E]"
         }
     ];
+
+    const [errMsg, setErrMsg] = useState("");
+    const [successMsg, setSuccessMsg] = useState("");
 
     const initialFormData = {
         company_name: "",
@@ -132,7 +137,8 @@ export default function ProspectMoaForm() {
 
         try {
             await submitMoaProspect(payload);
-            alert("MOA Prospect submitted successfully.");
+            // alert("MOA Prospect submitted successfully.");
+            setSuccessMsg("MOA Prospect submitted successfully.");
 
             setFormData(initialFormData);
 
@@ -148,7 +154,7 @@ export default function ProspectMoaForm() {
             const existingRecord = data?.existing_record;
 
             if (duplicateType === "APPROVED_HTE") {
-                alert(
+                setErrMsg(
                     `"${existingRecord?.company_name || formData.company_name}" is already an approved HTE.` +
                     (existingRecord?.moa_status
                         ? ` Current MOA status: ${existingRecord.moa_status}.`
@@ -158,7 +164,7 @@ export default function ProspectMoaForm() {
             }
 
             if (duplicateType === "EXISTING_MOA_PROSPECT") {
-                alert(
+                setErrMsg(
                     `"${existingRecord?.company_name || formData.company_name}" already exists as an MOA prospect.` +
                     (existingRecord?.status
                         ? ` Current status: ${existingRecord.status}.`
@@ -172,12 +178,31 @@ export default function ProspectMoaForm() {
                 data?.error ||
                 "Failed to submit MOA Prospect.";
 
-            alert(errorMessage);
+            setErrMsg(errorMessage);
         }
     };
 
     return (
         <>
+            {successMsg && 
+                <GeneralPopupModal 
+                    text={successMsg} 
+                    title={"Successful"} 
+                    time={3000} 
+                    isSuccess={true}
+                />
+            }
+
+            {errMsg && 
+                <GeneralPopupModal 
+                    text={errMsg} 
+                    title={"Error"} 
+                    time={3000} 
+                    icon={<X color="#800020" size={35}/>}
+                    isFailed={true}
+                />
+            }
+            
             <div
                 id="prospectForm"
                 className="relative w-full px-5 py-10 flex flex-col gap-2 justify-center items-center shadow-[inset_0_0_50px_rgba(0,0,0,1)]"
