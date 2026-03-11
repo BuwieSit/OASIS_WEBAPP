@@ -198,7 +198,6 @@ export default function MoaOverview() {
                         url={url}
                         onClick={() => {
                             openPdf(r.document_path);
-                            console.log(`Path: ${r.document_path}`)
                         }}
                         onDownload={() =>
                             downloadMoa(r.document_path, r.hte?.company_name)
@@ -275,7 +274,6 @@ export default function MoaOverview() {
                         url={url}
                         onClick={() => {
                             openPdf(r.moa_file_path);
-                            console.log(`Path: ${r.moa_file_path}`)
                         }}
                         onDownload={() =>
                             downloadMoa(r.moa_file_path, r.company_name)
