@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 import { AdminAPI } from "../../api/admin.api";
 import SvgLoader from '../../components/SvgLoader.jsx';
 import Subtitle from '../../utilities/subtitle.jsx';
+import { PieChart } from '../../components/Charts.jsx';
 
 export default function Admin() {
     const [dashboard, setDashboard] = useState(null);
@@ -58,17 +59,19 @@ export default function Admin() {
             try {
                 const res = await AdminAPI.getDashboard();
                 setDashboard(res.data);
+                console.log("Data returned: ", dashboard);
             } catch (err) {
                 console.error("Dashboard error:", err);
-                setDashboardError(err);
+               
             } finally {
                 setLoadingDashboard(false);
             }
         };
 
         loadDashboard();
+        
     }, []);
-
+    
     useEffect(() => {
         AdminAPI.getAnnouncements()
             .then(res => setAnnouncements(res.data))
@@ -231,14 +234,18 @@ export default function Admin() {
 
             {/* CARDS */}
             <section className="w-[90%] p-5 gap-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-                <Link to={"/admStudents"}>
+
+                <Link to={"/admMoaOverview"}>
                     <AdmCard
-                        cardTitle="Total Students"
-                        cardIcon={<UsersRound color="#377268" />}
+                        hasRibbon={true}
+                        ribbonColor={"bg-yellow-500"}
+                        cardTitle="Total MOAs"
+                        cardIcon={<Book color="#377268" />}
                         cardNumber={
                             loadingDashboard ? <SvgLoader size={20} /> :
                             dashboardError ? "-" :
-                            dashboard?.metrics?.total_students ?? "-"
+                            dashboard?.metrics?.total_active_moas + 
+                            dashboard?.metrics?.total_expired_moas ?? "-"
                         }
                         cardDate={
                             dashboard?.last_updated
@@ -277,6 +284,23 @@ export default function Admin() {
                             loadingDashboard ? <SvgLoader size={20} /> :
                             dashboardError ? "-" :
                             dashboard?.metrics?.total_expired_moas ?? "-"
+                        }
+                        cardDate={
+                            dashboard?.last_updated
+                                ? new Date(dashboard.last_updated).toLocaleDateString()
+                                : "-"
+                        }
+                    />
+                </Link>
+                
+                <Link to={"/admStudents"}>
+                    <AdmCard
+                        cardTitle="Total Students"
+                        cardIcon={<UsersRound color="#377268" />}
+                        cardNumber={
+                            loadingDashboard ? <SvgLoader size={20} /> :
+                            dashboardError ? "-" :
+                            dashboard?.metrics?.total_students ?? "-"
                         }
                         cardDate={
                             dashboard?.last_updated
@@ -365,6 +389,10 @@ export default function Admin() {
                 </a> */}
             </section>
             
+            <section className='w-[90%] p-5 flex gap-3 justify-center items-center bg-red-500'>
+                    <PieChart/>
+            </section>
+
             <div className='flex justify-start items-start w-[90%]'>
                 <Title text={"Post Announcements"} />
             </div>
