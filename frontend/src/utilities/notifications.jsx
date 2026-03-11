@@ -33,30 +33,30 @@ export default function Notifications({
         }
     }, [open]);
 
-    // useEffect(() => {
-    //     if (!open) return;
+    useEffect(() => {
+        if (!open) return;
 
-    //     loadNotifications();
+        loadNotifications();
 
-    //     const interval = setInterval(() => {
-    //         loadNotifications(false);
-    //     }, 5000);
+        const interval = setInterval(() => {
+            loadNotifications(false);
+        }, 5000);
 
-    //     return () => clearInterval(interval);
-    // }, [open]);
+        return () => clearInterval(interval);
+    }, [open]);
 
-    // const loadNotifications = async (showLoader = true) => {
-    //     try {
-    //         if (showLoader) setLoading(true);
-    //         const res = await NotificationAPI.getStudentNotifications();
-    //         setNotifications(res.data || []);
-    //     } catch (err) {
-    //         console.error("Failed to load notifications:", err);
-    //         setNotifications([]);
-    //     } finally {
-    //         if (showLoader) setLoading(false);
-    //     }
-    // };
+    const loadNotifications = async (showLoader = true) => {
+        try {
+            if (showLoader) setLoading(true);
+            const res = await NotificationAPI.getStudentNotifications();
+            setNotifications(res.data || []);
+        } catch (err) {
+            console.error("Failed to load notifications:", err);
+            setNotifications([]);
+        } finally {
+            if (showLoader) setLoading(false);
+        }
+    };
 
     const parseNotificationDate = (dateString) => {
         if (!dateString) return null;
