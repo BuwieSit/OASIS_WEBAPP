@@ -18,7 +18,6 @@ import { useScrollTop } from "../hooks/useScrollToTop.jsx";
 const API_BASE = api.defaults.baseURL;
 
 export function Header({ admin = false }) {
-    const [bell, setBell] = useState('');
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
     const [hasProfile, setHasProfile] = useState(false);
@@ -71,6 +70,27 @@ export function Header({ admin = false }) {
         fetchProfile();
     }, []);
 
+    useEffect(() => {
+        loadNotifications();
+
+        const interval = setInterval(() => {
+            loadNotifications();
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const loadNotifications = async () => {
+        try {
+            const res = await NotificationAPI.getStudentNotifications();
+            setNotifications(res.data || []);
+        } catch (err) {
+            console.error("Failed to load notifications:", err);
+        }
+    };
+
+    const [notifications, setNotifications] = useState([]);
+    const hasUnread = notifications.some(n => !n.is_read && !n.is_saved);
 
     if (!admin && (!user || !profile)) return null;
 
@@ -109,7 +129,11 @@ export function Header({ admin = false }) {
                     <HoverLift onClick={handleNotifClick}>
                         {!admin && (
                             <div>
-                            <Bell className="hidden md:block lg:block" size={28} color="#54A194" />
+                                {hasUnread ? (
+                                    <BellDot className="hidden md:block lg:block" size={28} color="#54A194" />
+                                ) : (
+                                    <Bell className="hidden md:block lg:block" size={28} color="#54A194" />
+                                )}
                             </div>
                         )}
                     </HoverLift>
@@ -140,7 +164,7 @@ export function Header({ admin = false }) {
                         { text: "Log out" },
                     ]}
                 />}
-            {open && <Notifications open={open} onClose={() => setOpen(false)} />}
+            {open && <Notifications open={open} onClose={() => setOpen(false)}/>}
 
         </>
     )
