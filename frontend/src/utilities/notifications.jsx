@@ -190,7 +190,7 @@ export default function Notifications({
                 />
             </section>
 
-            <div className="mt-3 h-[85%] overflow-y-auto overflow-x-auto pr-2">
+            <div className="mt-3 h-[85%] overflow-y-auto overflow-x-auto pr-2 bg-red-500">
                 {loading ? (
                     <div className="w-full p-3">
                         <Subtitle text={"Loading notifications..."} />
