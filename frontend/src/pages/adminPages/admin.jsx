@@ -32,7 +32,7 @@ export default function Admin() {
     const [deleteModalShow, setDeleteModalShow] = useState(false);
     const [announcementToDelete, setAnnouncementToDelete] = useState(null);
     const [lastPostedTitle, setLastPostedTitle] = useState("");
-
+    const [disableButton, setDisableButton] = useState(false);
     
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
@@ -54,6 +54,12 @@ export default function Admin() {
         "Others": "OTHERS"
     };
 
+    const handleDisableButton = () => {
+        setDisableButton(true);
+        setTimeout(() => {
+            setDisableButton(false);
+        }, 5000)
+    }
     useEffect(() => {
         const loadDashboard = async () => {
             try {
@@ -188,6 +194,7 @@ export default function Admin() {
         : null;
 
     const totalNotifications = alerts.length;
+
 
     return (
         <AdminScreen>
@@ -435,7 +442,7 @@ export default function Admin() {
                         />
 
                         <section className='flex flex-row items-start justify-start gap-10 mt-10'>
-                            <AnnounceButton btnText="Post" type="submit" />
+                            <AnnounceButton btnText="Post" type="submit" disabled={disableButton}/>
                         </section>
                     </div>
 

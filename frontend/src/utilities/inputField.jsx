@@ -1,5 +1,5 @@
 import 'animate.css';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 export function AdminField({
   type = 'text',
@@ -53,6 +53,20 @@ export function UploadField({ id, accept, onChange, disabled = false }) {
     [id]
   );
 
+  const [fileName, setFileName] = useState("Select a file to upload");
+
+  const handleChange = (e) => {
+    const file = e.target.files?.[0];
+
+    if (file) {
+      setFileName(file.name);
+    }
+
+    if (onChange) {
+      onChange(e);
+    }
+  };
+
   return (
     <label
       htmlFor={inputId}
@@ -66,7 +80,7 @@ export function UploadField({ id, accept, onChange, disabled = false }) {
         id={inputId}
         type="file"
         accept={accept}
-        onChange={onChange}
+        onChange={handleChange}
         disabled={disabled}
         className="hidden"
       />
@@ -76,8 +90,46 @@ export function UploadField({ id, accept, onChange, disabled = false }) {
       </div>
 
       <span className="text-sm text-gray-500">
-        Select a file to upload
+        {fileName !== "Select a file to upload"
+          ? `File selected: ${fileName}`
+          : fileName
+        }
       </span>
     </label>
   );
 }
+
+// export function UploadField({ id, accept, onChange, disabled = false }) {
+//   const inputId = useMemo(
+//     () => id || `upload-${Math.random().toString(36).slice(2, 10)}`,
+//     [id]
+//   );
+
+//   return (
+//     <label
+//       htmlFor={inputId}
+//       className={`w-full flex items-center gap-4 p-4 bg-white rounded border border-gray-300 transition ${
+//         disabled
+//           ? "opacity-60 cursor-not-allowed"
+//           : "cursor-pointer hover:border-oasis-button-light"
+//       }`}
+//     >
+//       <input
+//         id={inputId}
+//         type="file"
+//         accept={accept}
+//         onChange={onChange}
+//         disabled={disabled}
+//         className="hidden"
+//       />
+
+//       <div className="px-4 py-2 bg-oasis-button-light text-white rounded-xl text-sm font-medium">
+//         Choose File
+//       </div>
+
+//       <span className="text-sm text-gray-500">
+//         Select a file to upload
+//       </span>
+//     </label>
+//   );
+// }

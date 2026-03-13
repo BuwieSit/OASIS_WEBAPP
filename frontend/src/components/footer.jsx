@@ -22,15 +22,14 @@ export default function Footer() {
                     <ul className="w-full flex flex-col justify-center items-center p-3">
                         <Title text={"Contact Info"}/>
                         <li>Email: oasisofficial@gmail.com</li>
-                        <li>Phone: (+63) 123 456 7890</li>
                     </ul>
 
                     <ul className="w-full flex flex-col justify-center items-center p-3">
                         <Title text={"Menu"}/>
-                        <Link to={"/"}><li>Home</li></Link>
-                        <li>HTE Directory</li>
-                        <li>OJT Hub</li>
-                        <li>Announcements</li>
+                        <Link to={"/home"}><li>Home</li></Link>
+                        <Link to={"/htedirectory"}><li>HTE Directory</li></Link>
+                        <Link to={"/ojthub"}><li>OJT Hub</li></Link>
+                        <Link to={"/announcements"}><li>Announcements</li></Link>
                     </ul>
 
                     <ul className="w-full flex flex-col justify-center items-center p-3">
