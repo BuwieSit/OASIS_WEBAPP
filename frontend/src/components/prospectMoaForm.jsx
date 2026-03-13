@@ -222,7 +222,7 @@ export default function ProspectMoaForm() {
                     <div className="bg-oasis-gradient hidden w-[450px] p-10 md:flex lg:flex flex-col justify-center items-start shadow-[3px_3px_2px_rgba(0,0,0,0.4)] rounded-3xl">
                         <Subtitle size={"text-[1.2rem]"} color={"text-black"} weight={"font-bold"} text={"MOA Process Flow"} />
 
-                        <div className="mt-5 w-full font-oasis-text text-[0.85rem] flex flex-col gap-4">
+                        <div className="mt-5 w-full font-oasis-text text-table-text-size flex flex-col gap-4">
                             <MOAStepList steps={moaSteps} />
                         </div>
                     </div>

@@ -190,7 +190,7 @@ export default function Notifications({
                 />
             </section>
 
-            <div className="mt-3 h-[85%] overflow-y-auto pr-2">
+            <div className="mt-3 h-[85%] flex flex-col justify-start items-start overflow-y-auto overflow-x-visible">
                 {loading ? (
                     <div className="w-full p-3">
                         <Subtitle text={"Loading notifications..."} />
@@ -204,7 +204,7 @@ export default function Notifications({
                         <div
                             key={item.id}
                             onClick={() => handleNotificationClick(item)}
-                            className={`w-full p-3 rounded-2xl flex flex-col gap-3 mt-3 shadow-[0px_0px_5px_rgba(0,0,0,0.5)] mb-3 cursor-pointer transition-all ${
+                            className={`w-full p-3 w-full rounded-2xl flex flex-col gap-3 mt-3 shadow-[0px_0px_5px_rgba(0,0,0,0.5)] mb-3 cursor-pointer transition-all ${
                                 item.is_read ? "bg-white" : "bg-[#EAF7F4]"
                             }`}
                         >
