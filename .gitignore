@@ -39,7 +39,7 @@ frontend/.vite/
 frontend/.env
 frontend/.env.*
 !frontend/.env.example
-frontend/src/api/axios.jsx
+
 
 
 ####################################
