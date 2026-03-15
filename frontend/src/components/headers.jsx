@@ -27,28 +27,45 @@ export function Header({ admin}) {
     const [animationClass, setAnimationClass] = useState("");
     const [openSettings, setOpenSettings] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
-
-    const toggleDropdown = (dropdownName) => {
-        setActiveDropdown(prev =>
-            prev === dropdownName ? null : dropdownName
-        );
-    };
     
-    const handleSettingsClick = () => {
-        if (openSettings) {
-            setAnimationClass("bubble-close");
-            setOpenSettings(false);
-        }
-        else {
-            requestAnimationFrame(() => setAnimate(true));
-            setAnimationClass("bubble-pop");
-            setOpenSettings(true)
-        }
-    }
-    const handleNotifClick = () => {
-        requestAnimationFrame(() => setAnimate(true));
-        setOpen(prev => !prev);
-    }
+    const toggleDropdown = (name) => {
+        setActiveDropdown((prev) => (prev === name ? null : name));
+    };
+    // const toggleDropdown = (dropdownName) => {
+    //     setActiveDropdown(prev =>
+    //         prev === dropdownName ? null : dropdownName
+    //     );
+    // };
+    
+    const handleProfileClick = () => {
+        setActiveDropdown((prev) => {
+            const next = prev === "profile" ? null : "profile";
+            console.log("Dropdown:", next);
+            if (next === "profile") {
+                setAnimationClass("bubble-pop");
+                setOpenSettings(true);
+            } else {
+                setAnimationClass("bubble-close");
+                setOpenSettings(false);
+            }
+
+            return next;
+        });
+    };
+
+   const handleNotifClick = () => {
+        setActiveDropdown((prev) => {
+            const next = prev === "notifs" ? null : "notifs";
+            console.log("Dropdown:", next);
+            if (next === "notifs") {
+                setOpen(true);
+            } else {
+                setOpen(false);
+            }
+
+            return next;
+        });
+    };
 
     useEffect(() => {
         async function fetchProfile() {
@@ -93,10 +110,8 @@ export function Header({ admin}) {
         }
     };
 
-
-
-
     if (!admin && (!user || !profile)) return null;
+
     return (
         <>
         {admin ? 
@@ -117,7 +132,6 @@ export function Header({ admin}) {
                 
                 <div className="flex gap-3 items-center">
 
-      
                     <HoverLift>
                         {!admin && (
                             <Subtitle 
@@ -151,7 +165,9 @@ export function Header({ admin}) {
                         )}
                     </HoverLift>
 
-                    <HoverLift onClick={handleSettingsClick}>
+                    <HoverLift 
+                        onClick={handleProfileClick}
+                    >
                         {!admin && (
                             <img
                             className="w-8 rounded-full object-cover aspect-square hidden md:block lg:block"
@@ -161,35 +177,42 @@ export function Header({ admin}) {
                         )}
                     </HoverLift>
                     
+                    {/* MOBILE */}
                     <Menu onClick={() => toggleDropdown("menu")} className="md:hidden lg:hidden absolute left-[5%] cursor-pointer" color="#54A194" />
                     <UserRoundCog onClick={() => toggleDropdown("profile")} className="md:hidden lg:hidden absolute right-[5%] cursor-pointer" color="#54A194"/>
             
-                
-                    
-                    
-
                     
                 </div>
             </header>
         }
-            {activeDropdown === "menu" && <NavigationDropdown/>}
-            {activeDropdown === "profile" && <ProfileDropdown/>}
-            {openSettings && <UserDropdownSettings
-                    open={openSettings}
-                    className={animationClass}
-                    items={[
-                        { text: "Profile", to: "/student-profile" },
-                        { text: "Log out" },
-                    ]}
-                />}
-           {open && (
-                <Notifications
-                    open={open}
-                    onClose={() => setOpen(false)}
-                    notifications={notifications}
-                    setNotifications={setNotifications}
-                />
-            )}
+            {/* MOBILE */}
+
+                {activeDropdown === "menu" && <NavigationDropdown />}
+                {activeDropdown === "profile" && <ProfileDropdown />}
+
+
+            {/* DESKTOP */}
+
+                {activeDropdown === "profile" && (
+                    <UserDropdownSettings
+                        open={activeDropdown === "profile"}
+                        onClose={() => setActiveDropdown(null)}
+                        className={animationClass}
+                        items={[
+                            { text: "Profile", to: "/student-profile" },
+                            { text: "Log out" },
+                        ]}
+                    />
+                )}
+
+                {activeDropdown === "notifs" && (
+                    <Notifications
+                        open={activeDropdown === "notifs"}
+                        onClose={() => setActiveDropdown(null)}
+                        notifications={notifications}
+                        setNotifications={setNotifications}
+                    />
+                )}
 
         </>
     )
@@ -301,10 +324,94 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
 }
 
 export function StudentHeader({ showNavigation = true }) {
+    const [user, setUser] = useState(null);
+    const [profile, setProfile] = useState(null);
+    const [hasProfile, setHasProfile] = useState(false);
+    const [open, setOpen] = useState(false);
+
+    const [animationClass, setAnimationClass] = useState("");
+    const [openSettings, setOpenSettings] = useState(false);
+    const [activeDropdown, setActiveDropdown] = useState(null);
+
+    const handleProfileClick = () => {
+        setActiveDropdown((prev) => {
+            const next = prev === "profile" ? null : "profile";
+            console.log("Dropdown:", next);
+            if (next === "profile") {
+                setAnimationClass("bubble-pop");
+                setOpenSettings(true);
+            } else {
+                setAnimationClass("bubble-close");
+                setOpenSettings(false);
+            }
+
+            return next;
+        });
+    };
+
+   const handleNotifClick = () => {
+
+        setActiveDropdown((prev) => {
+            const next = prev === "notifs" ? null : "notifs";
+            console.log("Dropdown:", next);
+            if (next === "notifs") {
+                setOpen(true);
+            } else {
+                setOpen(false);
+            }
+
+            return next;
+        });
+    };
+
+    useEffect(() => {
+        async function fetchProfile() {
+        const res = await api.get("/api/student/me");
+        const fetchedProfile = res.data.profile;
+            
+        // ✅ NORMALIZE IMAGE URL ON FETCH
+        if (fetchedProfile?.photo_path) {
+            fetchedProfile.photo_url = `${API_BASE}${fetchedProfile.photo_path}`;
+            setHasProfile(true);
+        } else {
+            setHasProfile(false);
+        }
+        setUser(res.data.user);
+        setProfile(fetchedProfile);
+        setHasProfile(true);
+            
+        }
+
+        fetchProfile();
+    }, []);
+
+    const [notifications, setNotifications] = useState([]);
+    const hasUnread = notifications.some(n => !n.is_read && !n.is_saved);
+    const unreadCount = notifications.filter(n => !n.is_read && !n.is_saved).length;
+    useEffect(() => {
+        loadNotifications();
+
+        const interval = setInterval(() => {
+            loadNotifications();
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const loadNotifications = async () => {
+        try {
+            const res = await NotificationAPI.getStudentNotifications();
+            setNotifications(res.data || []);
+        } catch (err) {
+            console.error("Failed to load notifications:", err);
+        }
+    };
+
     const scrolled = useScrollTop(50);
 
     return (
-        <div
+        <div>
+            <div
             className={`
                 fixed top-15 left-0 w-full
                 -translate-y-0
@@ -323,9 +430,61 @@ export function StudentHeader({ showNavigation = true }) {
                 <NavItem to="/ojthub" label="OJT Hub" isOpen={true}/>
                 <NavItem to="/announcements" label="Announcement" isOpen={true}/>
 
-                {/* {scrolled ? "" : ""} */}
+                {scrolled ? 
+                    <div className="animate__animate animate__bounceIn absolute right-0 p-5 flex gap-3 items-center">
+
+                        <HoverLift onClick={handleNotifClick}>
+                                <div className="relative">
+                                    {hasUnread ? (
+                                        <BellDot className="hidden md:block lg:block" size={28} color="#54A194"/>
+                                    ) : (
+                                        <Bell className="hidden md:block lg:block" size={28} color="#54A194" />
+                                    )}
+
+                                    {unreadCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 bg-oasis-red text-white text-[10px] min-w-4 h-4 px-1 flex items-center justify-center rounded-full">
+                                            {unreadCount > 99 ? "99+" : unreadCount}
+                                        </span>
+                                    )}
+                                </div>
+                        </HoverLift>
+
+                        <HoverLift onClick={handleProfileClick}>
+                            <img
+                            className="w-8 rounded-full object-cover aspect-square hidden md:block lg:block"
+                            src={profile?.photo_url}
+                            alt="Profile"
+                            />
+                        </HoverLift> 
+
+                    </div>
+                    : 
+                    
+                    ""}
             </ul>
         </div>
+            {activeDropdown === "profile" && (
+                <UserDropdownSettings
+                    open={activeDropdown === "profile"}
+                    onClose={() => setActiveDropdown(null)}
+                    className={animationClass}
+                    items={[
+                        { text: "Profile", to: "/student-profile" },
+                        { text: "Log out" },
+                    ]}
+                />
+            )}
+
+            {activeDropdown === "notifs" && (
+                <Notifications
+                    open={activeDropdown === "notifs"}
+                    onClose={() => setActiveDropdown(null)}
+                    notifications={notifications}
+                    setNotifications={setNotifications}
+                />
+            )}
+        </div>
+        
     );
 }
 
@@ -354,6 +513,7 @@ export function ProfileDropdown() {
                     <NavItem isTrigger={true} label="Log out" isOpen={true}/>
                 </ul>     
             </div>
+            
         </>
     )
 }

@@ -1,6 +1,6 @@
 import { StudentProfileScreen } from "../../layouts/profileScreen";
 import Subtitle from "../../utilities/subtitle";
-import { SquarePen, Activity} from "lucide-react";
+import { SquarePen, Activity, Eye, EyeClosed} from "lucide-react";
 import testPfp from "../../assets/testprofile.png";
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
@@ -18,6 +18,7 @@ export default function StudentProfile() {
   const [ojtAdviser, setOjtAdviser] = useState("");
   const [Program, setProgram] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
 
   useEffect(() => {
@@ -287,20 +288,33 @@ export default function StudentProfile() {
 
           {/* Password Field */}
           <div className="w-full">
-            <label className="block mb-2 text-sm font-semibold text-gray-600">Password</label>
-            {isEditing ? (
-              <input
-                type="password"
-                className="w-full p-3 bg-white text-black border rounded outline-none"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter new password"
-              />
-            ) : (
-              <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
-                **********
-              </div>
-            )}
+            <label className="relative mb-2 text-sm font-semibold text-gray-600 flex flex-col gap-2">
+              Password
+              {isEditing ? (
+                <div className="w-full flex items-center justify-center gap-3">
+                  <input
+                    type={showPassword ? "text": "password"}
+                    className="w-full p-3 bg-white text-black border rounded outline-none"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter new password"
+                  />
+                  {showPassword ? 
+                    <Eye onClick={() => setShowPassword(false)} size={35} color="#2B6259" className="z-20 cursor-pointer"/>
+                  : 
+                    <EyeClosed onClick={() => setShowPassword(true)} size={35} color="#2B6259" className="z-20 cursor-pointer"/>
+                  }
+                  
+                </div>
+                  
+                
+              ) : (
+                <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
+                  **********
+                </div>
+              )}
+
+            </label>
           </div>
           
           {!isEditing ? (

@@ -1,14 +1,20 @@
-import { useState, useEffect } from "react";
-
+import { useState, useEffect, useRef } from "react";
+import useOutsideClick from "./dropdownBehavior";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import { useNavigate } from "react-router-dom";
 
-export default function UserDropdownSettings({ open, className, items }) {
+export default function UserDropdownSettings({ open, onClose, className, items }) {
     const { logoutUser } = useAuth();
     const navigate = useNavigate();
     const [show, setShow] = useState(false);
     const [animationClass, setAnimationClass] = useState("");
+    
+    const dropdownRef = useRef(null);
+
+    useOutsideClick(dropdownRef, () => {
+        onClose();
+    });
 
     useEffect(() => {
         if (open) {
@@ -40,7 +46,11 @@ export default function UserDropdownSettings({ open, className, items }) {
 
     return (
         <>
-            <div className={`w-50 p-5 fixed top-[10%] right-0 -translate-x-[10%] bg-[rgba(255,255,255,0.5)] backdrop-blur-2xl z-150 rounded-3xl shadow-[0px_0px_5px_rgba(0,0,0,0.5)] ${animationClass} ${className}`}>
+
+            <div 
+                className={`w-[min(20rem,90vw)] p-5 fixed top-[20%] right-5  -translate-y-1/2 bg-[rgba(255,255,255,0.5)] backdrop-blur-2xl z-150 rounded-3xl shadow-[0px_0px_5px_rgba(0,0,0,0.5)] ${animationClass} ${className}`}
+                ref={dropdownRef}
+            >
                 <ul>
                     {setItems.map((item, index) => (
                         <SetItem

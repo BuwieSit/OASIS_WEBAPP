@@ -1,8 +1,9 @@
 import { Filter } from "../components/adminComps";
 import Subtitle from "./subtitle";
 import { CircleX, Bookmark, BookmarkCheck } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { NotificationAPI } from "../api/notification.api";
+import useOutsideClick from "./dropdownBehavior";
 
 export default function Notifications({ 
     open,
@@ -17,6 +18,12 @@ export default function Notifications({
     const [activeFilter, setActiveFilter] = useState("All");
     const [loading, setLoading] = useState(false);
     const [processingId, setProcessingId] = useState(null);
+
+    const dropdownRef = useRef(null);
+
+    useOutsideClick(dropdownRef, () => {
+        onClose();
+    });
 
     useEffect(() => {
         if (open) {
@@ -168,6 +175,7 @@ export default function Notifications({
     return (
         <div
             className={`w-100 h-[70%] p-5 fixed top-1/2 right-0 -translate-x-[10%] -translate-y-[55%] bg-[rgba(255,255,255,0.5)] backdrop-blur-2xl z-150 rounded-3xl shadow-[0px_0px_5px_rgba(0,0,0,0.5)] ${animationClass}`}
+            ref={dropdownRef}
         >
             <section className="w-full flex flex-row justify-start items-center gap-5 px-3">
                 <div onClick={() => setActiveFilter("All")}>
@@ -190,13 +198,14 @@ export default function Notifications({
                 />
             </section>
 
-            <div className="mt-3 h-[85%] flex flex-col justify-start items-start overflow-y-auto overflow-x-visible">
+            <div className="mt-3 h-[85%] flex flex-col pt-2 justify-start items-center overflow-y-auto">
+                
                 {loading ? (
-                    <div className="w-full p-3">
+                    <div className="w-[90%] p-3">
                         <Subtitle text={"Loading notifications..."} />
                     </div>
                 ) : filteredNotifications.length === 0 ? (
-                    <div className="w-full p-3 rounded-2xl shadow-[0px_0px_5px_rgba(0,0,0,0.5)] bg-white">
+                    <div className="w-[90%] p-3 rounded-2xl shadow-[0px_0px_5px_rgba(0,0,0,0.5)] bg-white">
                         <Subtitle text={getEmptyStateText()} />
                     </div>
                 ) : (
@@ -204,7 +213,7 @@ export default function Notifications({
                         <div
                             key={item.id}
                             onClick={() => handleNotificationClick(item)}
-                            className={`w-full p-3 w-full rounded-2xl flex flex-col gap-3 mt-3 shadow-[0px_0px_5px_rgba(0,0,0,0.5)] mb-3 cursor-pointer transition-all ${
+                            className={`w-[90%] p-3 rounded-2xl flex flex-col gap-3 mt-3 shadow-[0px_0px_5px_rgba(0,0,0,0.5)] mb-3 cursor-pointer transition-all ${
                                 item.is_read ? "bg-white" : "bg-[#EAF7F4]"
                             }`}
                         >

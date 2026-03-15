@@ -70,9 +70,12 @@ export function UploadField({ id, accept, onChange, disabled = false }) {
   return (
     <label
       htmlFor={inputId}
-      className={`w-full flex items-center gap-4 p-4 bg-white rounded border border-gray-300 transition ${
-        disabled
-          ? "opacity-60 cursor-not-allowed"
+      className={`w-full flex items-center gap-4 p-3 rounded border transition 
+        ${fileName !== "Select a file to upload" ? 
+          "border-oasis-button-light bg-oasis-button-light text-white" 
+          : "bg-white border-gray-300"} 
+          ${disabled ? 
+            "opacity-60 cursor-not-allowed"
           : "cursor-pointer hover:border-oasis-button-light"
       }`}
     >
@@ -85,11 +88,16 @@ export function UploadField({ id, accept, onChange, disabled = false }) {
         className="hidden"
       />
 
-      <div className="px-4 py-2 bg-oasis-button-light text-white rounded-xl text-sm font-medium">
+      <div className={`px-4 py-2 bg-oasis-button-light text-white rounded-xl text-sm font-medium`}>
         Choose File
       </div>
 
-      <span className="text-sm text-gray-500">
+      <span className={`
+        ${fileName !== "Select a file to upload" ? "text-white font-bold" : "text-gray-500"} 
+        text-sm line-clamp-1 w-full
+        
+        `
+      }>
         {fileName !== "Select a file to upload"
           ? `File selected: ${fileName}`
           : fileName
