@@ -451,6 +451,7 @@ export default function AdmOperations() {
                 </div>
             </OasisTable>
 
+            {/* HTE ADD SECTION */}
             <div className='flex justify-start items-start w-[80%]'>
                 <Title text={"Add HTE"} />
             </div>
@@ -599,6 +600,8 @@ export default function AdmOperations() {
                 </form>
             </div>
 
+
+            {/* REVIEWS SECTION */}
             <div className='flex justify-start items-start w-[80%] mt-10'>
                 <Title text={"Reviews Moderation"} />
             </div>

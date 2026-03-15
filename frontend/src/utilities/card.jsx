@@ -7,6 +7,7 @@ import goldStar from "../assets/icons/goldStar.png";
 import blackStar from "../assets/icons/blackStar.png"
 import { MultiField, SingleField } from "../components/fieldComp";
 import fallbackImg from "../assets/oasisLogo.png";
+import { Star } from "lucide-react";
 
 export function TutorialCard({title = "What is OASIS?", desc = "A short video of what OASIS can do.", thumbnail = fallbackImg, onClick }) {
 
@@ -152,71 +153,115 @@ export function ReviewCard({
         </div>
     );
 }
-// export function ReviewCard({ 
-//     username = "Francine Ishael Hardy", 
-//     hteName = "Prima Tech", 
-//     role, // student intern, prof
-//     dateTime = "22/11/2025, 8:41 PM", 
-//     rating = "5",
-//     message = "Prima Tech is such a good company to take an intern job since they have benefits like allowance as well as a healthy environment with supportive and kind employees and mentors! Really had a great time here.",
 
-// }) {
+export function AddReviewCard({ hteName, onSubmit }) {
+  const [reviewerName, setReviewerName] = useState("");
+  const [reviewMessage, setReviewMessage] = useState("");
+  const [reviewRating, setReviewRating] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [errMsg, setErrMsg] = useState("");
+
+  const handleSubmit = async () => {
+    if (!reviewMessage) {
+      alert("Review message required.")
+      setErrMsg("Review message required.");
+    };
+
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        message: reviewMessage,
+        rating: reviewRating,
+      });
+
+      setReviewMessage("");
+      setReviewRating(5);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+   
+    <form className="w-full max-w-80 sm:w-80 p-5 flex flex-col gap-5 bg-linear-to-br bg-oasis-gradient rounded-2xl drop-shadow-[0px_0px_10px_rgba(0,0,0,0.5)]">
+        
+        {/* Header */}
+        <div className="w-full p-2 bg-oasis-button-dark rounded">
+          <p className="text-white text-[0.9rem] text-center">
+            {`Leave a review for ${hteName || "-"}`}
+          </p>
+        </div>
+
+        {/* Rating */}
+        <section className="w-full flex justify-evenly items-center">
+          <ul className="flex justify-evenly items-center w-full">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <li key={star}>
+                <Star
+                  size={30}
+                  strokeWidth={2}
+                  className={`cursor-pointer transition-colors duration-200
+                    ${reviewRating >= star ? "text-[#FFD700] " : "text-oasis-header"}
+                  `}
+                  fill={reviewRating >= star ? "#FFD700" : "none"}
+                  onClick={() => setReviewRating(star)}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Inputs */}
+        <section className="w-full flex flex-col gap-2">
+          <MultiField
+            fieldHolder="Enter review"
+            fieldId="reviewContent"
+            value={reviewMessage}
+            onChange={(e) => setReviewMessage(e.target.value)}
+          />
+        </section>
+
+        {/* Submit */}
+        <AnnounceButton
+          btnText={submitting ? "Submitting..." : "Submit"}
+          onClick={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+        />
+    </form>
+  );
+}
+
+
+
+// export function AddReviewCard({ hteName, rating, onChange, msgValue, reviewValue}) {
 //   return (
 //     <>
-//         <div className="basis-[calc(50%-0.5rem)] aspect-video max-h-75 p-5 hover:bg-white cursor-pointer rounded-3xl hover:shadow-[0px_2px_5px_rgba(0,0,0,0.5)] transition duration-300 ease-in-out flex flex-col justify-evenly items-start gap-3">
-//             <section className="w-full flex justify-center items-center">
-//               <h3 className='font-oasis-text font-bold text-[1.3rem] text-center'>{hteName}</h3>
-//             </section>
+//       <form className=" w-80 aspect-square p-5 flex flex-col gap-5 bg-linear-to-br from-oasis-button-dark via-oasis-blue via-50% to-oasis-blue to-50% rounded-2xl drop-shadow-[0px_0px_10px_rgba(0,0,0,0.5)]">
+//           <div className="w-full p-2 bg-oasis-button-dark rounded ">
+//               <p className="text-white text-[0.9rem] text-center">{`Leave a review for ${hteName || "-"}`}</p>
+//           </div>
+//           <section className="w-full flex justify-evenly items-center">
+//               <ul className="flex justify-evenly items-center w-full">
+               
+//                   <li><Star size={30} className="cursor-pointer"/></li>
+//                   <li><Star size={30} className="cursor-pointer"/></li>
+//                   <li><Star size={30} className="cursor-pointer"/></li>
+//                   <li><Star size={30} className="cursor-pointer"/></li>
+//                   <li><Star size={30} className="cursor-pointer"/></li>
+//               </ul>
 
-//             <sections className='w-full flex flex-col justify-start items-start'>
-//                 <p className='font-oasis-text text-[0.7rem] text-justify w-full overflow-y-auto'>{message}</p>
-//             </sections>
-    
-//             <div className='w-full flex flex-row justify-between items-center'>
+//           </section>
+//           <section className="w-full flex flex-col gap-2">
+//               <SingleField fieldHolder={"Enter name..."} fieldId={"reviewerName"}/>
+//               <MultiField onChange={onChange} fieldHolder={"Enter review"} fieldId={"reviewContent"}/>
+//           </section>
+//           <AnnounceButton btnText="Submit"/>
 
-//                 <section className="w-full flex flex-col justify-start items-start">
-//                   <Label labelText={username}/>
-//                   <Subtitle text={"Student intern"}/>
-//                   <div className="flex flex-row">
-                     
-//                       <img src={goldStar} className="w-7.5 aspect-square object-contain"/>
-//                       <img src={goldStar} className="w-7.5 aspect-square object-contain"/>
-//                       <img src={goldStar} className="w-7.5 aspect-square object-contain"/>
-//                       <img src={goldStar} className="w-7.5 aspect-square object-contain"/>
-//                       <img src={goldStar} className="w-7.5 aspect-square object-contain"/>
-//                   </div>
-                  
-//                 </section>
-                
-
-//             </div>
-//     </div>
+//       </form>
 //     </>
 //   )
 // }
-
-
-export function AddReviewCard() {
-  return (
-    <>
-      <form className=" w-80 aspect-square p-5 flex flex-col gap-5 bg-linear-to-br from-oasis-button-dark via-oasis-blue via-50% to-oasis-blue to-50% rounded-2xl drop-shadow-[0px_0px_10px_rgba(0,0,0,0.5)]">
-          <div className="w-full p-2 bg-oasis-button-dark rounded ">
-              <p className="text-white text-[0.9rem] text-center">Add review for Prima Tech</p>
-          </div>
-          <section className="w-full flex justify-evenly items-center">
-              <img src={blackStar} className="w-8 aspect-square object-contain"/> 
-              <img src={blackStar} className="w-8 aspect-square object-contain"/> 
-              <img src={blackStar} className="w-8 aspect-square object-contain"/> 
-              <img src={blackStar} className="w-8 aspect-square object-contain"/> 
-              <img src={blackStar} className="w-8 aspect-square object-contain"/> 
-          </section>
-          <section className="w-full flex flex-col gap-2">
-              <SingleField fieldHolder={"Enter name..."} fieldId={"reviewerName"}/>
-              <MultiField fieldHolder={"Enter review"} fieldId={"reviewContent"}/>
-          </section>
-          <AnnounceButton btnText="Submit"/>
-
-      </form>
-    </>
-  )
-}

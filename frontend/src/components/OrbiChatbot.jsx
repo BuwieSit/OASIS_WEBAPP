@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ChatField from '../utilities/chatField';
 import orbi from '../assets/orbi.png';
 import { SingleField } from './fieldComp';
-import { Maximize2, Minus, SendHorizontal } from 'lucide-react';
+import { Maximize2, Minimize2, Minus, SendHorizontal } from 'lucide-react';
 import { useChatbotToggle } from '../hooks/useChatbotToggle';
-
+import useOutsideClick from '../utilities/dropdownBehavior';
 
 
 export default function OrbiChatbot() {
@@ -48,7 +48,13 @@ export function FloatingChat({ open, onClose }) {
 
     const [show, setShow] = useState(false);
     const [animationClass, setAnimationClass] = useState("");
-
+    const [isMaximized, setIsMaximized] = useState(false);
+    const dropdownRef = useRef(null);
+    
+    useOutsideClick(dropdownRef, () => {
+        onClose();
+    });
+    
     useEffect(() => {
         let timer;
 
@@ -68,36 +74,47 @@ export function FloatingChat({ open, onClose }) {
     if (!show) return null;
 
     return (
+        // parent
         <div
             className="
+
                 fixed inset-0
                 z-150
+                w-full
+                h-screen
                 flex items-center justify-center
                 bg-black/30
                 p-4"
         >
+            {/* floating chat */}
             <div
                 className={`
-                    relative
-                    w-full
-                    max-w-5xl
-                    h-[90vh]
-                    bg-oasis-gradient
-                    backdrop-blur-xs
-                    rounded-3xl
+                    fixed z-50
+                    ${isMaximized
+                        ? "w-[90%] h-[90%] rounded-3xl animate__animate animate__bounceIn"    
+                        : "bottom-4 right-4 w-full max-w-xs sm:max-w-sm md:max-w-md h-[60vh] sm:h-[70vh] md:h-[80vh] rounded-3xl animate__animate animate__bounceIn" 
+                    }
+
+                    bg-page-white backdrop-blur-xs
                     shadow-2xl
-                    flex flex-col
-                    overflow-hidden
+                    flex flex-col overflow-hidden
+                    transition-all duration-300 ease-in-out
                     ${animationClass}
                 `}
-                style={{ transformOrigin: "center center" }}
+                style={{ transformOrigin: isMaximized ? "center center" : "bottom right" }}
+                ref={dropdownRef}
             >
 
                 {/* HEADER */}
                 <div className="w-full border-b px-5 py-4 flex justify-between items-center">
                     <div className="flex gap-4 justify-end w-full">
-                        <Maximize2 size={20} />
-                        <Minus size={20} className="cursor-pointer" onClick={onClose} />
+                        {isMaximized ? 
+                            <Minimize2 size={25} color='#2B6259' className='cursor-pointer' onClick={() => setIsMaximized(false)}/> 
+                            : 
+                            <Maximize2 size={25} color='#2B6259' className='cursor-pointer' onClick={() => setIsMaximized(true)}/> 
+                        }
+                        
+                        <Minus size={25} color='#2B6259' className="cursor-pointer" onClick={onClose} />
                     </div>
                 </div>
 
@@ -110,7 +127,7 @@ export function FloatingChat({ open, onClose }) {
                 </div>
 
                 {/* INPUT */}
-                <div className="w-full p-4 border-t">
+                <div className="w-full p-4">
                     <div className="flex items-center gap-3">
                         <SingleField
                             hasBorder={true}

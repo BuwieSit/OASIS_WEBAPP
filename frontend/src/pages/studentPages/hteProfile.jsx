@@ -1,7 +1,6 @@
 import MainScreen from "../../layouts/mainScreen";
 import { Link, useSearchParams } from "react-router-dom";
 import Title from "../../utilities/title";
-import hteLogo from "../../assets/hteLogo.png";
 import Subtitle from "../../utilities/subtitle";
 import pin from "../../assets/icons/pin.png";
 import linkIcon from "../../assets/icons/link.png";
@@ -11,19 +10,46 @@ import fallbackImg from "../../assets/htePlaceholder.png";
 import { fetchHTEById, downloadMOA, getHteReviews, submitHteReview } from "../../api/student.service";
 import { StatusView } from "../../utilities/tableUtil";
 import SvgLoader from "../../components/SvgLoader";
-import { Home } from "lucide-react";
+import { Home, Star } from "lucide-react";
+import { AddReviewCard } from "../../utilities/card";
 
 export default function HteProfile() {
   const [searchParams] = useSearchParams();
   const [hte, setHte] = useState(null);
+  const [hteName, setHteName] = useState("");
   const [loading, setLoading] = useState(true);
-  const hteId = searchParams.get("hteId");3
-
+  const hteId = searchParams.get("hteId");
+  
   // REVIEWS
   const [reviews, setReviews] = useState([]);
-  const [reviewMessage, setReviewMessage] = useState("");
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewRating, setReviewRating] = useState(null);
+  const [reviewHteName, setReviewHteName] = useState("");
+  
+    const fetchReviews = async () => {
+        setReviewsLoading(true);
+        try {
+            const params = {
+                status: reviewStatus,
+                sort: reviewSort,
+            };
+            if (reviewCriteria) params.criteria = reviewCriteria;
+            if (reviewRating) params.rating = reviewRating;
+            if (reviewHteName) params.hte_name = reviewHteName;
+
+            const res = await AdminAPI.getReviews(params);
+            setReviews(res.data || []);
+        } catch (err) {
+            console.error(err);
+            setReviews([]);
+        } finally {
+            setReviewsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchReviews();
+    }, [reviewRating, reviewHteName]);
 
   useEffect(() => {
     if (!hteId) return;
@@ -31,12 +57,16 @@ export default function HteProfile() {
     fetchHTEById(hteId)
       .then((data) => {
         setHte(data);
+        setHteName(data.company_name);
+        
       })
       .catch((err) => {
         console.error("Failed to load HTE profile", err);
       })
       .finally(() => setLoading(false));
   }, [hteId]);
+
+
 
   const handleDownloadMOA = async () => {
     try {
@@ -60,38 +90,6 @@ export default function HteProfile() {
     }
   };
 
-  const handleSubmitReview = async () => {
-
-  if (!reviewMessage.trim()) {
-    alert("Please enter a review.");
-    return;
-  }
-
-  try {
-
-    setReviewSubmitting(true);
-
-    await submitHteReview(hteId, {
-      rating: reviewRating,
-      message: reviewMessage
-    });
-
-    alert("Review submitted. Waiting for admin approval.");
-
-    setReviewMessage("");
-    setReviewRating(5);
-
-  } catch (err) {
-
-    console.error(err);
-    alert("Failed to submit review.");
-
-  } finally {
-
-    setReviewSubmitting(false);
-
-  }
-};
 
   if (loading) {
     return (
@@ -113,13 +111,13 @@ export default function HteProfile() {
   return (
     <MainScreen>
       <Link to={"/htedirectory"}><AnnounceButton icon={<Home/>} btnText="Go Back"/></Link>
-      <div className="w-full flex flex-col lg:flex-row gap-10">
+      <div className="w-[90%] flex flex-col lg:flex-row gap-10">
 
         {/* FIRST COLUMN */}
         <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-5">
 
           {/* HEADER SECTION */}
-          <section className="w-full flex flex-col sm:flex-row gap-5 items-center sm:items-start">
+          <section className="w-full flex flex-col sm:flex-row gap-5 justify-center items-center sm:items-center">
 
             {/* HTE LOGO */}
             <img
@@ -131,7 +129,7 @@ export default function HteProfile() {
               className="object-contain w-24 sm:w-28 md:w-32 rounded-full border"
             />
 
-            <div className="flex flex-col justify-center items-center sm:items-start text-center sm:text-left">
+            <div className="flex flex-col justify-center items-center sm:items-center text-center sm:text-left">
 
               <Title
                 isAnimated={false}
@@ -168,7 +166,7 @@ export default function HteProfile() {
           </section>
 
           {/* ABOUT SECTION */}
-          <section className="w-full mt-10 flex flex-col gap-2 justify-center items-center">
+          <section className="w-full mt-10 flex flex-col gap-2 justify-center items-start">
             <Subtitle
               text={`About ${hte.company_name}`}
               weight={"font-bold"}
@@ -184,7 +182,7 @@ export default function HteProfile() {
 
         {/* SECOND COLUMN */}
         <div className="w-full lg:w-1/2 flex justify-center items-start">
-
+                 
           <div className="
             w-[80%]
             max-w-md
@@ -228,7 +226,7 @@ export default function HteProfile() {
           REVIEWS SECTION
       ========================= */}
 
-      <div className="w-full mt-15">
+      <div className="w-[90%] mt-15 p-5">
 
         <Subtitle
           text="Student Reviews"
@@ -238,91 +236,174 @@ export default function HteProfile() {
 
         {/* EXISTING REVIEWS */}
 
-        <div className="mt-5 flex flex-col gap-4">
+        {reviewsLoading ? (
+          <p>Loading reviews...</p>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {reviews.length === 0 && <p>No reviews yet.</p>}
+            {reviews.map((r) => (
+              <div key={r.id} className="p-4 bg-white rounded-xl shadow">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold">{r.reviewer || "Anonymous"}</span>
+                  <span className="text-xs italic">{new Date(r.created_at).toLocaleDateString()}</span>
+                </div>
+
+                <div className="flex items-center gap-1 mt-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      size={16}
+                      className={r.rating >= star ? "text-yellow-400" : "text-gray-300"}
+                    />
+                  ))}
+                  <span className="ml-2 text-xs text-gray-600">{r.rating} / 5</span>
+                </div>
+
+                <p className="mt-2 text-sm">{r.message}</p>
+              </div>
+            ))}
+          </div>
+        )}
+        {/* <div className="mt-5 flex flex-col gap-4">
 
           {reviews.length === 0 && (
             <p className="font-oasis-text text-sm">No reviews yet.</p>
           )}
 
           {reviews.map((r) => (
-
             <div
               key={r.id}
               className="w-full p-4 bg-white rounded-xl shadow-[0px_2px_5px_rgba(0,0,0,0.2)]"
             >
-
+        
               <div className="flex justify-between items-center">
-
                 <Subtitle
                   text={r.reviewer || "Anonymous"}
                   weight="font-bold"
                   size="text-sm"
                 />
-
                 <span className="text-xs italic">
                   {new Date(r.created_at).toLocaleDateString()}
                 </span>
-
               </div>
 
-              <div className="mt-2">
-                ⭐ {r.rating} / 5
+         
+              <div className="mt-2 flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={16}
+                    className={`${
+                      r.rating >= star ? "text-yellow-400" : "text-gray-300"
+                    }`}
+                  />
+                ))}
+                <span className="ml-2 text-xs text-gray-600">{r.rating} / 5</span>
               </div>
 
+           
               <p className="mt-2 text-sm font-oasis-text">
                 {r.message}
               </p>
-
             </div>
-
           ))}
 
-        </div>
+        </div> */}
 
         {/* SUBMIT REVIEW */}
 
-        <div className="mt-10 flex flex-col gap-3">
+        <div className="mt-10 flex flex-col justify-center items-center gap-3">
+          {/* SUBMIT REVIEW */}
 
-          <Subtitle
-            text="Leave a Review"
-            weight="font-bold"
-            size="text-md"
+          <AddReviewCard
+            hteName={`${hteName || "-"}`} 
+            onSubmit={async ({ message, rating }) => {
+              if (!message.trim()) {
+                alert("Please enter a review.");
+                return;
+              }
+              try {
+                await submitHteReview(hteId, {
+                  rating: rating,
+                  message: message,
+                });
+
+                alert("Review submitted. Waiting for admin approval.");
+
+              } catch (err) {
+                console.error(err);
+                alert("Failed to submit review.");
+              }
+            }}
           />
-
-          <textarea
-            className="w-full p-3 rounded-lg border font-oasis-text text-sm"
-            rows="4"
-            placeholder="Write your review here..."
-            value={reviewMessage}
-            onChange={(e) => setReviewMessage(e.target.value)}
-          />
-
-          <div className="flex items-center gap-3">
-
-            <span className="text-sm">Rating:</span>
-
-            <select
-              value={reviewRating}
-              onChange={(e) => setReviewRating(Number(e.target.value))}
-              className="p-2 border rounded"
-            >
-              <option value={5}>5</option>
-              <option value={4}>4</option>
-              <option value={3}>3</option>
-              <option value={2}>2</option>
-              <option value={1}>1</option>
-            </select>
-
-            <AnnounceButton
-              btnText={reviewSubmitting ? "Submitting..." : "Submit Review"}
-              onClick={handleSubmitReview}
-            />
-
-          </div>
-
         </div>
 
       </div>
     </MainScreen>
   );
 }
+
+
+  // const handleSubmitReview = async () => {
+
+  //   if (!reviewMessage.trim()) {
+  //     alert("Please enter a review.");
+  //     return;
+  //   }
+
+  //   try {
+
+  //     setReviewSubmitting(true);
+
+  //     await submitHteReview(hteId, {
+  //       rating: reviewRating,
+  //       message: reviewMessage
+  //     });
+
+  //     alert("Review submitted. Waiting for admin approval.");
+
+  //     setReviewMessage("");
+  //     setReviewRating(5);
+
+  //   } catch (err) {
+
+  //     console.error(err);
+  //     alert("Failed to submit review.");
+
+  //   } finally {
+
+  //     setReviewSubmitting(false);
+
+  //   }
+  // };
+
+// <textarea
+//             className="w-full p-3 rounded-lg border font-oasis-text text-sm"
+//             rows="4"
+//             placeholder="Write your review here..."
+//             value={reviewMessage}
+//             onChange={(e) => setReviewMessage(e.target.value)}
+//           />
+
+//           <div className="flex items-center gap-3">
+
+//             <span className="text-sm">Rating:</span>
+
+//             <select
+//               value={reviewRating}
+//               onChange={(e) => setReviewRating(Number(e.target.value))}
+//               className="p-2 border rounded"
+//             >
+//               <option value={5}>5</option>
+//               <option value={4}>4</option>
+//               <option value={3}>3</option>
+//               <option value={2}>2</option>
+//               <option value={1}>1</option>
+//             </select>
+
+//             <AnnounceButton
+//               btnText={reviewSubmitting ? "Submitting..." : "Submit Review"}
+//               onClick={handleSubmitReview}
+//             />
+
+//           </div>

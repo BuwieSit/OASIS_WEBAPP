@@ -3,7 +3,7 @@ import oasisLogo from "../assets/oasisLogo.png";
 import NavItem from "./navItem";
 import HoverLift from "./hoverLift";
 import { useState, useEffect } from "react";
-import { Bell, BellDot, LayoutDashboard, ChevronLeft, Cog, FileText, Upload, Users, LogOut, Menu, UserRoundCog } from "lucide-react";
+import { Bell, BellDot, LayoutDashboard, ChevronLeft, Cog, FileText, Upload, Users, LogOut, Menu, UserRoundCog, ChevronUp } from "lucide-react";
 import Notifications from "../utilities/notifications";
 import { UserRound, BellIcon } from "lucide-react";
 import api from "../api/axios.jsx";
@@ -18,52 +18,29 @@ import { AnnounceButton } from "./button.jsx";
 
 const API_BASE = api.defaults.baseURL;
 
-export function Header({ admin}) {
+export function Header({ admin }) {
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
     const [hasProfile, setHasProfile] = useState(false);
-    const [open, setOpen] = useState(false);
 
     const [animationClass, setAnimationClass] = useState("");
-    const [openSettings, setOpenSettings] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
     
     const toggleDropdown = (name) => {
         setActiveDropdown((prev) => (prev === name ? null : name));
     };
-    // const toggleDropdown = (dropdownName) => {
-    //     setActiveDropdown(prev =>
-    //         prev === dropdownName ? null : dropdownName
-    //     );
-    // };
-    
-    const handleProfileClick = () => {
+
+    const handleDropdownClick = (dropdown) => {
         setActiveDropdown((prev) => {
-            const next = prev === "profile" ? null : "profile";
-            console.log("Dropdown:", next);
-            if (next === "profile") {
-                setAnimationClass("bubble-pop");
-                setOpenSettings(true);
-            } else {
+            if (prev === dropdown) {
+
                 setAnimationClass("bubble-close");
-                setOpenSettings(false);
-            }
-
-            return next;
-        });
-    };
-
-   const handleNotifClick = () => {
-        setActiveDropdown((prev) => {
-            const next = prev === "notifs" ? null : "notifs";
-            console.log("Dropdown:", next);
-            if (next === "notifs") {
-                setOpen(true);
+                return null;
             } else {
-                setOpen(false);
-            }
 
-            return next;
+                setAnimationClass("bubble-pop");
+                return dropdown;
+            }
         });
     };
 
@@ -147,7 +124,7 @@ export function Header({ admin}) {
                     </HoverLift>
 
                     
-                    <HoverLift onClick={handleNotifClick}>
+                    <HoverLift onClick={() => handleDropdownClick("notifs")}>
                         {!admin && (
                             <div className="relative">
                                 {hasUnread ? (
@@ -166,12 +143,12 @@ export function Header({ admin}) {
                     </HoverLift>
 
                     <HoverLift 
-                        onClick={handleProfileClick}
+                        onClick={() => handleDropdownClick("profile")}
                     >
                         {!admin && (
                             <img
                             className="w-8 rounded-full object-cover aspect-square hidden md:block lg:block"
-                            src={profile.photo_url}
+                            src={profile?.photo_url}
                             alt="Profile"
                             />
                         )}
@@ -185,23 +162,21 @@ export function Header({ admin}) {
                 </div>
             </header>
         }
-            {/* MOBILE */}
 
+            {/* MOBILE */}
+            <div className="block md:hidden">
                 {activeDropdown === "menu" && <NavigationDropdown />}
                 {activeDropdown === "profile" && <ProfileDropdown />}
-
+            </div>
 
             {/* DESKTOP */}
-
+            <div className="hidden md:block">
                 {activeDropdown === "profile" && (
                     <UserDropdownSettings
                         open={activeDropdown === "profile"}
                         onClose={() => setActiveDropdown(null)}
                         className={animationClass}
-                        items={[
-                            { text: "Profile", to: "/student-profile" },
-                            { text: "Log out" },
-                        ]}
+                        items={[{ text: "Profile", to: "/student-profile" }, { text: "Log out" }]}
                     />
                 )}
 
@@ -213,7 +188,7 @@ export function Header({ admin}) {
                         setNotifications={setNotifications}
                     />
                 )}
-
+            </div>
         </>
     )
 }
@@ -327,40 +302,21 @@ export function StudentHeader({ showNavigation = true }) {
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
     const [hasProfile, setHasProfile] = useState(false);
-    const [open, setOpen] = useState(false);
 
     const [animationClass, setAnimationClass] = useState("");
-    const [openSettings, setOpenSettings] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
 
-    const handleProfileClick = () => {
+    const handleDropdownClick = (dropdown) => {
         setActiveDropdown((prev) => {
-            const next = prev === "profile" ? null : "profile";
-            console.log("Dropdown:", next);
-            if (next === "profile") {
-                setAnimationClass("bubble-pop");
-                setOpenSettings(true);
-            } else {
+            if (prev === dropdown) {
+
                 setAnimationClass("bubble-close");
-                setOpenSettings(false);
-            }
-
-            return next;
-        });
-    };
-
-   const handleNotifClick = () => {
-
-        setActiveDropdown((prev) => {
-            const next = prev === "notifs" ? null : "notifs";
-            console.log("Dropdown:", next);
-            if (next === "notifs") {
-                setOpen(true);
+                return null;
             } else {
-                setOpen(false);
-            }
 
-            return next;
+                setAnimationClass("bubble-pop");
+                return dropdown;
+            }
         });
     };
 
@@ -433,7 +389,7 @@ export function StudentHeader({ showNavigation = true }) {
                 {scrolled ? 
                     <div className="animate__animate animate__bounceIn absolute right-0 p-5 flex gap-3 items-center">
 
-                        <HoverLift onClick={handleNotifClick}>
+                        <HoverLift onClick={() => handleDropdownClick("notifs")}>
                                 <div className="relative">
                                     {hasUnread ? (
                                         <BellDot className="hidden md:block lg:block" size={28} color="#54A194"/>
@@ -449,13 +405,16 @@ export function StudentHeader({ showNavigation = true }) {
                                 </div>
                         </HoverLift>
 
-                        <HoverLift onClick={handleProfileClick}>
+                        <HoverLift 
+                            onClick={() => handleDropdownClick("profile")}
+                        >
                             <img
                             className="w-8 rounded-full object-cover aspect-square hidden md:block lg:block"
                             src={profile?.photo_url}
                             alt="Profile"
                             />
-                        </HoverLift> 
+
+                        </HoverLift>
 
                     </div>
                     : 
@@ -483,6 +442,12 @@ export function StudentHeader({ showNavigation = true }) {
                     setNotifications={setNotifications}
                 />
             )}
+            {scrolled ? 
+                <div className="animate__animate animate__bounceIn fixed p-3 rounded-full bg-oasis-header shadow-[0px_0px_5px_rgba(0,0,0,0.5)] bottom-5 left-5 md:bottom-15 md:left-15 lg:bottom-15 lg:left-15 z-150 transition ease-in-out duration-150 cursor-pointer">
+                    <ChevronUp size={30} color="white" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}/>
+                </div> : ""
+            }
+            
         </div>
         
     );
