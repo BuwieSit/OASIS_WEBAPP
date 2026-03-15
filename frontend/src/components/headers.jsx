@@ -10,7 +10,7 @@ import api from "../api/axios.jsx";
 import Subtitle from "../utilities/subtitle";
 import UserDropdownSettings from "../utilities/userDropdownSettings";
 import { useAuth } from "../context/authContext";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ConfirmModal } from "./popupModal";
 import { useScrollTop } from "../hooks/useScrollToTop.jsx";
 import { NotificationAPI } from "../api/notification.api";
@@ -200,8 +200,8 @@ export function LandingHeader() {
             <LogoWrap />
             <img src={oasisLogo} className="absolute left-1/2 -translate-x-1/2 w-25 aspect-auto"/> 
             <div className="flex gap-3 items-center">
-                <AnnounceButton btnText="Log In"/>
-                <AnnounceButton btnText="Sign In"/>
+                <Link to={"/access?form=login"}><AnnounceButton btnText="Log In"/></Link>
+                <Link to={"/access?form=register"}><AnnounceButton btnText="Sign in"/></Link>
             </div>
         </header>
     )

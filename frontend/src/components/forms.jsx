@@ -79,7 +79,7 @@ export function UpdatedReg() {
       await completeRegistration(user, pwd, matchPwd);
       // setSuccess(true);
       // console.log("Success reg!", success);
-      navigate("/");
+      navigate("/access?form=login");
     } catch (err) {
       setErrMsg(
         err?.response?.data?.error ||

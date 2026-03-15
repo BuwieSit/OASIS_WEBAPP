@@ -4,17 +4,18 @@ import LogregScreen from '../layouts/logregScreen';
 import { UpdatedLogin, UpdatedReg, ForgotPassword } from '../components/forms';
 import { Navigate } from "react-router-dom";
 import { useAuth } from '../context/authContext';
+import useQueryParam from '../hooks/useQueryParams';
 
 export default function UserAccess() {
-  const { role, loading } = useAuth();
 
   const ACCESS = {
-    LOGIN: "LOGIN",
-    REGISTER: "REGISTER",
-    FORGOTPASS: "FORGOTPASS",
+    LOGIN: "login",
+    REGISTER: "register",
+    FORGOTPASS: "forgotpassword",
   };
 
-  const [accessType, setAccessType] = useState(ACCESS.LOGIN);
+  const { role, loading } = useAuth();
+  const [accessType, setAccessType] = useQueryParam("form", ACCESS.LOGIN);
 
   if (loading) return null;
   if (role === "ADMIN") return <Navigate to="/admin" replace />;

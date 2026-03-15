@@ -25,7 +25,6 @@ export default function LandingPage() {
     return(
         <>
             <LandingScreen>
-                <Header isLandingPage/>
                 <ViewModal 
                     visible={openView}
                     onClose={() => setOpenView(false)}
