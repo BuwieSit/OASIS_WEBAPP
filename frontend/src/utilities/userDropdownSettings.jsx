@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import useOutsideClick from "./dropdownBehavior";
+import useOutsideClick from "./OutsideClick";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import { useNavigate } from "react-router-dom";

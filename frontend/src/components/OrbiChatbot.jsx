@@ -4,7 +4,7 @@ import orbi from '../assets/orbi.png';
 import { SingleField } from './fieldComp';
 import { Maximize2, Minimize2, Minus, SendHorizontal } from 'lucide-react';
 import { useChatbotToggle } from '../hooks/useChatbotToggle';
-import useOutsideClick from '../utilities/dropdownBehavior';
+import useOutsideClick from '../utilities/OutsideClick';
 
 
 export default function OrbiChatbot() {

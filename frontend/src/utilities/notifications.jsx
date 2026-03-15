@@ -3,7 +3,7 @@ import Subtitle from "./subtitle";
 import { CircleX, Bookmark, BookmarkCheck } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { NotificationAPI } from "../api/notification.api";
-import useOutsideClick from "./dropdownBehavior";
+import useOutsideClick from "./OutsideClick";
 
 export default function Notifications({ 
     open,
