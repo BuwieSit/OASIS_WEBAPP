@@ -3,7 +3,7 @@ import oasisLogo from "../assets/oasisLogo.png";
 import NavItem from "./navItem";
 import HoverLift from "./hoverLift";
 import { useState, useEffect } from "react";
-import { CircleUserRound, Bell, BellDot, LayoutDashboard, ChevronLeft, Cog, FileText, Upload, Users, LogOut, Menu, MenuIcon, User, UserRoundCog } from "lucide-react";
+import { Bell, BellDot, LayoutDashboard, ChevronLeft, Cog, FileText, Upload, Users, LogOut, Menu, UserRoundCog } from "lucide-react";
 import Notifications from "../utilities/notifications";
 import { UserRound, BellIcon } from "lucide-react";
 import api from "../api/axios.jsx";
@@ -12,13 +12,13 @@ import UserDropdownSettings from "../utilities/userDropdownSettings";
 import { useAuth } from "../context/authContext";
 import { useNavigate } from "react-router-dom";
 import { ConfirmModal } from "./popupModal";
-import testPfp from "../assets/testprofile.png"
 import { useScrollTop } from "../hooks/useScrollToTop.jsx";
 import { NotificationAPI } from "../api/notification.api";
+import { AnnounceButton } from "./button.jsx";
 
 const API_BASE = api.defaults.baseURL;
 
-export function Header({ admin = false }) {
+export function Header({ admin}) {
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
     const [hasProfile, setHasProfile] = useState(false);
@@ -97,7 +97,6 @@ export function Header({ admin = false }) {
 
 
     if (!admin && (!user || !profile)) return null;
-
     return (
         <>
         {admin ? 
@@ -108,6 +107,7 @@ export function Header({ admin = false }) {
                 <Subtitle text={"Admin"} color={"text-[#3E8679]"} size={"text-[1rem]"}/> 
             </header>
             : 
+        
             // STUDENT HEADER
             <header className="fixed md:sticky lg:sticky top-0 w-full h-5 flex flex-row justify-between
             items-center bg-linear-to-t from-oasis-blue via-oasis-blue to-oasis-dark min-h-15 px-5 shadow-[0_5px_10px_rgba(0,0,0,0.3)] z-90">
@@ -116,6 +116,8 @@ export function Header({ admin = false }) {
                 <img src={oasisLogo} className="absolute left-1/2 -translate-x-1/2 w-25 aspect-auto"/>
                 
                 <div className="flex gap-3 items-center">
+
+      
                     <HoverLift>
                         {!admin && (
                             <Subtitle 
@@ -130,6 +132,7 @@ export function Header({ admin = false }) {
                         )}
                     </HoverLift>
 
+                    
                     <HoverLift onClick={handleNotifClick}>
                         {!admin && (
                             <div className="relative">
@@ -140,7 +143,7 @@ export function Header({ admin = false }) {
                                 )}
 
                                 {unreadCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-oasis-red text-white text-[10px] min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full">
+                                    <span className="absolute -top-1 -right-1 bg-oasis-red text-white text-[10px] min-w-4 h-4 px-1 flex items-center justify-center rounded-full">
                                         {unreadCount > 99 ? "99+" : unreadCount}
                                     </span>
                                 )}
@@ -149,18 +152,23 @@ export function Header({ admin = false }) {
                     </HoverLift>
 
                     <HoverLift onClick={handleSettingsClick}>
-                    {!admin && (
-                        <img
-                        className="w-8 rounded-full object-cover aspect-square hidden md:block lg:block"
-                        src={profile.photo_url}
-                        alt="Profile"
-                        />
-                    )}
+                        {!admin && (
+                            <img
+                            className="w-8 rounded-full object-cover aspect-square hidden md:block lg:block"
+                            src={profile.photo_url}
+                            alt="Profile"
+                            />
+                        )}
                     </HoverLift>
-                    
                     
                     <Menu onClick={() => toggleDropdown("menu")} className="md:hidden lg:hidden absolute left-[5%] cursor-pointer" color="#54A194" />
                     <UserRoundCog onClick={() => toggleDropdown("profile")} className="md:hidden lg:hidden absolute right-[5%] cursor-pointer" color="#54A194"/>
+            
+                
+                    
+                    
+
+                    
                 </div>
             </header>
         }
@@ -184,6 +192,20 @@ export function Header({ admin = false }) {
             )}
 
         </>
+    )
+}
+
+export function LandingHeader() {
+    return (
+        <header className="sticky top-0 w-full h-5 flex flex-row justify-between
+        items-center bg-linear-to-t from-oasis-blue via-oasis-blue to-oasis-dark min-h-15 px-5 shadow-[0_5px_10px_rgba(0,0,0,0.3)] z-90">
+            <LogoWrap />
+            <img src={oasisLogo} className="absolute left-1/2 -translate-x-1/2 w-25 aspect-auto"/> 
+            <div className="flex gap-3 items-center">
+                <AnnounceButton btnText="Log In"/>
+                <AnnounceButton btnText="Sign In"/>
+            </div>
+        </header>
     )
 }
 

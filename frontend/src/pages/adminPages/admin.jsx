@@ -442,7 +442,7 @@ export default function Admin() {
                         />
 
                         <section className='flex flex-row items-start justify-start gap-10 mt-10'>
-                            <AnnounceButton btnText="Post" type="submit" disabled={disableButton}/>
+                            <AnnounceButton btnText="Post" type="submit" />
                         </section>
                     </div>
 

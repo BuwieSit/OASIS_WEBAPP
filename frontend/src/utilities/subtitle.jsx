@@ -26,7 +26,7 @@ const Subtitle = forwardRef(({
         ${isCenter ? "text-center" : "text-start"}
         ${size}
         ${color}
-        ${isActive ? "font-bold border-0 border-b-5 border-b-oasis-header px-2" : "px-2"}
+        ${isActive ? "font-bold border-0 border-b-5 border-b-oasis-header" : ""}
         ${isUnderlined ? "underline underline-offset-2" : ""}
         ${isItalic ? "italic" : ""}
         transition ease-in-out duration-500
@@ -37,7 +37,7 @@ const Subtitle = forwardRef(({
     return isLink ? (
         <a
             href={link}
-            className={`${baseClasses} cursor-pointer hover:underline`}
+            className={`${baseClasses} cursor-pointer hover:-translate-y-1 transition ease-in-out px-2`}
             onClick={onClick}
         >
             {text}

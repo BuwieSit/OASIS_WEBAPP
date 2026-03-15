@@ -30,7 +30,7 @@ export function AnnounceButton({
   const text = btnText.toLowerCase();
 
   const isDanger = ["delete", "reject", "clear all", "clear"].includes(text) || isRed;
-  const isNeutral = ["cancel"].includes(text);
+  const isNeutral = ["cancel", "sign in"].includes(text);
   const isPending = ["pending"].includes(text);
   const isUpload = ["upload file", "upload"].includes(text);
 
