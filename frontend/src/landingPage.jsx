@@ -3,7 +3,7 @@ import Subtitle from './utilities/subtitle';
 import LandingScreen from './layouts/landingScreen.jsx';
 import { Link } from 'react-router-dom';
 import { ViewModal } from './components/popupModal.jsx';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TutorialCard } from './utilities/card';
 import { LowerWave } from './components/waves.jsx';
 import { Header } from './components/headers.jsx';
@@ -19,9 +19,16 @@ export function HoverContainer({ children }) {
 }
 
 export default function LandingPage() {
-
+    
     const [openView, setOpenView] = useState(false);
 
+    useEffect(() => {
+        const backendUrl = import.meta.env.VITE_API_BASE_URL;
+
+        fetch(`${backendUrl}/health-check`)
+            .then(() => console.log("Backend warming up..."))
+            .catch(() => console.log("Backend wake-up initiated"));
+        }, []);
     return(
         <>
             <LandingScreen>
