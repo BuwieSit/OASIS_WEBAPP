@@ -28,7 +28,16 @@ export default function LandingPage() {
         fetch(`${backendUrl}/health-check`)
             .then(() => console.log("Backend warming up..."))
             .catch(() => console.log("Backend wake-up initiated"));
-        }, []);
+            
+        // PRELOAD FUNCTION: Starts downloading the UserAccess code chunk early
+        import('./pages/userAccess').then(() => {
+            console.log("Access page resources pre-fetched!");
+        });
+    }, []);
+
+
+
+    
     return(
         <>
             <LandingScreen>
