@@ -31,7 +31,8 @@ export function ContentField({
   maxNum = 'max-h-100',
   value,
   onChange,
-  disabled = false
+  disabled = false,
+  hasBorder
 }) {
   return (
     <textarea
@@ -40,7 +41,9 @@ export function ContentField({
       value={value}
       onChange={onChange}
       disabled={disabled}
-      className={`w-full ${maxNum} min-h-12 bg-white px-2 py-2 text-[0.9rem] rounded ${
+      className={`w-full ${maxNum} min-h-12 bg-white px-2 py-2 text-[0.9rem] rounded 
+      ${hasBorder && "border border-oasis-gray"}
+      ${
         disabled ? "opacity-60 cursor-not-allowed" : ""
       }`}
     />

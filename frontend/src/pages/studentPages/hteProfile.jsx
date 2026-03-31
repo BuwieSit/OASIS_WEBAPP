@@ -10,8 +10,11 @@ import fallbackImg from "../../assets/htePlaceholder.png";
 import { fetchHTEById, downloadMOA, getHteReviews, submitHteReview } from "../../api/student.service";
 import { StatusView } from "../../utilities/tableUtil";
 import SvgLoader from "../../components/SvgLoader";
-import { Home, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home, Star } from "lucide-react";
 import { AddReviewCard } from "../../utilities/card";
+import SearchBar from "../../components/searchBar";
+import { Dropdown } from "../../components/adminComps";
+import ReviewRatings from "../../components/reviewRatings";
 
 export default function HteProfile() {
   const [searchParams] = useSearchParams();
@@ -228,15 +231,9 @@ export default function HteProfile() {
 
       <div className="w-[90%] mt-15 p-5">
 
-        <Subtitle
-          text="Student Reviews"
-          weight="font-bold"
-          size="text-lg"
-        />
-
         {/* EXISTING REVIEWS */}
 
-        {reviewsLoading ? (
+        {/* {reviewsLoading ? (
           <p>Loading reviews...</p>
         ) : (
           <div className="flex flex-col gap-4">
@@ -263,7 +260,7 @@ export default function HteProfile() {
               </div>
             ))}
           </div>
-        )}
+        )} */}
         {/* <div className="mt-5 flex flex-col gap-4">
 
           {reviews.length === 0 && (
@@ -310,37 +307,171 @@ export default function HteProfile() {
 
         </div> */}
 
-        {/* SUBMIT REVIEW */}
+        {/* SUBMIT REVIEWS NEW */} 
+        <div className="w-full p-5 flex flex-col gap-5">
+          <section className="w-full flex flex-col items-center justify-center">
+            <Subtitle text={"Student Reviews"} size={"text-[1.8rem]"} color={"text-[#2B6259]"} weight={"font-bold"}/>
+            <Subtitle text={"See what students say about this HTE"}/>
+          </section>
+          
+          <section className="w-full flex items-center justify-start">
+            <SearchBar/>
+          </section>
 
-        <div className="mt-10 flex flex-col justify-center items-center gap-3">
-          {/* SUBMIT REVIEW */}
+          <section className="w-full rounded-lg border bg-white border-gray-400 flex">
+              <div className="flex-1 p-3 border-r border-gray-400 flex flex-col gap-2">
+                <Subtitle text={"Filter by Rating:"}/>
+                <div className="flex flex-wrap gap-2">
+                  <SortByStarButton text={"All"} hasIcon={false}/>
+                  {Array.from({ length: 5 }, (_, i) => 5 - i).map((star) => (
+                      <SortByStarButton key={star} text={star} />
+                  ))}
+                  
+                </div>
+              </div>
+            
 
-          <AddReviewCard
-            hteName={`${hteName || "-"}`} 
-            onSubmit={async ({ message, rating }) => {
-              if (!message.trim()) {
-                alert("Please enter a review.");
-                return;
-              }
-              try {
-                await submitHteReview(hteId, {
-                  rating: rating,
-                  message: message,
-                });
+              <div className="flex-2 p-3 flex flex-col gap-2 items-start justify-center">
+                  <Subtitle text={"Sort by Date:"}/>
+                  <Dropdown hasBorder={true}/>
+              </div>
+          </section>
 
-                alert("Review submitted. Waiting for admin approval.");
+          {/* MAIN GRID */}
+          <section className="grid grid-cols-1 lg:grid-cols-[33%_1fr] gap-5 w-full items-start">
+            
+            <div className="flex flex-col gap-5 sticky top-5 h-fit">
+                
+                {/* OVERALL RATING CARD */}
+                <div className="w-full max-w-80 sm:w-80 flex flex-col justify-center items-center gap-3 bg-linear-to-br border border-oasis-gray rounded-lg overflow-hidden p-3 ">
+            
+                  <Subtitle text={"Overall Internship Ratings"} size={"text-[1rem]"} color={"text-[#2B6259]"} weight={"font-bold"} isCenter={true}/>
 
-              } catch (err) {
-                console.error(err);
-                alert("Failed to submit review.");
-              }
-            }}
-          />
+                  <section className="w-fit border border-oasis-gray px-3 py-1 rounded-lg flex items-center justify-center gap-2">
+                    <Subtitle text={"4.1"} size={"text-[2.5rem]"} weight={"font-bold"} isCenter={true}/>
+
+                    <div className="flex gap-2">
+                        {[1,2,3,4,5].map((star) => (
+                          <Star key={star} color="#2B6259" fill="#2B6259"/>  
+                        ))}
+                    </div>
+                  </section>
+                  <Subtitle text={`Based on 1,123 student reviews`} color={"text-[#2B6259]"} isItalic={true}/>
+
+                  <ReviewRatings/>
+                  
+                </div>
+                
+                <AddReviewCard
+                  hteName={`${hteName}`} 
+                  onSubmit={async ({ message, rating }) => {
+                    if (!message.trim()) {
+                      alert("Please enter a review.");
+                      return;
+                    }
+                    try {
+                      await submitHteReview(hteId, {
+                        rating: rating,
+                        message: message,
+                      });
+
+                      alert("Review submitted. Waiting for admin approval.");
+
+                    } catch (err) {
+                      console.error(err);
+                      alert("Failed to submit review.");
+                    }
+                  }}
+                />
+
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              
+              {/* REVIEW GRID */}
+              <div className="w-full row-span-2 p-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 justify-items-center">
+                {reviewsLoading ? 
+                  <Subtitle text={"Loading Reviews..."}/> 
+                  : 
+                  <>
+                    {reviews.length === 0 && 
+                      <div>
+                        <Subtitle text={"No reviews yet."}/>
+                      </div>
+                      
+                    }
+                    {reviews.map((r) => (
+                      <div key={r.id} className="border border-oasis-gray p-5 w-full max-w-sm aspect-3/1 rounded-lg flex flex-col gap-2">
+                      
+                        <Subtitle text={"Prima Tech"} weight={"font-bold"} size={"text-[1rem]"}/>
+                        
+                        <div className="flex gap-2 w-full">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={16}
+                              className={r.rating >= star ? "text-yellow-400" : "text-gray-300"}
+                            />
+                          ))}
+                        </div>
+
+                        <Subtitle 
+                          text={r.message}
+                          className={"text-ellipsis line-clamp-5"}
+                          isJustify={true}
+                        />
+
+                        <Subtitle text={r.reviewer || "Anonymous"} weight={"font-bold"}/>
+
+                        <section className="w-full flex justify-between items-center">
+                          <Subtitle text={"IT Intern"} color={"text-oasis-gray"}/>
+                          <Subtitle text={new Date(r.created_at).toLocaleDateString()} color={"text-oasis-gray"}/>
+                        </section>
+
+                      </div>
+                    ))}
+                    
+                  </>
+                  
+                }
+                
+              </div>
+
+              {/* PAGINATION SECTION (Below the grid) */}
+            <section className="w-full flex justify-between items-center px-2">
+
+              <Subtitle text={`Showing 1-4 of 100 reviews`} />
+
+              <div className="flex gap-2 items-center justify-center">
+                  <ChevronLeft/>
+                  <Subtitle text={"1 / 20"} size={`text-[1rem]`}/>
+                  <ChevronRight/>
+              </div>
+            </section>
+
+
+            </div>
+
+          </section>
+
         </div>
+            
 
+        
       </div>
     </MainScreen>
   );
+}
+
+export function SortByStarButton({ text, hasIcon = true, onActive}) {
+  return (
+    <>
+      <div className="w-fit px-2 py-0.5 rounded-lg flex justify-center items-center gap-1 border border-oasis-gray cursor-pointer">
+        <Subtitle text={text} weight={"font-bold"}/>
+        {hasIcon && <Star size={15} color="#2B6259" fill="#2B6259"/>}
+      </div>
+    </>
+  )
 }
 
 

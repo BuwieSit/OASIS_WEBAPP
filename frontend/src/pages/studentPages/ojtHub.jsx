@@ -5,6 +5,7 @@ import Subtitle from '../../utilities/subtitle';
 import useQueryParam from '../../hooks/useQueryParams';
 import FormDownloadable from '../../components/formDownloadable';
 import api from '../../api/axios.jsx';
+import Accordion from '../../components/accordion.jsx';
 
 const SECTION_KEYS = {
     procedures: "Procedures",
@@ -181,19 +182,36 @@ export function SideNavText({ text, link, isActive = false, onClick }) {
 }
 
 export function DynamicSection({ sectionKey, title, items = [] }) {
+    const findFirstHeader = (list) => {
+        for (const item of list) {
+            if (item.type === "header") return item.title;
+
+            if (item.children && item.children.length > 0) {
+                const childHeader = findFirstHeader(item.children);
+                if (childHeader) return childHeader;
+            }
+        }
+        return null;
+    };
+    const headerTitle = findFirstHeader(items) || title || "Section Content";
     return (
         <section className='w-full flex flex-col items-start justify-center gap-5'>
+            
             <Title text={title} isAnimated={false} id={sectionKey} />
             <div className='w-full border'></div>
 
-            {items.length === 0 ? (
-                <Subtitle
-                    size={"text-[0.9rem]"}
-                    text={"No content available yet for this section."}
-                />
-            ) : (
-                <StudentTreeRenderer items={items} sectionKey={sectionKey} />
-            )}
+
+                <Accordion headerText={headerTitle}>
+                    {items.length === 0 ? (
+                        <Subtitle
+                            size={"text-[0.9rem]"}
+                            text={"No content available yet for this section."}
+                        />
+                    ) : (
+                        <StudentTreeRenderer items={items} sectionKey={sectionKey} />
+                    )}
+                </Accordion>
+            
         </section>
     );
 }
@@ -202,13 +220,17 @@ export function StudentTreeRenderer({ items = [], sectionKey }) {
     if (!items.length) return null;
 
     return (
-        <div className="w-full flex flex-col gap-4">
+        <div className="w-full flex flex-col gap-5">
             {items.map((item) => (
-                <StudentItemRenderer
-                    key={item.id}
-                    item={item}
-                    sectionKey={sectionKey}
-                />
+                <>
+                    <StudentItemRenderer
+                        key={item.id}
+                        item={item}
+                        sectionKey={sectionKey}
+                    />
+                </>
+               
+                
             ))}
         </div>
     );
@@ -219,13 +241,13 @@ export function StudentItemRenderer({ item, sectionKey }) {
 
     if (item.type === "header") {
         return (
-            <div className="w-full flex flex-col gap-3">
-                <h2 className="font-oasis-title font-bold text-[1.3rem]">
+            <div className="w-full flex flex-col gap-3 ">
+                <h2 className="font-oasis-text font-bold text-[1rem]">
                     {item.title}
                 </h2>
 
                 {item.description && (
-                    <p className="text-[0.95rem] font-oasis-text whitespace-pre-wrap">
+                    <p className="text-[0.8rem] text-black font-oasis-text whitespace-pre-wrap">
                         {item.description}
                     </p>
                 )}
@@ -242,7 +264,7 @@ export function StudentItemRenderer({ item, sectionKey }) {
     if (item.type === "description") {
         return (
             <div className="w-full flex flex-col gap-3">
-                <p className="text-[0.95rem] font-oasis-text whitespace-pre-wrap">
+                <p className="text-[0.8rem] text-black font-oasis-text whitespace-pre-wrap">
                     {item.description || item.title}
                 </p>
 

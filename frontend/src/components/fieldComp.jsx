@@ -35,12 +35,14 @@ export function MultiField({
   value,
   onChange,
   max,
-  disabled = false
+  disabled = false,
+  hasBorder
 }) {
   return (
     <div className="w-full">
       <Label fieldId={fieldId} labelText={labelText} />
       <ContentField
+        hasBorder={hasBorder}
         pholder={fieldHolder}
         id={fieldId}
         value={value}

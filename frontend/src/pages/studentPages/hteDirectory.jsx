@@ -15,10 +15,12 @@ import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
 import { useEffect, useState } from "react";
 import { fetchHTEs, downloadMOA } from "../../api/student.service";
 import SearchBar from '../../components/searchBar';
-import { FilterIcon, FilterX } from 'lucide-react';
+import { FilterIcon, FilterX, Star} from 'lucide-react';
+import { SortByStarButton } from './hteProfile';
+import { Dropdown } from '../../components/adminComps';
+
 
 export default function HteDirectory() {
-    
     const [htes, setHtes] = useState([]);
     const [industry] = useState("");
     const [course] = useState("");
@@ -75,6 +77,8 @@ export default function HteDirectory() {
         }
     ];
 
+   
+    
     const handleDownloadMOA = async (hteId) => {
         try {
             const res = await downloadMOA(hteId);
@@ -168,20 +172,18 @@ export default function HteDirectory() {
                     </section>
 
 {/* REVIEWS SECTION */}
-                    <div>
-                        <UpperWave/>
-                        <section className="bg-oasis-blue w-full flex flex-col gap-6 justify-center items-center px-4 py-8">
+                    {/* <div>
+                        <section className="w-full flex flex-col gap-6 justify-center items-center px-4 py-8">
 
                             <Title text={"Student Reviews"} />
 
-                            {/* Filters */}
+                      
                             <section className="w-full flex justify-start">
                                 <div className="w-full max-w-[900px] mx-auto">
                                     <Filter text={"Filters"} />
                                 </div>
                             </section>
 
-                            {/* Ratings Summary */}
                             <section className="w-full flex flex-col md:flex-row justify-center items-center gap-8 p-5">
 
                                 <ReviewRatings />
@@ -189,10 +191,10 @@ export default function HteDirectory() {
 
                             </section>
 
-                            {/* Reviews List + Add Review */}
+             
                             <section className="w-full flex flex-col lg:flex-row justify-center items-start gap-6 p-4">
 
-                                {/* Review Cards Container */}
+              
                                 <section className="
                                     w-full
                                     max-h-[420px]
@@ -210,7 +212,7 @@ export default function HteDirectory() {
                                     <ReviewCard />
                                 </section>
 
-                                {/* Add Review */}
+                            
                                 <div className="w-full lg:w-[35%] flex justify-center">
                                     <AddReviewCard />
                                 </div>
@@ -218,9 +220,11 @@ export default function HteDirectory() {
                             </section>
                         </section>
                         
-                        <LowerWave/>
-                    </div>
+  
+                    </div> */}
+
                     
+
                 </div>
                 
             </MainScreen>

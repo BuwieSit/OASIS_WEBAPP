@@ -1,5 +1,6 @@
 import { useInView } from "../hooks/useInView";
 import star from "../assets/icons/star.png";
+import { Star } from "lucide-react";
 
 
 export default function ReviewRatings() {
@@ -24,7 +25,7 @@ export default function ReviewRatings() {
                     {/* STARS */}
                     <div className="w-24 flex justify-end gap-1">
                         {Array.from({ length: rating.stars }).map((_, i) => (
-                            <img key={i} src={star} className="w-5" />
+                            <Star/>
                         ))}
                     </div>
 

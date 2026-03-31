@@ -8,7 +8,7 @@ export default function MainScreen({ children,  showHeader = true, hasTopMargin 
 
     return(
         <>
-            <div className={`w-full h-full pb-5 bg-[#F4FCF8] flex flex-col justify-center items-center overflow-x-hidden overflow-y-auto`}>
+            <div className={`w-full h-full bg-page-white flex flex-col justify-center items-center overflow-x-hidden overflow-y-auto`}>
                 <Header /> 
                 {showHeader ? <StudentHeader/> : ""}
                 {hasTopMargin ? <div className='mt-25'></div> : ""}

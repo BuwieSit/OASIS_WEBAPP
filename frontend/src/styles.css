@@ -23,6 +23,7 @@
   --color-oasis-button-dark: rgba(45,98,89,1);
   --color-admin-header-bg: rgba(178,190,181, 0.3);
   --color-admin-element: #CDE8E3;
+  --color-oasis-gray: #333333;
 
   --color-oasis-neutral: rgba(54, 69, 79, 1);
   --color-oasis-red: rgba(128,0,32, 1);
@@ -30,11 +31,10 @@
   --font-oasis-title: "Heavitas";
   
   --text-table-text-size: 0.85rem;
+
   --background-oasis-gradient: linear-gradient(
-    170deg,
-    var(--color-oasis-button-light) 0%,
-    var(--color-oasis-blue) 50%,
-    var(--color-oasis-blue) 50%
+    var(--color-oasis-button-light) -10%,
+    var(--color-oasis-blue) 70%
   );
 
   --background-oasis-redient: linear-gradient(

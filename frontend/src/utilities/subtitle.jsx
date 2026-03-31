@@ -2,6 +2,7 @@ import { forwardRef } from "react";
 
 const Subtitle = forwardRef(({
     isCenter = false,
+    isJustify = false,
     text,
     color,
     size = "text-xs",
@@ -23,6 +24,7 @@ const Subtitle = forwardRef(({
         ${isAnimated ? "animate__animated animate__fadeInDown" : ""}
         font-oasis-text
         ${weight}
+        ${isJustify ? "text-justify" : ""}
         ${isCenter ? "text-center" : "text-start"}
         ${size}
         ${color}
@@ -31,6 +33,7 @@ const Subtitle = forwardRef(({
         ${isItalic ? "italic" : ""}
         transition ease-in-out duration-500
         ${isMobile? "hidden md:block lg:block" : ""}
+        
         ${className}
     `;
 

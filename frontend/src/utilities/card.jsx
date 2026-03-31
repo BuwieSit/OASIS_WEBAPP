@@ -154,7 +154,7 @@ export function ReviewCard({
     );
 }
 
-export function AddReviewCard({ hteName, onSubmit }) {
+export function AddReviewCard({ hteName, onSubmit, hasHte }) {
   const [reviewerName, setReviewerName] = useState("");
   const [reviewMessage, setReviewMessage] = useState("");
   const [reviewRating, setReviewRating] = useState(0);
@@ -185,52 +185,73 @@ export function AddReviewCard({ hteName, onSubmit }) {
 
   return (
    
-    <form className="w-full max-w-80 sm:w-80 p-5 flex flex-col gap-5 bg-linear-to-br bg-oasis-gradient rounded-2xl drop-shadow-[0px_0px_10px_rgba(0,0,0,0.5)]">
+    <form className="w-full max-w-80 sm:w-80 flex flex-col gap-5 bg-linear-to-br border border-oasis-gray rounded-lg overflow-hidden">
         
         {/* Header */}
-        <div className="w-full p-2 bg-oasis-button-dark rounded">
-          <p className="text-white text-[0.9rem] text-center">
-            {`Leave a review for ${hteName || "-"}`}
+        <div className="w-full p-2 border-b border-oasis-gray bg-oasis-gradient">
+          <p className="font-bold text-[0.9rem] text-center">
+            {`Write a review`}
           </p>
         </div>
 
-        {/* Rating */}
-        <section className="w-full flex justify-evenly items-center">
-          <ul className="flex justify-evenly items-center w-full">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <li key={star}>
-                <Star
-                  size={30}
-                  strokeWidth={2}
-                  className={`cursor-pointer transition-colors duration-200
-                    ${reviewRating >= star ? "text-[#FFD700] " : "text-oasis-header"}
-                  `}
-                  fill={reviewRating >= star ? "#FFD700" : "none"}
-                  onClick={() => setReviewRating(star)}
-                />
-              </li>
-            ))}
-          </ul>
-        </section>
+        <div className="w-full px-5 flex flex-col gap-3 mb-3">
+          <section className="w-full flex justify-start items-center">
+            {hteName ? 
+              <>
+                <Subtitle text={hteName || "-"} size={"text-[1rem]"}/>
+              </>
+              : 
+              <SingleField fieldHolder={"HTE Company..."} hasBorder={true}/> 
+            }
+          </section>
+      
 
-        {/* Inputs */}
-        <section className="w-full flex flex-col gap-2">
-          <MultiField
-            fieldHolder="Enter review"
-            fieldId="reviewContent"
-            value={reviewMessage}
-            onChange={(e) => setReviewMessage(e.target.value)}
+
+          {/* Rating */}
+          <section className="w-full flex justify-evenly items-center">
+            <ul className="flex justify-start items-center gap-2 w-full">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <li key={star}>
+                  <Star
+                    size={30}
+                    strokeWidth={2}
+                    className={`cursor-pointer transition-colors duration-200
+                      ${reviewRating >= star ? "text-[#FFD700]" : "text-oasis-header"}
+                    `}
+                    fill={reviewRating >= star ? "#FFD700" : "none"}
+                    onClick={() => setReviewRating(star)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* Inputs */}
+          <section className="w-full flex flex-col gap-2">
+            <MultiField
+              fieldHolder="Write review..."
+              fieldId="reviewContent"
+              value={reviewMessage}
+              onChange={(e) => setReviewMessage(e.target.value)}
+              hasBorder={true}
+            />
+            <label className="flex items-center justify-start gap-2 cursor-pointer">
+              <input type="checkbox" className="appearance-none w-2 p-2 aspect-square border border-gray-300 rounded checked:bg-oasis-header checked:border-transparent cursor-pointer relative"/>
+              <Subtitle text={"Submit review anonymously"} color={"text-oasis-header"}/>
+            </label>
+            
+          </section>
+
+          {/* Submit */}
+          <AnnounceButton
+            btnText={submitting ? "Submitting..." : "Submit"}
+            onClick={(e) => {
+              e.preventDefault();
+              handleSubmit();
+            }}
           />
-        </section>
-
-        {/* Submit */}
-        <AnnounceButton
-          btnText={submitting ? "Submitting..." : "Submit"}
-          onClick={(e) => {
-            e.preventDefault();
-            handleSubmit();
-          }}
-        />
+        </div>
+        
     </form>
   );
 }

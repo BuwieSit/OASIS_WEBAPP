@@ -2,8 +2,7 @@ import { Search } from "lucide-react";
 
 export default function SearchBar({ value, onChange }) {
     return (
-        <div className="relative w-full flex justify-end my-5 px-4">
-
+        <div className="relative flex justify-start my-5 px-4">
             <Search
                 className="absolute right-6 top-1/2 -translate-y-1/2 opacity-60 pointer-events-none"
                 size={18}
@@ -16,9 +15,9 @@ export default function SearchBar({ value, onChange }) {
                     w-full
                     max-w-[320px] sm:max-w-[350px] md:max-w-[400px] lg:max-w-[450px]
                     bg-white border
-                    px-4 py-2
+                    px-4 py-1
                     pr-10
-                    rounded-full
+                    rounded-lg
                     text-sm md:text-base
                     outline-none
                     transition-all duration-200

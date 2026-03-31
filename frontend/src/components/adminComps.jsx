@@ -39,7 +39,8 @@ export function Dropdown({
     value = "",
     onChange,
     placeholder = "Select category",
-    disabled
+    disabled,
+    hasBorder
 }) {
     const handleChange = (e) => {
         onChange?.(e.target.value); 
@@ -54,7 +55,7 @@ export function Dropdown({
                     id={fieldId}
                     value={value}
                     onChange={handleChange}
-                    className={`w-full p-3 bg-white rounded text-[0.8rem] font-oasis-text disabled:cursor-not-allowed ${textColor}`}
+                    className={`w-full px-2 py-1 bg-white rounded text-[0.8rem] font-oasis-text disabled:cursor-not-allowed ${textColor} ${hasBorder && "border border-oasis-gray"}`}
                     disabled={disabled}
                 >
                     <option value="" disabled className="text-black">
