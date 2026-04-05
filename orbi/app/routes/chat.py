@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, request
+from app.services.retriever import retrieve_best_answer
 
 chat_bp = Blueprint("chat", __name__)
+
 
 @chat_bp.route("/health", methods=["GET"])
 def health_check():
@@ -15,7 +17,6 @@ def health_check():
 def orbi_chat():
     data = request.get_json()
 
-    # Basic validation
     if not data:
         return jsonify({"error": "Invalid request format"}), 400
 
@@ -26,9 +27,14 @@ def orbi_chat():
     if not user_id or not role or not message:
         return jsonify({"error": "Missing required fields"}), 400
 
-    # Stub response (NO AI)
+    if role not in ["student", "admin"]:
+        return jsonify({"error": "Invalid role"}), 400
+
+    result = retrieve_best_answer(message)
+
     return jsonify({
-        "reply": "ORBI is ready. Chat processing will be enabled soon.",
-        "source": "system",
-        "confidence": 0.0
+        "reply": result["reply"],
+        "source": result["source"],
+        "section": result["section"],
+        "confidence": result["confidence"]
     }), 200
