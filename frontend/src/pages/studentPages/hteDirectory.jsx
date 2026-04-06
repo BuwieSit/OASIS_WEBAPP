@@ -77,7 +77,6 @@ export default function HteDirectory() {
         }
     ];
 
-   
     
     const handleDownloadMOA = async (hteId) => {
         try {
@@ -132,6 +131,7 @@ export default function HteDirectory() {
                             color="text-oasis-button-dark"
                             text="See the lists of HTEs with their MOA and significant details; See the reviews about HTEs and make a review yourself!"
                             isCenter
+                            isItalic
                         />
                     </div>
 
@@ -144,10 +144,7 @@ export default function HteDirectory() {
 
                  
                     <section className="w-[90%] flex flex-col gap-5 justify-center items-center">
-                        <div className='w-full flex flex-row justify-between items-center z-70'>
-                            <div className="w-full max-w-[200px] mx-auto">
-                                    <Filter text={"Filters"} icon={<FilterIcon fill='#3E8679' stroke='white'/>}/>
-                                </div>
+                        <div className='w-full flex flex-row justify-end items-center z-70'>
                             <SearchBar
                                 value={search}
                                 onChange={setSearch}

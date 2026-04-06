@@ -17,16 +17,16 @@ export function Filter({ text, size, isActive = false, onClick, icon }) {
     return (
         <div
             onClick={onClick}
-            className={`p-3 font-oasis-text font-medium text-[0.7rem] rounded-3xl cursor-pointer transition duration-300 ease-in-out flex flex-row gap-2 items-center justify-center
+            className={`p-3 font-oasis-text font-medium text-[0.7rem] rounded-3xl cursor-pointer transition duration-300 ease-in-out flex flex-row gap-2 items-center justify-center text-oasis-header
                 ${
                     isActive
-                        ? "bg-oasis-aqua text-black translate-y-[-10%] shadow-[inset_0px_0px_5px_rgba(0,0,0,0.4)]"
-                        : "bg-oasis-button-dark text-white hover:bg-oasis-aqua hover:translate-y-[-10%] drop-shadow-[0px_2px_5px_rgba(0,0,0,0.5)]"
+                        ? "border-b-4 border-oasis-header "
+                        : ""
                 }
             `}
         >
             {icon}
-            <Subtitle text={text} size={size}/>
+            <Subtitle text={text} size={size} weight={"font-bold"}/>
         </div>
     );
 }

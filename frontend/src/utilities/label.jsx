@@ -9,7 +9,6 @@ export function Label({ fieldId, labelText, children}) {
     )
 }
 
-// import Star from "../assets/icons/star.png";
 
 export function RatingLabel({ rating }) {
     const starsCount = Math.min(rating, 5);

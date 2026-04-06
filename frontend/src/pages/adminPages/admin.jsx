@@ -351,59 +351,22 @@ export default function Admin() {
                     />
                 </Link>
 
-                <Link to={"/admUploads"}>
-                    <AdmCard
-                        hasRibbon
-                        cardTitle="Uploaded Documents"
-                        cardIcon={<FileCheck color="#377268" />}
-                        cardNumber={
-                            loadingDashboard ? <SvgLoader size={30} /> :
-                            dashboardError ? "-" :
-                            dashboard?.metrics?.total_uploaded_documents ?? "-"
-                        }
-                        cardDate={
-                            dashboard?.last_updated
-                                ? new Date(dashboard.last_updated).toLocaleDateString()
-                                : "-"
-                        }
-                    />
-                </Link>
-
-                {/* <a href='#announcements'>
-                    <AdmCard
-                        cardTitle="Total Announcements Posted"
-                        cardIcon={<Megaphone color="#377268" />}
-                        cardNumber={totalAnnouncements}
-                        cardDate={
-                            latestAnnouncement?.created_at
-                                ? new Date(latestAnnouncement.created_at).toLocaleDateString()
-                                : "-"
-                        }
-                    />
-                </a>
-
-                <a href='#notifications'>
-                    <AdmCard
-                        cardTitle="Total Notifications"
-                        cardIcon={<Bell color="#377268" />}
-                        cardNumber={totalNotifications}
-                        cardDate={
-                            latestNotification?.date
-                                ? new Date(latestNotification.date).toLocaleDateString()
-                                : "-"
-                        }
-                    />
-                </a> */}
-            </section>
-            
-            {/* <section className='w-[90%] p-5 flex gap-3 justify-center items-center'>
-                   <PieChart
+                <section className='w-full p-5 flex gap-3 justify-center items-center col-span-2 border border-gray-300'>
+                    <PieChart
                         items={[
-                            { label: "Active MOA", value: 18, color: "#16a34a" },
-                            { label: "Expired MOA", value: 7, color: "#dc2626" },
+                            {   label: "Active MOA", 
+                                value: dashboard?.metrics?.total_active_moas ?? "-", 
+                                color: "#2B6259" 
+                            },
+                            { 
+                                label: "Expired MOA", 
+                                value: dashboard?.metrics?.total_expired_moas ?? "-", 
+                                color: "#800020" 
+                            }
                         ]}
                     />
-            </section> */}
+                </section>
+            </section>        
 
             <div className='flex justify-start items-start w-[90%]'>
                 <Title text={"Post Announcements"} />

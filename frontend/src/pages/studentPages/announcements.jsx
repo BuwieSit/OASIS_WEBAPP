@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 import { AnnouncementModal } from '../../components/userModal';
 
 import api from "../../api/axios.jsx";
+import SvgLoader from '../../components/SvgLoader.jsx';
+import SearchBar from '../../components/searchBar.jsx';
 
 export default function Announcements() {
     const [announcements, setAnnouncements] = useState([]);
@@ -58,8 +60,9 @@ export default function Announcements() {
                 <Subtitle
                     size="text-xs sm:text-sm md:text-base"
                     color="text-oasis-button-dark"
-                    text="See the lists of HTEs with their MOA and significant details; See the reviews about HTEs and make a review yourself!"
+                    text="See the latest news about OJT and internship concerns in ITECH"
                     isCenter
+                    isItalic
                 />
             </div>
 
@@ -70,7 +73,11 @@ export default function Announcements() {
                 py-5
                 flex flex-col
             ">
-
+                {/* SEARCH */}
+                <section>
+                    <SearchBar isFull={true}/>
+                </section>
+                
                 {/* FILTERS */}
                 <section className="
                     flex
@@ -84,6 +91,7 @@ export default function Announcements() {
                             text={f}
                             onClick={() => setActiveFilter(f)}
                             isActive={activeFilter === f}
+                            size={"text-[0.8rem]"}
                         />
                     ))}
                 </section>
@@ -92,56 +100,67 @@ export default function Announcements() {
                 <section className="flex flex-col gap-3">
 
                     {loading && (
-                        <p className="text-sm text-gray-500">Loading announcements...</p>
+                        <>
+                            <div className='w-full flex items-center justify-center'>
+                                <Subtitle text={"Loading announcements..."} color={"text-oasis-gray"}/>
+                                <SvgLoader/>
+                            </div>
+                           
+                        </>
+                        
                     )}
 
                     {!loading && filteredAnnouncements.length === 0 && (
-                        <p className="text-sm text-gray-500">No announcements yet.</p>
+                        <>
+                            <div className='w-full flex items-center justify-center'>
+                                <Subtitle text={"No announcements yet."} color={"text-oasis-gray"}/>
+                            </div>
+                        </>
+                        
                     )}
 
-                    {filteredAnnouncements.map(a => (
-                        <div
-                            key={a.id}
-                            className="
-                                w-full
-                                flex
-                                flex-col sm:flex-row
-                                gap-3 sm:gap-5
-                                p-4
-                                border border-oasis-button-dark
-                                bg-linear-to-b from-oasis-button-light via-oasis-blue
-                                cursor-pointer
-                                rounded-xl
-                                hover:shadow-md
-                                transition duration-200
-                            "
-                            onClick={() => setSelectedAnnouncement(a)}
-                        >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
+                        {filteredAnnouncements.map((a) => {
 
-                            {/* DATE */}
-                            <section className="shrink-0">
-                                <Subtitle
-                                    size="text-xs sm:text-sm"
-                                    text={a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"}
-                                />
-                            </section>
+                            const isNew = a.created_at && (new Date() - new Date(a.created_at)) < 3 * 24 * 60 * 60 * 1000;
 
-                            {/* TITLE + CONTENT */}
-                            <section className="flex flex-col gap-1">
+                            return (
+                                <div 
+                                    key={a.id} 
+                                    className="relative aspect-video w-full p-5 border border-oasis-gray rounded-2xl flex flex-col justify-between cursor-pointer hover:border-oasis-header hover:shadow-md transition-all bg-white"
+                                    onClick={() => setSelectedAnnouncement(a)}
+                                >
 
-                                <Subtitle
-                                    size="text-sm sm:text-base"
-                                    weight="font-bold"
-                                    color="text-oasis-button-dark"
-                                    text={a.title}
-                                />
-                                <Subtitle
-                                    size="text-xs sm:text-sm line-clamp-3"
-                                    text={a.content}
-                                />
-                            </section>
-                        </div>
-                    ))}
+                                    {/* TOP SECTION: Date and Title */}
+                                    <div className="flex flex-col gap-1">
+                                        <Subtitle 
+                                            text={a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"}
+                                            color={"text-oasis-gray"}
+                                            size={"text-[0.7rem]"}
+                                            isItalic
+                                        />
+                                        <Subtitle 
+                                            text={a.title} 
+                                            size={"text-[0.9rem]"}
+                                            weight={"font-bold"}
+                                        />
+                                        <Subtitle
+                                            text={a.content}
+                                            className="line-clamp-2 text-sm text-gray-600 mt-1"
+                                        />
+                                    </div>
+
+                                    {/* BOTTOM SECTION: The Badge */}
+                                    {isNew && (
+                                        <span className="absolute bottom-4 right-4 bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-sm uppercase tracking-tight">
+                                            New
+                                        </span>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                   
                 </section>
             </div>
         </MainScreen>

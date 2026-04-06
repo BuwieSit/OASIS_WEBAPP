@@ -81,6 +81,7 @@ export default function OjtHub() {
                     color="text-oasis-button-dark"
                     text="Access internship procedures, MOA process, key guidelines, and downloadable forms prepared by the admin."
                     isCenter
+                    isItalic
                 />
             </div>
 

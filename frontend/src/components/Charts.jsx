@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import Subtitle from "../utilities/subtitle";
 
 export function PieChart({ items = [] }) {
 
@@ -44,7 +45,7 @@ export function PieChart({ items = [] }) {
             />
 
             {/* LEGEND */}
-            <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
                 {items.map((item, i) => {
 
                     const percent = total
@@ -54,15 +55,16 @@ export function PieChart({ items = [] }) {
                     return (
                         <div
                             key={i}
-                            className="flex items-center gap-3 text-sm"
+                            className="flex items-center gap-2"
                         >
+                            <Subtitle text={item.label}/>
+
                             <div
                                 className="w-4 h-4 rounded-sm"
                                 style={{ background: item.color }}
                             />
-                            <span>
-                                {item.label} ({percent}%)
-                            </span>
+
+                            <Subtitle text={item.value} weight={"font-bold"}/>
                         </div>
                     );
                 })}

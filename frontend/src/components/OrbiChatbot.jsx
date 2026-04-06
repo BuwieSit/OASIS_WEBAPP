@@ -7,6 +7,7 @@ import { useChatbotToggle } from '../hooks/useChatbotToggle';
 import useOutsideClick from '../utilities/OutsideClick';
 import api from '../api/axios';
 import { getRole } from '../api/token';
+import Subtitle from '../utilities/subtitle';
 
 const ORBI_BASE_URL = import.meta.env.VITE_ORBI_API_URL || "http://127.0.0.1:5050";
 const MAX_HISTORY = 12;
@@ -272,10 +273,12 @@ export function FloatingChat({ open, onClose, userId, role }) {
                 style={{ transformOrigin: isMaximized ? "center center" : "bottom right" }}
                 ref={dropdownRef}
             >
-                <div className="w-full border-b px-5 py-4 flex justify-between items-center">
+                <div className="w-full border-b px-5 py-2 flex justify-between items-center">
                     <div className="flex items-center justify-between w-full">
-                        <div className="text-[#2B6259] font-semibold text-sm sm:text-base">
-                            ORBI Assistant
+                        <div className="w-full flex items-center justify-start">
+                            <img src={orbi} alt='orbi' className='w-10 aspect-square'/>
+
+                            <Subtitle text={"ORBI Assistant"} color={"text-oasis-header"} size={"text-[1rem]"}/>
                         </div>
 
                         <div className="flex gap-4">

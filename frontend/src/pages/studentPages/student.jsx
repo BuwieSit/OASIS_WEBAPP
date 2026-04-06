@@ -194,7 +194,7 @@ export default function Student() {
 
                     <section className='w-[50%] flex flex-col gap-2'>
                         <Title text="HTE Dashboard Updates"/>
-                        <Subtitle isCenter={true} size={'text-[0.9rem]'} text="See the latest HTEs with updates regarding their MOA status!"/>
+                        <Subtitle isCenter isItalic size={'text-[0.9rem]'} text="See the latest HTEs with updates regarding their MOA status!"/>
                     </section>
 
                     {/* TABLE HERE */}
