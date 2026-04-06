@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import ChatField from '../utilities/chatField';
 import orbi from '../assets/orbi.png';
 import { SingleField } from './fieldComp';
@@ -9,6 +9,7 @@ import api from '../api/axios';
 import { getRole } from '../api/token';
 
 const ORBI_BASE_URL = import.meta.env.VITE_ORBI_API_URL || "http://127.0.0.1:5050";
+const MAX_HISTORY = 12;
 
 export default function OrbiChatbot() {
     const { open, animate, onBubble, closeChat, handleClick } = useChatbotToggle();
@@ -40,7 +41,7 @@ export default function OrbiChatbot() {
                 console.error("Failed to fetch ORBI user context:", error);
                 setUserData({
                     userId: "guest-temp-id",
-                    role: role
+                    role
                 });
             }
         }
@@ -93,7 +94,13 @@ export function FloatingChat({ open, onClose, userId, role }) {
         {
             id: 1,
             sender: "orbi",
-            text: "Hi! I’m ORBI. You can ask me about OJT portfolio requirements, the OJT journey, and the MOA process."
+            text: "Hi! I’m ORBI. Ask me about your OJT portfolio, internship steps, or the MOA process.",
+            followUps: [
+                "What are the OJT portfolio requirements?",
+                "What should I do before internship?",
+                "How does the MOA process work?"
+            ],
+            isLoading: false
         }
     ]);
 
@@ -122,20 +129,49 @@ export function FloatingChat({ open, onClose, userId, role }) {
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages, isSending]);
+    }, [messages]);
 
-    const sendMessage = async () => {
-        const trimmedMessage = message.trim();
+    const recentContext = useMemo(() => {
+        return messages
+            .filter((msg) => !msg.isLoading)
+            .slice(-MAX_HISTORY)
+            .map((msg) => ({
+                role: msg.sender,
+                text: msg.text
+            }));
+    }, [messages]);
+
+    const clearOldFollowUps = (list) =>
+        list.map((msg) => ({
+            ...msg,
+            followUps: msg.sender === "orbi" ? [] : msg.followUps
+        }));
+
+    const sendMessage = async (incomingMessage = null) => {
+        const rawMessage = incomingMessage ?? message;
+        const trimmedMessage = rawMessage.trim();
 
         if (!trimmedMessage || isSending) return;
 
+        const timestamp = Date.now();
+
         const userMessage = {
-            id: Date.now(),
+            id: timestamp,
             sender: "user",
-            text: trimmedMessage
+            text: trimmedMessage,
+            isLoading: false
         };
 
-        setMessages((prev) => [...prev, userMessage]);
+        const loadingId = timestamp + 1;
+        const loadingMessage = {
+            id: loadingId,
+            sender: "orbi",
+            text: "",
+            isLoading: true,
+            followUps: []
+        };
+
+        setMessages((prev) => [...clearOldFollowUps(prev), userMessage, loadingMessage]);
         setMessage("");
         setIsSending(true);
 
@@ -148,7 +184,8 @@ export function FloatingChat({ open, onClose, userId, role }) {
                 body: JSON.stringify({
                     user_id: userId || "guest-temp-id",
                     role: role || "student",
-                    message: trimmedMessage
+                    message: trimmedMessage,
+                    history: recentContext
                 })
             });
 
@@ -158,23 +195,37 @@ export function FloatingChat({ open, onClose, userId, role }) {
                 throw new Error(data?.error || "Failed to get ORBI response.");
             }
 
-            const orbiMessage = {
-                id: Date.now() + 1,
-                sender: "orbi",
-                text: data?.reply || "ORBI could not generate a response."
-            };
-
-            setMessages((prev) => [...prev, orbiMessage]);
+            setMessages((prev) =>
+                prev.map((msg) =>
+                    msg.id === loadingId
+                        ? {
+                            ...msg,
+                            text: data?.reply || "No response.",
+                            isLoading: false,
+                            followUps: Array.isArray(data?.follow_ups) ? data.follow_ups.slice(0, 3) : [],
+                            shortReply: data?.short_reply || "",
+                            source: data?.source || "",
+                            section: data?.section || "",
+                            confidence: data?.confidence ?? null
+                        }
+                        : msg
+                )
+            );
         } catch (error) {
             console.error("ORBI chat error:", error);
 
-            const errorMessage = {
-                id: Date.now() + 2,
-                sender: "orbi",
-                text: "I couldn’t connect to ORBI right now. Please make sure the ORBI server is running."
-            };
-
-            setMessages((prev) => [...prev, errorMessage]);
+            setMessages((prev) =>
+                prev.map((msg) =>
+                    msg.id === loadingId
+                        ? {
+                            ...msg,
+                            text: "⚠️ ORBI is not responding right now. Please make sure the ORBI server is running.",
+                            isLoading: false,
+                            followUps: []
+                        }
+                        : msg
+                )
+            );
         } finally {
             setIsSending(false);
         }
@@ -185,6 +236,11 @@ export function FloatingChat({ open, onClose, userId, role }) {
             e.preventDefault();
             sendMessage();
         }
+    };
+
+    const handleFollowUpClick = (item) => {
+        if (isSending) return;
+        sendMessage(item);
     };
 
     if (!show) return null;
@@ -217,58 +273,78 @@ export function FloatingChat({ open, onClose, userId, role }) {
                 ref={dropdownRef}
             >
                 <div className="w-full border-b px-5 py-4 flex justify-between items-center">
-                    <div className="flex gap-4 justify-end w-full">
-                        {isMaximized ? (
-                            <Minimize2
-                                size={25}
-                                color="#2B6259"
-                                className="cursor-pointer"
-                                onClick={() => setIsMaximized(false)}
-                            />
-                        ) : (
-                            <Maximize2
-                                size={25}
-                                color="#2B6259"
-                                className="cursor-pointer"
-                                onClick={() => setIsMaximized(true)}
-                            />
-                        )}
+                    <div className="flex items-center justify-between w-full">
+                        <div className="text-[#2B6259] font-semibold text-sm sm:text-base">
+                            ORBI Assistant
+                        </div>
 
-                        <Minus
-                            size={25}
-                            color="#2B6259"
-                            className="cursor-pointer"
-                            onClick={onClose}
-                        />
+                        <div className="flex gap-4">
+                            {isMaximized ? (
+                                <Minimize2
+                                    size={25}
+                                    color="#2B6259"
+                                    className="cursor-pointer"
+                                    onClick={() => setIsMaximized(false)}
+                                />
+                            ) : (
+                                <Maximize2
+                                    size={25}
+                                    color="#2B6259"
+                                    className="cursor-pointer"
+                                    onClick={() => setIsMaximized(true)}
+                                />
+                            )}
+
+                            <Minus
+                                size={25}
+                                color="#2B6259"
+                                className="cursor-pointer"
+                                onClick={onClose}
+                            />
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex-1 p-6 overflow-y-auto">
+                <div className="flex-1 p-4 sm:p-6 overflow-y-auto">
                     {messages.map((chat) => (
-                        <ChatField
-                            key={chat.id}
-                            isOrbi={chat.sender === "orbi"}
-                            isUser={chat.sender === "user"}
-                            text={chat.text}
-                        />
-                    ))}
+                        <div key={chat.id} className="w-full">
+                            <ChatField
+                                isOrbi={chat.sender === "orbi"}
+                                isUser={chat.sender === "user"}
+                                text={chat.text}
+                                isLoading={chat.isLoading}
+                            />
 
-                    {isSending && (
-                        <ChatField
-                            isOrbi
-                            text="ORBI is thinking..."
-                        />
-                    )}
+                            {chat.sender === "orbi" &&
+                                Array.isArray(chat.followUps) &&
+                                chat.followUps.length > 0 &&
+                                !chat.isLoading && (
+                                    <div className="ml-2 sm:ml-4 mb-3 flex flex-wrap gap-2 max-w-[90%]">
+                                        {chat.followUps.map((item, index) => (
+                                            <button
+                                                key={`${chat.id}-followup-${index}`}
+                                                type="button"
+                                                onClick={() => handleFollowUpClick(item)}
+                                                disabled={isSending}
+                                                className="px-3 py-2 rounded-full border text-[0.75rem] text-[#2B6259] border-[#2B6259] hover:bg-[#2B6259] hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {item}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                        </div>
+                    ))}
 
                     <div ref={messagesEndRef} />
                 </div>
 
-                <div className="w-full p-4">
+                <div className="w-full p-4 border-t bg-white">
                     <div className="flex items-center gap-3">
                         <div onKeyDown={handleKeyDown} className="w-full">
                             <SingleField
                                 hasBorder={true}
-                                fieldHolder="Enter message"
+                                fieldHolder={isSending ? "ORBI is replying..." : "Enter message"}
                                 fieldId="userMessage"
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
@@ -278,7 +354,7 @@ export function FloatingChat({ open, onClose, userId, role }) {
 
                         <button
                             type="button"
-                            onClick={sendMessage}
+                            onClick={() => sendMessage()}
                             disabled={isSending || !message.trim()}
                             className="rounded-full p-2 hover:bg-white transition group disabled:opacity-50 disabled:cursor-not-allowed"
                         >

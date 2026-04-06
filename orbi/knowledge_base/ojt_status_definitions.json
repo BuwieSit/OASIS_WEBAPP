@@ -1,0 +1,60 @@
+{
+  "portfolio_submission": {
+    "soft_copy": {
+      "format": "PDF",
+      "filename_format": "LastName_FirstName_OJT Portfolio",
+      "example": "Santos_Ana_OJT Portfolio"
+    },
+    "hard_copy": {
+      "paper_size": "Legal bond paper",
+      "folder_type": "Long folder with transparent cover",
+      "page_quality": "Clean, readable, and properly labeled"
+    }
+  },
+  "department_folder_colors": {
+    "OM and IT": "Purple",
+    "Computer and Electronics": "Blue",
+    "Electrical and Mechanical": "Yellow",
+    "Civil and Railway": "Black"
+  },
+  "ojt_journey": {
+    "before_internship": [
+      "Attend the Pre-internship Orientation",
+      "Submit the Intent Letter",
+      "Enroll in the internship course"
+    ],
+    "during_internship": [
+      "Attend consultations and monitoring",
+      "Attend HTE Orientation",
+      "Submit required reports",
+      "Begin internship on time",
+      "Report issues promptly"
+    ],
+    "after_internship": [
+      "Submit the Portfolio to the internship adviser",
+      "Answer the post-OJT student feedback form",
+      "Wait for final evaluation and grade computation"
+    ]
+  },
+  "required_documents": [
+    "Cover Page",
+    "Table of Contents",
+    "Checklist of Requirements",
+    "Notarized MOA",
+    "Endorsement Letter",
+    "Internship Agreement",
+    "Consent Form",
+    "Comprehensive Resume or Profile",
+    "Daily Attendance Report (DTR) duly signed by the Training Supervisor",
+    "Weekly Accomplishment Report, Progress Report, or Learning Diary",
+    "Evaluation Forms accomplished by the Employer or Training Supervisor",
+    "Evaluation Forms accomplished by the Student-Intern for the HTE and Training Supervisor",
+    "Internship Experience Summary Report",
+    "Photo Documentation of the Actual Training or Output",
+    "Certificate of Completion issued by the HTE"
+  ],
+  "optional_documents": [
+    "Professional Readings",
+    "Certificates from networking and linkages participation such as local, national, or international webinars, trainings, or conferences"
+  ]
+}

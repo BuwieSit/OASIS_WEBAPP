@@ -1,11 +1,12 @@
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 KNOWLEDGE_BASE_DIR = BASE_DIR / "knowledge_base"
+CACHED_KB = None
 
 
 STOPWORDS = {
@@ -49,6 +50,11 @@ SECTION_PRIORITY_HINTS = {
     "During Internship": ["during", "consultation", "monitoring", "hte orientation", "report issues"],
     "After Internship": ["after", "portfolio", "feedback", "final evaluation", "grade"],
     "MOA Steps": ["moa", "legal", "approval", "signature", "retrieval", "notarization"]
+}
+
+FOLLOW_UP_MARKERS = {
+    "that", "this", "it", "those", "these", "next", "after", "then",
+    "also", "too", "instead", "same", "one", "another"
 }
 
 
@@ -139,6 +145,11 @@ def flatten_json(data, parent_key="") -> List[Dict]:
 
 
 def load_knowledge_base() -> List[Dict]:
+    global CACHED_KB
+
+    if CACHED_KB is not None:
+        return CACHED_KB
+
     chunks: List[Dict] = []
 
     if not KNOWLEDGE_BASE_DIR.exists():
@@ -168,6 +179,7 @@ def load_knowledge_base() -> List[Dict]:
         except Exception:
             continue
 
+    CACHED_KB = chunks
     return chunks
 
 
@@ -196,6 +208,94 @@ def detect_intents(message: str) -> List[str]:
     return found
 
 
+def looks_like_follow_up(message: str) -> bool:
+    normalized = normalize_text(message)
+    words = normalized.split()
+
+    if len(words) <= 5:
+        return True
+
+    if any(word in FOLLOW_UP_MARKERS for word in words):
+        return True
+
+    if normalized.startswith(("and ", "what about", "how about", "then ", "after that", "next")):
+        return True
+
+    return False
+
+
+def get_recent_user_context(history: Optional[List[Dict]]) -> List[str]:
+    if not history:
+        return []
+
+    recent_questions = []
+    for item in reversed(history):
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("role", "")).strip().lower() != "user":
+            continue
+
+        text = str(item.get("text", "")).strip()
+        if text:
+            recent_questions.append(text)
+
+        if len(recent_questions) >= 3:
+            break
+
+    return list(reversed(recent_questions))
+
+
+def enrich_message_with_history(message: str, history: Optional[List[Dict]] = None) -> str:
+    normalized = normalize_text(message)
+    recent_questions = get_recent_user_context(history)
+
+    if not recent_questions:
+        return message
+
+    last_question = recent_questions[-1]
+    last_normalized = normalize_text(last_question)
+
+    if not looks_like_follow_up(message):
+        return message
+
+    if "hard copy" in normalized:
+        return f"{last_question} about the hard copy"
+
+    if "soft copy" in normalized:
+        return f"{last_question} about the soft copy"
+
+    if "filename" in normalized:
+        return f"{last_question} specifically asking for the filename format"
+
+    if "color" in normalized or "folder" in normalized:
+        return f"{last_question} specifically asking about folder color"
+
+    if normalized in {"what about that", "what about it", "what about this", "and that", "and this"}:
+        return last_question
+
+    if "next" in normalized or "after that" in normalized or "then" in normalized:
+        return f"{last_question} and what comes next"
+
+    if normalized.startswith("what about"):
+        return f"{last_question} {message}"
+
+    return f"{last_question} {message}"
+
+
+def infer_intents_from_history(message: str, history: Optional[List[Dict]] = None) -> List[str]:
+    intents = detect_intents(message)
+    if intents:
+        return intents
+
+    recent_questions = get_recent_user_context(history)
+    for question in reversed(recent_questions):
+        previous_intents = detect_intents(question)
+        if previous_intents:
+            return previous_intents
+
+    return []
+
+
 def section_priority_score(message: str, section_name: str) -> float:
     normalized_message = normalize_text(message)
     score = 0.0
@@ -209,7 +309,7 @@ def section_priority_score(message: str, section_name: str) -> float:
     return score
 
 
-def score_chunk(message: str, chunk: Dict) -> float:
+def score_chunk(message: str, chunk: Dict, intents: Optional[List[str]] = None) -> float:
     message_tokens = set(tokenize(message))
     section_name = chunk.get("section", "")
     chunk_text = chunk.get("text", "")
@@ -236,7 +336,7 @@ def score_chunk(message: str, chunk: Dict) -> float:
     priority_bonus = section_priority_score(message, section_name)
 
     intent_bonus = 0.0
-    intents = detect_intents(message)
+    intents = intents or detect_intents(message)
 
     if "soft_copy" in intents and "soft copy" in normalized_section:
         intent_bonus += 5.0
@@ -258,8 +358,8 @@ def score_chunk(message: str, chunk: Dict) -> float:
     return float(overlap_score + phrase_bonus + section_bonus + title_overlap + priority_bonus + intent_bonus)
 
 
-def choose_top_chunks(message: str, chunks: List[Dict], top_n: int = 2) -> List[Tuple[float, Dict]]:
-    scored = [(score_chunk(message, chunk), chunk) for chunk in chunks]
+def choose_top_chunks(message: str, chunks: List[Dict], top_n: int = 2, intents: Optional[List[str]] = None) -> List[Tuple[float, Dict]]:
+    scored = [(score_chunk(message, chunk, intents=intents), chunk) for chunk in chunks]
     scored.sort(key=lambda item: item[0], reverse=True)
     return scored[:top_n]
 
@@ -278,58 +378,187 @@ def format_bullets_from_text(text: str) -> List[str]:
     return bullets
 
 
-def make_student_friendly_reply(message: str, best_chunk: Dict, support_chunk: Dict = None) -> str:
+def question_style(message: str) -> str:
+    normalized = normalize_text(message)
+
+    if any(word in normalized for word in ["what", "ano", "what is", "what are"]):
+        return "direct"
+    if any(word in normalized for word in ["how", "paano", "process", "steps", "next", "after that"]):
+        return "steps"
+    if any(word in normalized for word in ["list", "checklist", "requirements", "need", "include"]):
+        return "bullets"
+    return "direct"
+
+
+def make_intro(message: str, intents: List[str], section: str) -> str:
+    normalized = normalize_text(message)
+
+    if "soft_copy" in intents:
+        return "For the soft copy of your OJT portfolio, here’s what you need to prepare."
+    if "hard_copy" in intents:
+        return "For the hard copy of your OJT portfolio, these are the important requirements."
+    if "before_internship" in intents:
+        return "Before starting your internship, you need to complete these first."
+    if "during_internship" in intents:
+        return "During your internship, these are the things you’re expected to do."
+    if "after_internship" in intents:
+        return "After your internship, these are the next steps you need to finish."
+    if "moa_process" in intents:
+        return "If the HTE still does not have an existing MOA, this is the usual process."
+    if "department_color" in intents:
+        return "The folder color depends on your department."
+    if "portfolio" in intents:
+        return "For your OJT portfolio, these are the main requirements you should prepare."
+
+    if "when" in normalized:
+        return f"This usually falls under {section.lower()}."
+    if "how" in normalized:
+        return f"Here’s the process based on {section.lower()}."
+    return f"Here’s the most relevant answer based on {section.lower()}."
+
+
+def make_direct_answer(message: str, best_chunk: Dict, intents: List[str]) -> str:
     section = best_chunk.get("section", "")
     text = best_chunk.get("text", "")
     bullets = format_bullets_from_text(text)
-    normalized_message = normalize_text(message)
-    intents = detect_intents(message)
+    intro = make_intro(message, intents, section)
+
+    if not bullets:
+        return f"{intro}\n\n{text}".strip()
+
+    if "department_color" in intents:
+        return f"{intro}\n\n" + "\n".join([f"• {item}" for item in bullets[:6]])
+
+    if "moa_process" in intents:
+        return (
+            f"{intro}\n\n"
+            "You may follow these steps:\n" +
+            "\n".join([f"• {item}" for item in bullets[:10]])
+        ).strip()
+
+    if "soft_copy" in intents or "hard_copy" in intents or "portfolio" in intents:
+        return (
+            f"{intro}\n\n"
+            "The key items are:\n" +
+            "\n".join([f"• {item}" for item in bullets[:8]])
+        ).strip()
+
+    if "before_internship" in intents or "during_internship" in intents or "after_internship" in intents:
+        return (
+            f"{intro}\n\n"
+            "You should focus on these:\n" +
+            "\n".join([f"• {item}" for item in bullets[:8]])
+        ).strip()
+
+    return f"{intro}\n\n" + "\n".join([f"• {item}" for item in bullets[:8]])
+
+
+def make_paragraph_answer(message: str, best_chunk: Dict, intents: List[str]) -> str:
+    section = best_chunk.get("section", "")
+    text = best_chunk.get("text", "")
+    bullets = format_bullets_from_text(text)
+    intro = make_intro(message, intents, section)
+
+    if not bullets:
+        return f"{intro}\n\n{text}".strip()
 
     if "soft_copy" in intents:
-        intro = "For the soft copy of your OJT portfolio, here’s what you need to remember:"
-    elif "hard_copy" in intents:
-        intro = "For the hard copy of your OJT portfolio, here are the important requirements:"
-    elif "before_internship" in intents:
-        intro = "Before starting your internship, you should complete these steps:"
-    elif "during_internship" in intents:
-        intro = "While you are already in your internship, these are the things you need to do:"
-    elif "after_internship" in intents:
-        intro = "After your internship, these are the next requirements and steps:"
-    elif "moa_process" in intents:
-        intro = "If the HTE does not yet have an existing MOA, this is the usual process:"
-    elif "department_color" in intents:
-        intro = "The folder color depends on your department:"
-    elif "portfolio" in intents:
-        intro = "For your OJT portfolio, these are the key requirements to prepare:"
-    else:
-        intro = f"Based on the {section.lower()}, here’s the most relevant answer for your question:"
+        details = ", ".join(bullets[:6])
+        return (
+            f"{intro}\n\n"
+            f"You need to submit it in PDF format and make sure the file follows the required filename format. "
+            f"It should include items such as {details}. "
+            f"Make sure your portfolio is complete, organized, and professionally prepared."
+        ).strip()
 
-    if bullets:
-        limited = bullets[:8]
-        reply = intro + "\n\n" + "\n".join([f"• {item}" for item in limited])
-    else:
-        reply = intro + "\n\n" + text
+    if "hard_copy" in intents:
+        details = ", ".join(bullets[:4])
+        return (
+            f"{intro}\n\n"
+            f"Your hard copy should follow the required physical format, including {details}. "
+            f"Everything should be clean, readable, and properly labeled before submission."
+        ).strip()
 
-    if support_chunk and support_chunk.get("section") != section:
-        support_bullets = format_bullets_from_text(support_chunk.get("text", ""))
-        if support_bullets and (
-            "checklist" in normalized_message or
-            "complete" in normalized_message or
-            "all" in normalized_message
-        ):
-            extra = "\n\nYou may also need to check:\n" + "\n".join([f"• {item}" for item in support_bullets[:4]])
-            reply += extra
+    if "before_internship" in intents:
+        return (
+            f"{intro}\n\n"
+            "Before your internship begins, make sure you attend the pre-internship orientation, "
+            "submit your intent letter, and enroll in the internship course. "
+            "These steps help prepare you before your actual training starts."
+        ).strip()
 
-    if "filename" in normalized_message and "soft_copy" in intents:
-        reply += "\n\nUse this filename format: LastName_FirstName_OJT Portfolio."
+    if "during_internship" in intents:
+        return (
+            f"{intro}\n\n"
+            "While you are already undergoing internship, you need to attend consultations and monitoring, "
+            "join the HTE orientation, submit the required reports, start on time, and report any issues right away. "
+            "These help you stay updated and compliant throughout your OJT."
+        ).strip()
 
-    if "color" in normalized_message and "department" in normalized_message:
-        reply += "\n\nMake sure to use the folder color assigned to your department."
+    if "after_internship" in intents:
+        return (
+            f"{intro}\n\n"
+            "After finishing your internship, you need to submit your portfolio to your internship adviser, "
+            "answer the post-OJT student feedback form, and wait for the final evaluation and grade computation."
+        ).strip()
+
+    if "moa_process" in intents:
+        return (
+            f"{intro}\n\n"
+            "The MOA usually goes through several steps, starting from identifying a new potential HTE, "
+            "submission to the HTE, review by the OJT Coordinator and legal office, approval, printing, signing, "
+            "retrieval, and notarization. It is important to follow each step carefully to avoid delays."
+        ).strip()
+
+    if "department_color" in intents:
+        return (
+            f"{intro}\n\n"
+            "Make sure you use the folder color assigned to your department so your hard copy submission follows the required format."
+        ).strip()
+
+    return f"{intro}\n\n{text}".strip()
+
+
+def add_helpful_tail(message: str, reply: str, intents: List[str]) -> str:
+    normalized = normalize_text(message)
+
+    if "filename" in normalized or "soft_copy" in intents:
+        if "lastname_firstname_ojt portfolio" not in normalize_text(reply):
+            reply += "\n\nUse this filename format: LastName_FirstName_OJT Portfolio."
+
+    if "soft copy" in normalized and "pdf" not in normalize_text(reply):
+        reply += "\n\nAlso make sure your soft copy is submitted in PDF format."
+
+    if "hard copy" in normalized and "legal bond paper" not in normalize_text(reply):
+        reply += "\n\nAlso make sure the hard copy is printed on legal bond paper."
+
+    if "moa_process" in intents and "next moa step" not in normalize_text(reply):
+        reply += "\n\nYou can also ask ORBI about the next MOA step if you want a more specific guide."
 
     return reply.strip()
 
 
-def retrieve_best_answer(message: str) -> Dict:
+def make_student_friendly_reply(message: str, best_chunk: Dict, support_chunk: Dict = None, intents: Optional[List[str]] = None) -> str:
+    intents = intents or detect_intents(message)
+    style = question_style(message)
+
+    if style in {"bullets", "steps"}:
+        reply = make_direct_answer(message, best_chunk, intents)
+    else:
+        reply = make_paragraph_answer(message, best_chunk, intents)
+
+    if support_chunk and support_chunk.get("section") != best_chunk.get("section"):
+        normalized_message = normalize_text(message)
+        support_bullets = format_bullets_from_text(support_chunk.get("text", ""))
+
+        if support_bullets and any(word in normalized_message for word in ["all", "complete", "everything", "checklist"]):
+            reply += "\n\nYou may also need to check:\n" + "\n".join([f"• {item}" for item in support_bullets[:4]])
+
+    reply = add_helpful_tail(message, reply, intents)
+    return reply.strip()
+
+
+def retrieve_best_answer(message: str, history: Optional[List[Dict]] = None) -> Dict:
     chunks = load_knowledge_base()
 
     if not chunks:
@@ -337,10 +566,14 @@ def retrieve_best_answer(message: str) -> Dict:
             "reply": "ORBI knowledge base is not ready yet. Please add content to the knowledge_base files first.",
             "source": "system",
             "section": "Knowledge Base",
-            "confidence": 0.0
+            "confidence": 0.0,
+            "resolved_question": message
         }
 
-    top_chunks = choose_top_chunks(message, chunks, top_n=2)
+    resolved_message = enrich_message_with_history(message, history)
+    intents = infer_intents_from_history(resolved_message, history)
+
+    top_chunks = choose_top_chunks(resolved_message, chunks, top_n=2, intents=intents)
     best_score, best_chunk = top_chunks[0]
     support_chunk = top_chunks[1][1] if len(top_chunks) > 1 else None
 
@@ -353,15 +586,22 @@ def retrieve_best_answer(message: str) -> Dict:
             ),
             "source": "knowledge_base",
             "section": "Fallback",
-            "confidence": 0.15
+            "confidence": 0.15,
+            "resolved_question": resolved_message
         }
 
     confidence = min(round(best_score / 12, 2), 0.99)
-    tailored_reply = make_student_friendly_reply(message, best_chunk, support_chunk)
+    tailored_reply = make_student_friendly_reply(
+        resolved_message,
+        best_chunk,
+        support_chunk,
+        intents=intents
+    )
 
     return {
         "reply": tailored_reply,
         "source": best_chunk["source"],
         "section": best_chunk["section"],
-        "confidence": confidence
+        "confidence": confidence,
+        "resolved_question": resolved_message
     }
