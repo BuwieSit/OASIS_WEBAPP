@@ -14,7 +14,7 @@ function MessageText({ text }) {
     const lines = String(text || "").split("\n");
 
     return (
-        <div className="whitespace-pre-wrap break-words leading-relaxed">
+        <div className="whitespace-pre-wrap wrap-break-word leading-relaxed">
             {lines.map((line, index) => (
                 <div key={index} className={line.trim() === "" ? "h-3" : ""}>
                     {line.trim() === "" ? "" : <Subtitle text={line} />}

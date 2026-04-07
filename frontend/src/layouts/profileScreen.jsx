@@ -18,7 +18,7 @@ export function AdminProfileScreen({ children, className, }) {
     const [isOpen, setIsOpen] = useState(false)
     return(
         <>
-            <div className="relative w-full min-h-screen flex bg-[#F4FCF8] overflow-x-hidden">
+            <div className="relative w-full min-h-screen flex bg-page-white overflow-x-hidden">
                 
                 <AdminNavigation isOpen={isOpen} setIsOpen={setIsOpen} />
                 {isOpen && (

@@ -166,7 +166,7 @@ export function StudentTable({ columns = [], data = [], children, onRowClick }) 
                             displayData.map((row, rowIndex) => (
                                 <tr
                                     key={row.id ?? `${page}-${rowIndex}`}
-                                    className="text-[0.85rem] lg:text-[0.9rem] text-center bg-white cursor-pointer transition hover:bg-gray-300"
+                                    className="text-table-text-size lg:text-[0.9rem] text-center bg-white cursor-pointer transition hover:bg-gray-300"
                                     onClick={() => onRowClick?.(row.id)}
                                 >
                                     {columns.map((col, colIndex) => (
