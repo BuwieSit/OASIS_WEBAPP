@@ -26,7 +26,7 @@ export default function HteDirectory() {
     const [course] = useState("");
     const [location] = useState("");
     const [search, setSearch] = useState("");
-    
+
     const filteredHtes = htes.filter((hte) =>
         hte.hteName.toLowerCase().includes(search.toLowerCase()) ||
         hte.industry.toLowerCase().includes(search.toLowerCase())
@@ -141,8 +141,6 @@ export default function HteDirectory() {
                         text={"Overview of Host Training Establishment"} 
                         size="text-[1rem] sm:text-[1rem] md:text-[1.3rem] lg:text-[1.5rem]"
                     />
-
-
                  
                     <section className="w-[90%] flex flex-col gap-5 justify-center items-center">
                         <div className='w-full flex flex-row justify-end items-center z-70'>
@@ -157,16 +155,40 @@ export default function HteDirectory() {
                 
                     <section className="w-full flex flex-col gap-5 justify-center items-center">
                         <Title text={"List of available HTE with MOA"}/>
-                        {/* TABLE HERE */}
-                        <StudentTable columns={columns} data={filteredHtes} onRowClick={(id) => setHte(id)}>
+                        
+                        {filteredHtes.length > 0 ? (
+                            <>
+                                {/* DESKTOP TABLE */}
+                                <StudentTable 
+                                    columns={columns} 
+                                    data={filteredHtes} 
+                                    onRowClick={(id) => setHte(id)} 
+                                />
 
-                        </StudentTable>
-
-                        <MobileStudentTable
-                            columns={columns}
-                            data={htes}
-                            onRowClick={(id) => setHte(id)}
-                        />
+                                {/* MOBILE TABLE - Now using filteredHtes */}
+                                <MobileStudentTable
+                                    columns={columns}
+                                    data={filteredHtes}
+                                    onRowClick={(id) => setHte(id)}
+                                />
+                            </>
+                        ) : (
+                            /* NO RESULTS UI */
+                            <div className='w-full flex flex-col items-center justify-center py-10 bg-gray-50 rounded-xl'>
+                                <Subtitle 
+                                    text={search ? `No HTEs found matching "${search}"` : "The directory is currently empty."} 
+                                    color={"text-oasis-gray"}
+                                />
+                                {search && (
+                                    <button 
+                                        onClick={() => setSearch("")}
+                                        className="text-oasis-header underline text-sm mt-3 font-bold cursor-pointer hover:text-oasis-button-dark transition-colors"
+                                    >
+                                        Clear search and show all
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </section>
 
 {/* REVIEWS SECTION */}
