@@ -46,28 +46,43 @@ export function Header({ admin }) {
 
     useEffect(() => {
         async function fetchProfile() {
-        const res = await api.get("/api/student/me");
-        const fetchedProfile = res.data.profile;
+            try{
+                const res = await api.get("/api/student/me");
+                const fetchedProfile = res.data.profile;
+                    
+                // ✅ NORMALIZE IMAGE URL ON FETCH
+                if (fetchedProfile?.photo_path) {
+                    fetchedProfile.photo_url = `${API_BASE}${fetchedProfile.photo_path}`;
+                    setHasProfile(true);
+                } else {
+                    setHasProfile(false);
+                }
+                setUser(res.data.user);
+                setProfile(fetchedProfile);
+                setHasProfile(true);
+                    
+                }
+            catch (err) {
+                console.error("Profile fetch failed:", err);
+            }
             
-        // ✅ NORMALIZE IMAGE URL ON FETCH
-        if (fetchedProfile?.photo_path) {
-            fetchedProfile.photo_url = `${API_BASE}${fetchedProfile.photo_path}`;
-            setHasProfile(true);
-        } else {
-            setHasProfile(false);
         }
-        setUser(res.data.user);
-        setProfile(fetchedProfile);
-        setHasProfile(true);
-            
-        }
-
         fetchProfile();
     }, []);
 
     const [notifications, setNotifications] = useState([]);
     const hasUnread = notifications.some(n => !n.is_read && !n.is_saved);
     const unreadCount = notifications.filter(n => !n.is_read && !n.is_saved).length;
+    
+    const loadNotifications = async () => {
+        try {
+            const res = await NotificationAPI.getStudentNotifications();
+            setNotifications(res.data || []);
+        } catch (err) {
+            console.error("Failed to load notifications:", err);
+        }
+    };
+
     useEffect(() => {
         loadNotifications();
 
@@ -77,15 +92,6 @@ export function Header({ admin }) {
 
         return () => clearInterval(interval);
     }, []);
-
-    const loadNotifications = async () => {
-        try {
-            const res = await NotificationAPI.getStudentNotifications();
-            setNotifications(res.data || []);
-        } catch (err) {
-            console.error("Failed to load notifications:", err);
-        }
-    };
 
     if (!admin && (!user || !profile)) return null;
 

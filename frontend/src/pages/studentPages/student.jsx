@@ -9,7 +9,7 @@ import { TutorialCard } from '../../utilities/card';
 import { MobileStudentTable, StudentTable } from '../../components/oasisTable';
 import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
 import SearchBar from '../../components/searchBar';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Hand } from 'lucide-react';
 import { ViewModal } from '../../components/popupModal';
 import filePdf from "../../assets/resume.pdf";
 import api from "../../api/axios";
@@ -160,8 +160,8 @@ export default function Student() {
 
                     {/* Badge */}
                     <div className="mb-6 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-white/50 z-10">
-                        <span className="italic text-[#2d5f5d] text-xs sm:text-sm md:text-base">
-                            👋 Welcome, {userName}!
+                        <span className="italic text-[#2d5f5d] text-xs sm:text-sm md:text-base flex gap-3">
+                            Welcome, {userName}! <Hand/> 
                         </span>
                     </div>
 

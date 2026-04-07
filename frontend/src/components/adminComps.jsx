@@ -17,7 +17,7 @@ export function Filter({ text, size, isActive = false, onClick, icon }) {
     return (
         <div
             onClick={onClick}
-            className={`p-3 font-oasis-text font-medium text-[0.7rem] rounded-3xl cursor-pointer transition duration-300 ease-in-out flex flex-row gap-2 items-center justify-center text-oasis-header
+            className={`px-3 py-2 font-oasis-text font-medium text-[0.7rem] rounded-2xl cursor-pointer transition duration-300 ease-in-out flex flex-row gap-2 items-center justify-center text-oasis-header
                 ${
                     isActive
                         ? "border-b-4 border-oasis-header "

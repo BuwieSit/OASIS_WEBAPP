@@ -26,6 +26,7 @@ export default function HteDirectory() {
     const [course] = useState("");
     const [location] = useState("");
     const [search, setSearch] = useState("");
+    
     const filteredHtes = htes.filter((hte) =>
         hte.hteName.toLowerCase().includes(search.toLowerCase()) ||
         hte.industry.toLowerCase().includes(search.toLowerCase())
