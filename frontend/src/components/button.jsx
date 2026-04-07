@@ -1,6 +1,5 @@
 import 'animate.css';
 import HoverLift from './hoverLift';
-import add from "../assets/icons/add.png";
 
 export function Button({ text, onClick, disabled, width = "w-auto", type = "button" }) {
   return (

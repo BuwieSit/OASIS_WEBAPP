@@ -2,15 +2,13 @@ import MainScreen from "../../layouts/mainScreen";
 import { Link, useSearchParams } from "react-router-dom";
 import Title from "../../utilities/title";
 import Subtitle from "../../utilities/subtitle";
-import pin from "../../assets/icons/pin.png";
-import linkIcon from "../../assets/icons/link.png";
 import { AnnounceButton } from "../../components/button";
 import { useEffect, useState } from "react";
 import fallbackImg from "../../assets/htePlaceholder.png";
 import { fetchHTEById, downloadMOA, submitHteReview } from "../../api/student.service";
 import { StatusView } from "../../utilities/tableUtil";
 import SvgLoader from "../../components/SvgLoader";
-import { ChevronLeft, ChevronRight, Home, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home, LinkIcon, MapPinned, Star } from "lucide-react";
 import { AddReviewCard } from "../../utilities/card";
 import SearchBar from "../../components/searchBar";
 import { Dropdown } from "../../components/adminComps";
@@ -141,7 +139,7 @@ export default function HteProfile() {
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 mt-3">
 
                 <section className="flex items-center gap-1 justify-center sm:justify-start">
-                  <img src={pin} className="w-4 aspect-square object-contain" />
+                  <MapPinned size={20}/>
                   <Subtitle
                     text={hte.address || "—"}
                     size={"text-xs sm:text-sm"}
@@ -149,10 +147,7 @@ export default function HteProfile() {
                 </section>
 
                 <section className="flex items-center gap-1 justify-center sm:justify-start">
-                  <img
-                    src={linkIcon}
-                    className="w-4 aspect-square object-contain"
-                  />
+                  <LinkIcon size={20}/>
                   <Subtitle
                     text={hte.website || "N/A"}
                     isLink={!!hte.website}

@@ -1,12 +1,11 @@
 import { useState } from "react";
 import Title from "./title";
 import Subtitle from "./subtitle";
-import { Label, RatingLabel } from "./label";
+import { Label} from "./label";
 import { AnnounceButton } from "../components/button";
-import goldStar from "../assets/icons/goldStar.png";
 import { MultiField, SingleField } from "../components/fieldComp";
 import fallbackImg from "../assets/oasisLogo.png";
-import { Star } from "lucide-react";
+import { Star, StarIcon } from "lucide-react";
 
 export function TutorialCard({title = "What is OASIS?", desc = "A short video of what OASIS can do.", thumbnail = fallbackImg, onClick }) {
 
@@ -139,11 +138,8 @@ export function ReviewCard({
                 {/* Rating Stars */}
                 <div className="flex flex-row flex-wrap">
                     {Array.from({ length: 5 }).map((_, index) => (
-                        <img
-                            key={index}
-                            src={goldStar}
-                            className="w-6 sm:w-7 aspect-square object-contain"
-                        />
+                        
+                        <StarIcon key={index}/>
                     ))}
                 </div>
 
