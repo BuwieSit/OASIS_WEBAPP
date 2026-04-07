@@ -1,60 +1,35 @@
-
-// export default function SvgLoader({ size = 60 }) {
-//     return (
-//         <div className="w-full flex justify-center items-center py-10">
-//             <svg
-//                 width={size}
-//                 height={size}
-//                 viewBox="0 0 50 50"
-//                 className="animate-spin"
-//             >
-//                 <circle
-//                     cx="25"
-//                     cy="25"
-//                     r="20"
-//                     fill="none"
-//                     strokeWidth="5"
-//                     stroke="#377268"
-//                     strokeLinecap="round"
-//                     strokeDasharray="31.4 31.4"
-//                 />
-//             </svg>
-//         </div>
-//     );
-// }
-
-export default function SvgLoader({ size = 150 }) {
+export default function SvgLoader({ size = 60 }) {
   return (
     <div className="w-full flex justify-center items-center py-10">
+      <style>
+        {`
+          @keyframes waveFlow {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-40px); }
+          }
+          .solid-wave {
+            animation: waveFlow 1.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite alternate;
+          }
+        `}
+      </style>
       <svg 
         xmlns="http://www.w3.org/2000/svg" 
         width={size} 
-        height={size / 2} 
-        viewBox="0 0 300 150"
+        height={size / 3} 
+        viewBox="0 0 100 40"
+        className="overflow-hidden"
       >
+        {/* We make the path longer than the viewBox (140px) 
+            so that when it slides, we don't see the ends. 
+        */}
         <path 
+          className="solid-wave"
           fill="none" 
           stroke="#377268" 
-          strokeWidth="12" 
+          strokeWidth="6" 
           strokeLinecap="round" 
-          /* The dasharray creates the "head" (300) and the "gap" (385).
-             The total path length is 685.
-          */
-          strokeDasharray="300 385" 
-          d="M275 75c0 31-27 50-50 50-58 0-92-100-150-100-28 0-50 22-50 50s23 50 50 50c58 0 92-100 150-100 24 0 50 19 50 50Z"
-        >
-          <animate 
-            attributeName="stroke-dashoffset" 
-            /* Linear calculation mode for a consistent flow */
-            calcMode="spline" 
-            /* Increased to 3 seconds for a slower, calmer chase */
-            dur="3" 
-            /* Moves the dash from one end of the path to the other */
-            values="685;-685" 
-            keySplines="0 0 1 1" 
-            repeatCount="indefinite" 
-          />
-        </path>
+          d="M -40 20 Q -30 5 -20 20 T 0 20 T 20 20 T 40 20 T 60 20 T 80 20 T 100 20 T 120 20"
+        />
       </svg>
     </div>
   );

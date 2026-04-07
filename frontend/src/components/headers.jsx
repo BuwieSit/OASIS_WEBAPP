@@ -129,7 +129,6 @@ export function Header({ admin }) {
                         )}
                     </HoverLift>
 
-                    
                     <HoverLift onClick={() => handleDropdownClick("notifs")}>
                         {!admin && (
                             <div className="relative">

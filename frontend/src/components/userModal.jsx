@@ -37,6 +37,7 @@ export function AnnouncementModal({ visible, onClose, title, content, date, time
                 overflow-hidden
                 flex flex-col
                 animate-fadeIn
+                border border-oasis-gray
             ">
 
                 {/* HEADER */}

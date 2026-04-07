@@ -7,8 +7,7 @@ import {
 import Autoplay from 'embla-carousel-autoplay'
 import useEmblaCarousel from 'embla-carousel-react'
 import Subtitle from '../utilities/subtitle'
-import location from "../assets/icons/location.png"
-import { LocateIcon, MapPin, MapPinned } from 'lucide-react'
+import { MapPinned } from 'lucide-react'
 
 export function CarouselItem({ thumbnail, hteName = "Name of HTE", hteAddress = "Address of HTE", onClick }) {
     return (
@@ -20,16 +19,16 @@ export function CarouselItem({ thumbnail, hteName = "Name of HTE", hteAddress = 
                 <div 
                     className="w-full h-full bg-center bg-cover py-5 flex items-end overflow-hidden rounded-xl" 
                     style={{ 
-                        backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 60%, transparent 100%), url(${thumbnail})`
+                        backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.0) 60%, transparent 100%), url(${thumbnail})`
                     }}
                 >
                     {/* TEXT CONTENT */}
                     <div className='w-full flex flex-col items-start p-3 backdrop-blur-sm bg-white/10 text-white select-none'>
-                        <Subtitle text={hteName} weight={"font-bold"} size={"text-[1rem]"}/>
+                        <Subtitle text={hteName} weight={"font-bold"} size={"text-[1rem]"} className={"line-clamp-1"}/>
 
                         <section className='w-full flex flex-row justify-start items-center gap-3'>
                             <MapPinned size={14}/>
-                            <Subtitle text={hteAddress} size={"text-[0.7rem]"}/>
+                            <Subtitle text={hteAddress} size={"text-[0.7rem]"} className={"line-clamp-1"}/>
                         </section>
                     </div>
                 </div>

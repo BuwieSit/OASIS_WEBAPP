@@ -13,6 +13,7 @@ import { ArrowRight, Hand } from 'lucide-react';
 import { ViewModal } from '../../components/popupModal';
 import filePdf from "../../assets/resume.pdf";
 import api from "../../api/axios";
+import { AnnouncementModal } from "../../components/userModal";
 
 export default function Student() {
 
@@ -149,7 +150,8 @@ export default function Student() {
                     resourceTitle="What is OASIS?"
                 />
 
-                <div className="w-full py-10 md:py-30 lg:py-30 overflow-hidden relative flex flex-col items-center justify-center">
+
+                <div className="w-full py-10 md:py-30 lg:py-30 overflow-hidden relative flex flex-col items-center justify-center bg-black/40">
 
                     {/* Background Image */}
                     <img 
@@ -167,9 +169,9 @@ export default function Student() {
 
                     {/* Main Headline */}
                     <section className='w-full flex flex-col justify-center items-center px-10 z-10'>
-                        <h1 className='text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-oasis-text font-bold text-white text-center leading-tight drop-shadow-[3px_3px_8px_rgba(0,0,0,0.8)]'>
+                        <h1 className='text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-oasis-text font-bold text-white text-center leading-tight drop-shadow-[3px_3px_8px_rgba(255,255,255,0.5)]'>
                             Streamline Your OJT with
-                            <span className="text-oasis-header "> OASIS.</span>
+                            <span className="text-oasis-header drop-shadow-[3px_3px_8px_rgba(43,98,89,0.5)]"> OASIS.</span>
                         </h1>
                         
                         <p className='text-[0.6rem] sm:text-[0.6rem] md:text-[1rem] lg:text-[1.3rem] font-oasis-text text-white text-center leading-tight drop-shadow-[3px_3px_8px_rgba(0,0,0,0.8)]'>
