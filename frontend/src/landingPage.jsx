@@ -5,8 +5,6 @@ import { Link } from 'react-router-dom';
 import { ViewModal } from './components/popupModal.jsx';
 import { useEffect, useState } from 'react';
 import { TutorialCard } from './utilities/card';
-import { LowerWave } from './components/waves.jsx';
-import { Header } from './components/headers.jsx';
 import { Button } from './components/button.jsx';
 export function HoverContainer({ children }) {
     return (
@@ -35,9 +33,6 @@ export default function LandingPage() {
         });
     }, []);
 
-
-
-    
     return(
         <>
             <LandingScreen>

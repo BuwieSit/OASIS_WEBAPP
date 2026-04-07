@@ -4,21 +4,12 @@ import fallbackImg from "../../assets/fallbackImage.jpg"
 import Subtitle from '../../utilities/subtitle';
 import EmblaCarousel from '../../components/EmblaCarousel';
 import "../../embla.css";
-import { Filter } from '../../components/adminComps'
-import ReviewRatings from '../../components/reviewRatings'
-import AverageRating from '../../components/averageRating'
-import { AddReviewCard, ReviewCard } from '../../utilities/card'
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { LowerWave, UpperWave } from '../../components/waves';
 import { MobileStudentTable, StudentTable } from '../../components/oasisTable';
 import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
 import { useEffect, useState } from "react";
 import { fetchHTEs, downloadMOA } from "../../api/student.service";
 import SearchBar from '../../components/searchBar';
-import { FilterIcon, FilterX, Star} from 'lucide-react';
-import { SortByStarButton } from './hteProfile';
-import { Dropdown } from '../../components/adminComps';
-
 
 export default function HteDirectory() {
     const [htes, setHtes] = useState([]);
@@ -78,7 +69,6 @@ export default function HteDirectory() {
         }
     ];
 
-    
     const handleDownloadMOA = async (hteId) => {
         try {
             const res = await downloadMOA(hteId);
@@ -136,7 +126,6 @@ export default function HteDirectory() {
                         />
                     </div>
 
-                    {/* VINCENT - LINK TO HTE PROFILE BAWAT SLIDE ITEM */}
                     <Title 
                         text={"Overview of Host Training Establishment"} 
                         size="text-[1rem] sm:text-[1rem] md:text-[1.3rem] lg:text-[1.5rem]"
@@ -190,63 +179,8 @@ export default function HteDirectory() {
                             </div>
                         )}
                     </section>
-
-{/* REVIEWS SECTION */}
-                    {/* <div>
-                        <section className="w-full flex flex-col gap-6 justify-center items-center px-4 py-8">
-
-                            <Title text={"Student Reviews"} />
-
-                      
-                            <section className="w-full flex justify-start">
-                                <div className="w-full max-w-[900px] mx-auto">
-                                    <Filter text={"Filters"} />
-                                </div>
-                            </section>
-
-                            <section className="w-full flex flex-col md:flex-row justify-center items-center gap-8 p-5">
-
-                                <ReviewRatings />
-                                <AverageRating />
-
-                            </section>
-
-             
-                            <section className="w-full flex flex-col lg:flex-row justify-center items-start gap-6 p-4">
-
-              
-                                <section className="
-                                    w-full
-                                    max-h-[420px]
-                                    overflow-y-auto
-                                    p-4
-                                    flex flex-wrap
-                                    gap-4
-                                    rounded-3xl
-                                    justify-center
-                                    lg:w-[60%]
-                                ">
-                                    <ReviewCard />
-                                    <ReviewCard />
-                                    <ReviewCard />
-                                    <ReviewCard />
-                                </section>
-
-                            
-                                <div className="w-full lg:w-[35%] flex justify-center">
-                                    <AddReviewCard />
-                                </div>
-
-                            </section>
-                        </section>
-                        
-  
-                    </div> */}
-
                     
-
                 </div>
-                
             </MainScreen>
         </>
     )

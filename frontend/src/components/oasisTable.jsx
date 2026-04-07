@@ -1,7 +1,6 @@
 import Subtitle from "../utilities/subtitle";
 import { usePagination } from "../hooks/usePagination";
 
-
 export default function OasisTable({ columns = [], data = [], children }) {
         
     const { page, setPage, displayData, totalPages } = usePagination(data, 10); 
@@ -126,7 +125,6 @@ export default function OasisTable({ columns = [], data = [], children }) {
 }
 
 export function StudentTable({ columns = [], data = [], children, onRowClick }) {
-
     const { page, setPage, displayData, totalPages } = usePagination(data, 5); 
 
     return (

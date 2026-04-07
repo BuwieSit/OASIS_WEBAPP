@@ -284,10 +284,6 @@ export default function MoaOverview() {
                 );
             }
         }, 
-        // {
-        //     header: "Status",
-        //     render: r => <Text text={formatProspectStatus(r.status)} />
-        // },
     ];
 
     const activeFileName =
@@ -367,7 +363,6 @@ export default function MoaOverview() {
                     )}
                 </>
             )}
-
 
         </AdminScreen>
     );

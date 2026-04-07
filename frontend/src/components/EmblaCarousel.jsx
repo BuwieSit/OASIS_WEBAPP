@@ -34,10 +34,8 @@ export function CarouselItem({ thumbnail, hteName = "Name of HTE", hteAddress = 
                 </div>
                 </div>
         </>
-        
     );
 }
-
 
 const EmblaCarousel = (props) => {
   const { slides, options, onSelectHte } = props

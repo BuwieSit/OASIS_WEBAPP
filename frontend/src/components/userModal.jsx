@@ -13,7 +13,6 @@ export default function UserModal({ children }) {
     )
 }
 
-
 export function AnnouncementModal({ visible, onClose, title, content, date, time }) {
     if (!visible) return null;
 

@@ -1,8 +1,6 @@
-import { ArchiveRestore, CircleX, Delete, PencilIcon, Trash, X } from "lucide-react";
-import { Filter } from "../components/adminComps";
+import { ArchiveRestore, CircleX, PencilIcon } from "lucide-react";
 import { AnnounceButton } from "../components/button";
 import Subtitle from "./subtitle";
-import { useState } from "react";
 
 export function Text({ text, isGray }) {
     return(
@@ -16,7 +14,6 @@ export function Text({ text, isGray }) {
 export function DateTime({ date, time}) {
     return(
         <>
-
             <div className="">
                 <Subtitle text={date}/>
                 <Subtitle text={time}/>
@@ -63,29 +60,6 @@ export function StatusDots({color = "oasis-blue"}) {
     )
 }
 export function StatusDropdown({ value, onChange }) {
-//   const statusClasses = {
-//     Active: "bg-green-100 text-green-700 border-green-400",
-//     Pending: "bg-orange-100 text-orange-700 border-orange-400",
-//     Expired: "bg-red-100 text-red-700 border-red-400",
-//     Rejected: "bg-gray-200 text-gray-600 border-gray-400",
-//   }
-
-//   return (
-//     <select
-//       value={value}
-//       onChange={(e) => onChange?.(e.target.value)}
-//       className={`
-//         px-3 py-2 rounded-xl border text-sm
-//         focus:outline-none focus:ring-2 focus:ring-offset-1
-//         ${statusClasses[value] || "bg-white text-black border-gray-300"}
-//       `}
-//     >
-//       <option value="Active">Active</option>
-//       <option value="Pending">Pending</option>
-//       <option value="Expired">Expired</option>
-//       <option value="Rejected">Rejected</option>
-//     </select>
-//   )
     
     return (
         <>
@@ -183,7 +157,6 @@ export function AdviserDropdown({ value, options = [], onChange }) {
 //   />
 // )
 
-
 export function ViewMoaButton({ url, onClick, label = "View MOA", disabled = false}) {
     if (!url) {
         return <span className="text-gray-400 text-[0.8rem]">No file found</span>
@@ -203,16 +176,12 @@ export function ViewMoaButton({ url, onClick, label = "View MOA", disabled = fal
         </>      
     )
 }
-// render: row => (
-//   <ViewMoaButton url={row.moaFileUrl} />
-// )
 
 export function HteLocation({ address, mapUrl}) {
     if (!address) return <span className="text-gray-400">—</span>
 
     return(
         <>
-            {/* HTE Location, it's an address text but when the text is too long, it will have ... and when hovered, the full address will popup up top of that text address. If clicked, a mapbox or Google maps will show the location */}
             <div className="relative group max-w-[180px] mx-auto">
 
                 <p onClick={() => mapUrl && window.open(mapUrl, "_blank")} className="text-table-text-size truncate cursor-pointer text-oasis-header hover:underline">

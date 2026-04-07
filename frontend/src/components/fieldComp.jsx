@@ -68,6 +68,3 @@ export function FileUploadField({ labelText, fieldId, accept, onChange, disabled
   );
 }
 
-export function BulletField({ labelText, fieldId }) {
-  return <></>;
-}

@@ -13,7 +13,6 @@ import { ArrowRight, Hand } from 'lucide-react';
 import { ViewModal } from '../../components/popupModal';
 import filePdf from "../../assets/resume.pdf";
 import api from "../../api/axios";
-import { AnnouncementModal } from "../../components/userModal";
 
 export default function Student() {
 
@@ -68,14 +67,8 @@ export default function Student() {
         if (!filePath) return null;
 
         let path = String(filePath).trim();
-
-        if (path.startsWith("/")) {
-            path = path.slice(1);
-        }
-
-        if (path.startsWith("uploads/")) {
-            path = path.replace("uploads/", "");
-        }
+        if (path.startsWith("/")) path = path.slice(1);
+        if (path.startsWith("uploads/")) path = path.replace("uploads/", "");
 
         return `${API_BASE}/uploads/${path}`;
     };
@@ -121,6 +114,7 @@ export default function Student() {
             console.error("Failed to download MOA", err);
         }
     };
+
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const activeHteId = searchParams.get("hteId");
@@ -149,7 +143,6 @@ export default function Student() {
                     file={filePdf}
                     resourceTitle="What is OASIS?"
                 />
-
 
                 <div className="w-full py-10 md:py-30 lg:py-30 overflow-hidden relative flex flex-col items-center justify-center bg-black/40">
 
@@ -188,7 +181,6 @@ export default function Student() {
                             <ArrowRight size={20} />
                         </button>
                     </a>
-
                 </div>
                    
                 {/* 2ND SECTION */}
@@ -231,9 +223,6 @@ export default function Student() {
                     </div>
 
                 </div>
-                {/* <LowerWave/> */}
-
-
             </MainScreen>          
         </>
     )

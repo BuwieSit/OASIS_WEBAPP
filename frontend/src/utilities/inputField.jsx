@@ -109,38 +109,3 @@ export function UploadField({ id, accept, onChange, disabled = false }) {
     </label>
   );
 }
-
-// export function UploadField({ id, accept, onChange, disabled = false }) {
-//   const inputId = useMemo(
-//     () => id || `upload-${Math.random().toString(36).slice(2, 10)}`,
-//     [id]
-//   );
-
-//   return (
-//     <label
-//       htmlFor={inputId}
-//       className={`w-full flex items-center gap-4 p-4 bg-white rounded border border-gray-300 transition ${
-//         disabled
-//           ? "opacity-60 cursor-not-allowed"
-//           : "cursor-pointer hover:border-oasis-button-light"
-//       }`}
-//     >
-//       <input
-//         id={inputId}
-//         type="file"
-//         accept={accept}
-//         onChange={onChange}
-//         disabled={disabled}
-//         className="hidden"
-//       />
-
-//       <div className="px-4 py-2 bg-oasis-button-light text-white rounded-xl text-sm font-medium">
-//         Choose File
-//       </div>
-
-//       <span className="text-sm text-gray-500">
-//         Select a file to upload
-//       </span>
-//     </label>
-//   );
-// }

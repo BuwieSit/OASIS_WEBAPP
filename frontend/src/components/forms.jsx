@@ -1,6 +1,4 @@
 import { Button } from "./button";
-import { useForm } from "react-hook-form";
-import { useRef, useState, useEffect } from "react";
 import Title from "../utilities/title";
 import { useNavigate } from "react-router-dom";
 import { clearToken } from "../api/token";
@@ -8,7 +6,6 @@ import { useAuth } from "../context/authContext";
 import {
   sendOtp,
   verifyOtp,
-  login,
   completeRegistration
 } from "../api/auth.service";
 import Subtitle from "../utilities/subtitle";
@@ -55,8 +52,6 @@ export function UpdatedReg() {
     validMatch,
     matchFocus,
     setMatchFocus,
-    success,
-    setSuccess,
   } = useRegisterFlow({
     user,
     pwd,
@@ -77,8 +72,6 @@ export function UpdatedReg() {
     try {
       clearToken();
       await completeRegistration(user, pwd, matchPwd);
-      // setSuccess(true);
-      // console.log("Success reg!", success);
       navigate("/access?form=login");
     } catch (err) {
       setErrMsg(
@@ -90,7 +83,6 @@ export function UpdatedReg() {
   };
   return (
     <>
-      
         <>
           <section className="w-full p-1 flex flex-col items-center justify-center gap-1">
             <Title text={"Register"}></Title>

@@ -139,7 +139,6 @@ export default function ProspectMoaForm() {
             await submitMoaProspect(payload);
             // alert("MOA Prospect submitted successfully.");
             setSuccessMsg("MOA Prospect submitted successfully.");
-
             setFormData(initialFormData);
 
             const fileInput = document.getElementById("moa_file");

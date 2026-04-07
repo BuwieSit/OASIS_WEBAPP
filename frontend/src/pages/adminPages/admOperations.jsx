@@ -600,7 +600,6 @@ export default function AdmOperations() {
                 </form>
             </div>
 
-
             {/* REVIEWS SECTION */}
             <div className='flex justify-start items-start w-[80%] mt-10'>
                 <Title text={"Reviews Moderation"} />

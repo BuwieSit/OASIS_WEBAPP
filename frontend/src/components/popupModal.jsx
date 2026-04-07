@@ -52,21 +52,6 @@ export function GeneralPopupModal({
 
     );
 }
-        // <div 
-        //     className={`fixed top-0 translate-y-5 w-[30%] p-3 rounded-3xl flex flex-col items-center justify-center font-oasis-text font-bold text-[1.3rem] duration-300 transition ease-in-out z-100 
-        //     ${isSuccess && "text-oasis-button-dark drop-shadow-[0px_0px_2px_rgba(45,98,89,1)]"} 
-        //     ${isFailed && "text-oasis-red drop-shadow-[0px_0px_2px_rgba(128,0,32,1)]"} 
-        //     ${isNeutral && "text-[#36454F] drop-shadow-[0px_0px_2px_rgba(54,69,79,1)]"} 
-        // `}>
-        //     <div className="bg-white rounded-t-2xl p-1 min-w-[100px] flex justify-center items-center">
-        //         {icon}
-        //     </div>
-        //     <div className="bg-white rounded-2xl p-3 w-full flex flex-col justify-center items-center">
-        //         <Subtitle text={title} size="text-[1rem]" weight="font-bold"/>
-        //         <Subtitle text={text} size="text-[0.8rem]"/>
-        //     </div>
-            
-        // </div>
 
 
 export function ConfirmModal({ confText = "complete action?", onCancel, onLogOut, onConfirm}) {
@@ -90,8 +75,6 @@ export function ConfirmModal({ confText = "complete action?", onCancel, onLogOut
         </>
     )
 }
-
-
 
 export function ViewModal({
     videoLink = "https://www.youtube.com/embed/ctyRKH4T_AY",

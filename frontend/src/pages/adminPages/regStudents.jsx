@@ -187,8 +187,6 @@ export default function RegStudents() {
             </div>
         </div>
 
-        
-
         <div className="w-full flex flex-col gap-4 justify-center items-center">
           {activeTable === "registered" && 
             <>
@@ -269,10 +267,6 @@ export default function RegStudents() {
           }
         
         </div>
-
-
-
-
       </div>
     </AdminScreen>
   );

@@ -9,7 +9,6 @@ export function Label({ fieldId, labelText, children}) {
     )
 }
 
-
 export function RatingLabel({ rating }) {
     const starsCount = Math.min(rating, 5);
 

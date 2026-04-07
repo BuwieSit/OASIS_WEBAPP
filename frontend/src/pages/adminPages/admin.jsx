@@ -1,7 +1,7 @@
 import AdminScreen from '../../layouts/adminScreen.jsx';
 import Title from "../../utilities/title.jsx";
 import { AdmCard } from "../../utilities/card.jsx";
-import { UsersRound, Book, BookAlert, BookPlus, Building2, FileCheck, Check, X, Eye, Trash, Paperclip, Megaphone, Bell} from 'lucide-react';
+import { UsersRound, Book, BookAlert, BookPlus, Building2, Check, X, Eye, Trash} from 'lucide-react';
 import { SingleField, MultiField } from '../../components/fieldComp.jsx';
 import { Filter, Dropdown } from '../../components/adminComps.jsx';
 import { Label } from '../../utilities/label.jsx';
@@ -53,7 +53,7 @@ export default function Admin() {
         "Events and Webinars": "EVENTS_AND_WEBINARS",
         "Others": "OTHERS"
     };
-
+    // DISABLE after posting announcemnet
     const handleDisableButton = () => {
         setDisableButton(true);
         setTimeout(() => {
@@ -75,7 +75,6 @@ export default function Admin() {
         };
 
         loadDashboard();
-        
     }, []);
     
     useEffect(() => {
@@ -154,7 +153,6 @@ export default function Admin() {
 
         const deletedAnnouncement = announcementToDelete?.title || "announcement";
 
-        // Trigger deletion popup
         setPopup({
             title: "Deleted Announcement",
             text: `Successfully deleted ${deletedAnnouncement}`,
@@ -195,7 +193,6 @@ export default function Admin() {
 
     const totalNotifications = alerts.length;
 
-
     return (
         <AdminScreen>
             <AnnouncementModal
@@ -217,7 +214,6 @@ export default function Admin() {
                 />
             )}
 
-            {/* Confirm delete modal */}
             {deleteModalShow && announcementToDelete && (
                 <ConfirmModal
                     onConfirm={() => {

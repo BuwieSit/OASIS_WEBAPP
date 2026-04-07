@@ -109,7 +109,7 @@ export function Header({ admin }) {
             // STUDENT HEADER
             <header className="fixed md:sticky lg:sticky top-0 w-full h-5 flex flex-row justify-between
             items-center bg-linear-to-t from-oasis-blue via-oasis-blue to-oasis-dark min-h-15 px-5 shadow-[0_5px_10px_rgba(0,0,0,0.3)] z-90">
-                {/* VINCENT */}
+
                 <LogoWrap />
                 <img src={oasisLogo} className="absolute left-1/2 -translate-x-1/2 w-25 aspect-auto"/>
                 
@@ -237,7 +237,7 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
                     />  
                 </div>
                 <ul className="text-black w-full p-3 flex flex-col justify-center items-start gap-5 col-span-2 list-none">
-                    {/* VINCENT */}
+
                     <NavItem 
                         to="/admin" 
                         label="Dashboard" 

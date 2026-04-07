@@ -15,14 +15,12 @@ export function DocsBuilder() {
 
         const insertTree = (nodes) =>
             nodes.map(node => {
-
                 if (node.id === newItem.parentId) {
                     return {
                         ...node,
                         children: [...node.children, newItem]
                     };
                 }
-
                 return {
                     ...node,
                     children: insertTree(node.children || [])
@@ -34,7 +32,6 @@ export function DocsBuilder() {
 
     return (
         <div>
-
             <button onClick={() => setShowModal(true)}>
                 Add Item
             </button>
@@ -48,7 +45,6 @@ export function DocsBuilder() {
             )}
 
             <TreeRenderer items={items}/>
-
         </div>
     );
 }

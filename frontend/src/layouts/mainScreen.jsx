@@ -3,78 +3,10 @@ import Footer from '../components/footer'
 import OrbiChatbot from '../components/OrbiChatbot';
 import ProspectMoaForm from '../components/prospectMoaForm';
 import { AnnouncementModal } from '../components/userModal';
-
-
-// export default function MainScreen({ children,  showHeader = true, hasTopMargin = true, isRow = false}) {
-
-//     return(
-//         <>
-//             <div className={`w-full h-full bg-page-white flex flex-col justify-center items-center overflow-x-hidden overflow-y-auto`}>
-//                 <Header /> 
-//                 {showHeader ? <StudentHeader/> : ""}
-//                 {hasTopMargin ? <div className='mt-25'></div> : ""}
-//                 {children}
-
-//                 <OrbiChatbot/>
-//                 <AnnouncementModal
-//                     visible={true}
-//                     onClose={}
-//                     title={"Privacy Policy"}
-//                     content={
-//                         <div className="flex flex-col gap-4 text-sm leading-relaxed text-gray-700">
-//                             <p className="italic text-gray-500">Last Updated: April 2026</p>
-                            
-//                             <section>
-//                                 <h3 className="font-bold text-gray-900">1. Introduction</h3>
-//                                 <p>OASIS (OJT Administration, Support, and Information System) is committed to protecting the privacy of PUP ITech students and administrative staff. This policy outlines how we collect, use, and safeguard your personal and academic data within our digital ecosystem.</p>
-//                             </section>
-
-//                             <section>
-//                                 <h3 className="font-bold text-gray-900">2. Data Collection</h3>
-//                                 <p>We collect the following information to facilitate efficient OJT coordination:</p>
-//                                 <ul className="list-disc ml-5 mt-1 space-y-1">
-//                                     <li><strong>Personal Identification:</strong> Full name, student number, and contact details.</li>
-//                                     <li><strong>Academic Records:</strong> Course, year level, and OJT eligibility status.</li>
-//                                     <li><strong>Documents:</strong> Uploaded resumes, MOAs, and personal identification documents.</li>
-//                                     <li><strong>Chatbot Data:</strong> Interaction logs from ORBI (OJT Resource Bot for ITech).</li>
-//                                 </ul>
-//                             </section>
-
-//                             <section>
-//                                 <h3 className="font-bold text-gray-900">3. Use of Data</h3>
-//                                 <p>Your data is used strictly for academic and administrative purposes, specifically:</p>
-//                                 <ul className="list-disc ml-5 mt-1 space-y-1">
-//                                     <li>Managing and tracking Memoranda of Agreement (MOAs).</li>
-//                                     <li>Centralizing OJT document storage for institutional reliability.</li>
-//                                     <li>Providing automated support via the ORBI AI feature.</li>
-//                                     <li>Improving administrative efficiency and data accuracy.</li>
-//                                 </ul>
-//                             </section>
-
-//                             <section>
-//                                 <h3 className="font-bold text-gray-900">4. Data Security</h3>
-//                                 <p>OASIS employs centralized secure storage to prevent unauthorized access, alteration, or disclosure of student records. Access is restricted to authorized OJT Coordinators and administrators of PUP ITech.</p>
-//                             </section>
-                            
-//                             <p className="mt-2 text-xs text-gray-500 border-t pt-4">
-//                                 By using OASIS, you consent to the collection and processing of your data as described in this policy.
-//                             </p>
-//                         </div>
-//                     }
-//                 />
-//                 <div className='my-20'></div>
-//                 <ProspectMoaForm/>
-//                 <Footer />
-//             </div>
-//         </>
-//     )
-// }
-
 import { useState } from 'react';
-// ... other imports
 
 export default function MainScreen({ children, showHeader = true, hasTopMargin = true }) {
-    // Tracks: null, 'privacy', 'terms', or 'copyright'
+
     const [activeModal, setActiveModal] = useState(null);
 
     const getModalContent = () => {
@@ -194,7 +126,6 @@ export default function MainScreen({ children, showHeader = true, hasTopMargin =
 
             <OrbiChatbot />
 
-
             <AnnouncementModal
                 visible={!!activeModal}
                 onClose={() => setActiveModal(null)}
@@ -204,7 +135,6 @@ export default function MainScreen({ children, showHeader = true, hasTopMargin =
 
             <div className='my-20'></div>
             <ProspectMoaForm />
-            
 
             <Footer onOpenModal={setActiveModal} />
         </div>

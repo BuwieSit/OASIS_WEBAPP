@@ -4,7 +4,6 @@ import Subtitle from '../../utilities/subtitle';
 import { Filter } from '../../components/adminComps';
 import { useEffect, useState } from 'react';
 import { AnnouncementModal } from '../../components/userModal';
-
 import api from "../../api/axios.jsx";
 import SvgLoader from '../../components/SvgLoader.jsx';
 import SearchBar from '../../components/searchBar.jsx';
@@ -18,7 +17,6 @@ export default function Announcements() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
 
-    
     const CATEGORY_TO_ENUM = {
         "HTE Related": "HTE_RELATED",
         "Deadlines": "DEADLINES",
@@ -45,12 +43,11 @@ export default function Announcements() {
     }, []);
 
     const filteredAnnouncements = announcements.filter((a) => {
-        // Filter by Category Button
+
         const categoryMatch = 
             activeFilter === "All" || 
             a.category === (CATEGORY_TO_ENUM[activeFilter] || activeFilter);
 
-        // Filter by Search Bar 
         const searchTerm = search.toLowerCase();
         const searchMatch = 
             a.title?.toLowerCase().includes(searchTerm) || 

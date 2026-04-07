@@ -48,7 +48,6 @@ export default function PdfViewer({ file }) {
     <div className="flex w-full">
 
       {/* PAGE NAVIGATION SIDEBAR */}
-
       <div className="
         hidden md:flex
         flex-col w-40

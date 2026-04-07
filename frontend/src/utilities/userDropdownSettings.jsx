@@ -46,7 +46,6 @@ export default function UserDropdownSettings({ open, onClose, className, items }
 
     return (
         <>
-
             <div 
                 className={`w-[min(20rem,90vw)] p-5 fixed top-[20%] right-5  -translate-y-1/2 bg-[rgba(255,255,255,0.5)] backdrop-blur-2xl z-150 rounded-3xl shadow-[0px_0px_5px_rgba(0,0,0,0.5)] ${animationClass} ${className}`}
                 ref={dropdownRef}

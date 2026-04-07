@@ -1,5 +1,4 @@
 import { useInView } from "../hooks/useInView";
-import star from "../assets/icons/star.png";
 import { Star } from "lucide-react";
 
 

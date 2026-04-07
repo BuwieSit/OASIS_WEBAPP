@@ -17,9 +17,8 @@ export default function NavItem({
         <li>
             <HoverLift>
                 {isTrigger ? (
-                    //TRIGGER ITEM (no active state)
-                     <NavLink to={to} className="w-full" onClick={onClick}>
   
+                     <NavLink to={to} className="w-full" onClick={onClick}>
                         <div
                             className={`
                                 flex items-center w-full cursor-pointer

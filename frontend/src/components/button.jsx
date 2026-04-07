@@ -15,7 +15,6 @@ export function Button({ text, onClick, disabled, width = "w-auto", type = "butt
   );
 }
 
-
 export function AnnounceButton({
   type = "button",
   textSize,
@@ -104,14 +103,3 @@ export function CoursesButton({ onClick, isActive, text, type = "button"}) {
         </>
     )
 }
-
-export function AddButton({ onClick, type = "button", width = "w-25", height = "h-10", iconSize = "w-5 h-5" }) {
-    return (
-        <button type={type} onClick={onClick} className={`${width} ${height} rounded-full bg-oasis-button-light flex items-center justify-center hover:bg-oasis-button-dark hover:cursor-pointer transition`}>
-            
-            <img src={add} alt="Add" className={`${iconSize} object-contain`}/>
-
-        </button>
-    );
-}
-

@@ -329,7 +329,7 @@ export function FloatingChat({ open, onClose, userId, role }) {
                                                 type="button"
                                                 onClick={() => handleFollowUpClick(item)}
                                                 disabled={isSending}
-                                                className="px-3 py-2 rounded-full border text-[0.75rem] text-[#2B6259] border-[#2B6259] hover:bg-[#2B6259] hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="px-3 py-2 rounded-full border text-[0.75rem] text-oasis-header border-oasis-header hover:bg-oasis-header hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 {item}
                                             </button>

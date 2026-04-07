@@ -15,9 +15,6 @@ export default function NotFound() {
                     <Link to="/"><Subtitle text={"Click here to go back!"}/></Link>
                 </div>
            </LandingScreen>
-               
-            
-            
         </>
     )
 }

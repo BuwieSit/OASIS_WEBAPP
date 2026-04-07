@@ -8,14 +8,11 @@ export default function Accordion({ headerText, children }) {
         <div className={`w-full ${open ? "border border-oasis-gray" : ""} bg-oasis-header rounded-2xl overflow-hidden transition-all`}>
             
             {/* HEADER */}
-
             <button
                 onClick={() => setOpen(!open)}
                 className="w-full flex justify-start items-center gap-5 p-4 font-oasis-text text-black text-left hover:bg-oasis-button-light transition cursor-pointer">
                     <ChevronRight color="white" className={`transform transition-transform duration-300 ${ open ? "rotate-90" : ""}`}/>
                     <span className="text-white font-bold">{headerText}</span>
-
-
             </button>
 
             {/* CONTENT */}

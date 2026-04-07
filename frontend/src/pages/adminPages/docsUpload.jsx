@@ -258,7 +258,6 @@ export default function DocsUpload() {
         }
     }
 
-
     return (
         <AdminScreen>
             {showModal && (
@@ -446,15 +445,6 @@ export function DocsAddModal({
                 const response = await AdminAPI.uploadDocument(section, title.trim(), file);
                 uploadedFile = response?.data || null;
             }
-
-            // onCreate({
-            //     type: selectedTypeValue,
-            //     title: title.trim(),
-            //     description: description.trim() || null,
-            //     parentId: isChecked ? parentOptionMap[parent] || null : null,
-            //     file: uploadedFile?.file || null,
-            //     originalFilename: uploadedFile?.originalFilename || null
-            // });
 
             onCreate({
                 type: selectedTypeValue,

@@ -19,9 +19,6 @@ export default function SvgLoader({ size = 60 }) {
         viewBox="0 0 100 40"
         className="overflow-hidden"
       >
-        {/* We make the path longer than the viewBox (140px) 
-            so that when it slides, we don't see the ends. 
-        */}
         <path 
           className="solid-wave"
           fill="none" 
