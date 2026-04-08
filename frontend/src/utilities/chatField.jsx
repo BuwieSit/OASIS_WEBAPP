@@ -14,7 +14,7 @@ function MessageText({ text }) {
     const lines = String(text || "").split("\n");
 
     return (
-        <div className="whitespace-pre-wrap wrap-break-word leading-relaxed">
+        <div className="whitespace-pre-wrap break-words leading-relaxed">
             {lines.map((line, index) => (
                 <div key={index} className={line.trim() === "" ? "h-3" : ""}>
                     {line.trim() === "" ? "" : <Subtitle text={line} />}
@@ -28,7 +28,8 @@ export default function ChatField({
     isOrbi,
     isUser,
     text = "",
-    isLoading = false
+    isLoading = false,
+    moaLink = null
 }) {
     return (
         <>
@@ -49,7 +50,33 @@ export default function ChatField({
                                 ml-2 sm:ml-4
                             "
                         >
-                            {isLoading ? <TypingDots /> : <MessageText text={text} />}
+                            {isLoading ? (
+                                <TypingDots />
+                            ) : (
+                                <>
+                                    <MessageText text={text} />
+
+                                    {moaLink && (
+                                        <a
+                                            href={moaLink}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="
+                                                mt-3 inline-block
+                                                px-4 py-2
+                                                bg-white text-oasis-header
+                                                rounded-full
+                                                text-[0.75rem] font-medium
+                                                shadow
+                                                hover:bg-oasis-header hover:text-white
+                                                transition
+                                            "
+                                        >
+                                            📄 View MOA File
+                                        </a>
+                                    )}
+                                </>
+                            )}
                         </div>
 
                         <section className="p-3 w-[45%] flex flex-col justify-start items-start gap-1">
