@@ -1,3 +1,23 @@
+import React from 'react';
+import { 
+    ChevronRight, 
+    Type, 
+    AlignLeft, 
+    ListOrdered, 
+    List, 
+    FileText, 
+    CornerDownRight 
+} from 'lucide-react';
+
+const TYPE_ICONS = {
+    header: <Type size={14} className="text-blue-500" />,
+    description: <AlignLeft size={14} className="text-gray-400" />,
+    numerical_list: <ListOrdered size={14} className="text-green-500" />,
+    bulleted_list: <List size={14} className="text-green-500" />,
+    alphabetical_list: <List size={14} className="text-green-500" />,
+    document: <FileText size={14} className="text-orange-500" />
+};
+
 const TYPE_LABELS = {
     header: "Header",
     description: "Description",
@@ -13,70 +33,82 @@ const LIST_TYPES = [
     "alphabetical_list"
 ];
 
-export function TreeRenderer({ items = [] }) {
+export function TreeRenderer({ items = [], isRoot = true }) {
     if (!items || items.length === 0) return null;
 
     return (
-        <div className="ml-4 border-l border-oasis-header pl-4 flex flex-col gap-4">
-            {items.map((item) => (
-                <div key={item.id} className="flex flex-col gap-1">
-                    {!LIST_TYPES.includes(item.type) && item.title && (
-                        <div className="font-semibold text-black text-[0.95rem]">
-                            {item.title}
-                        </div>
+        <div className={`${isRoot ? "" : "ml-6 border-l-2 border-gray-100 pl-4 mt-2"}`}>
+            {items.map((item, index) => (
+                <div key={item.id} className="relative mb-4 group">
+                    {/* Visual Connector for nested items */}
+                    {!isRoot && (
+                        <div className="absolute -left-4 top-3 w-4 border-t-2 border-gray-100" />
                     )}
 
-                    <div className="text-xs text-gray-400">
-                        {TYPE_LABELS[item.type] || item.type}
+                    <div className="flex items-start gap-3 bg-white p-3 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="mt-1 bg-gray-50 p-1.5 rounded-lg">
+                            {TYPE_ICONS[item.type] || <FileText size={14} />}
+                        </div>
+                        
+                        <div className="flex flex-col gap-1 w-full">
+                            <div className="flex items-center justify-between w-full">
+                                <span className="font-bold text-oasis-button-dark text-sm uppercase tracking-wider">
+                                    {TYPE_LABELS[item.type]}
+                                </span>
+                                {item.children && item.children.length > 0 && (
+                                    <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-500">
+                                        {item.children.length} nested
+                                    </span>
+                                )}
+                            </div>
+
+                            {item.title && (
+                                <div className="font-semibold text-black text-[0.95rem] leading-tight">
+                                    {item.title}
+                                </div>
+                            )}
+
+                            {item.description && (
+                                <div className="text-xs text-gray-600 whitespace-pre-wrap mt-1 italic">
+                                    {item.description}
+                                </div>
+                            )}
+
+                            {LIST_TYPES.includes(item.type) && item.listItems && (
+                                <div className="mt-2 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                                    {item.type === "bulleted_list" && (
+                                        <ul className="list-disc ml-4 text-gray-600 text-xs gap-1 flex flex-col">
+                                            {item.listItems.map((listItem, i) => (
+                                                <li key={i}>{listItem}</li>
+                                            ))}
+                                        </ul>
+                                    )}
+
+                                    {(item.type === "numerical_list" || item.type === "alphabetical_list") && (
+                                        <ol className={`ml-4 text-gray-600 text-xs gap-1 flex flex-col ${item.type === "numerical_list" ? "list-decimal" : "list-[lower-alpha]"}`}>
+                                            {item.listItems.map((listItem, i) => (
+                                                <li key={i}>{listItem}</li>
+                                            ))}
+                                        </ol>
+                                    )}
+                                </div>
+                            )}
+
+                            {item.type === "document" && item.file && (
+                                <div className="mt-2 flex items-center gap-2 text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                    <FileText size={12} />
+                                    <a href={item.file} target="_blank" rel="noreferrer" className="underline">
+                                        {item.originalFilename || "View Attachment"}
+                                    </a>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {item.description && (
-                        <div className="text-sm text-gray-200 whitespace-pre-wrap">
-                            {item.description}
-                        </div>
-                    )}
-
-                    {LIST_TYPES.includes(item.type) && item.listItems && (
-                        <>
-                            {item.type === "bulleted_list" && (
-                                <ul className="list-disc ml-6 text-gray-200 text-sm">
-                                    {item.listItems.map((listItem, index) => (
-                                        <li key={index}>{listItem}</li>
-                                    ))}
-                                </ul>
-                            )}
-
-                            {item.type === "numerical_list" && (
-                                <ol className="list-decimal ml-6 text-gray-200 text-sm">
-                                    {item.listItems.map((listItem, index) => (
-                                        <li key={index}>{listItem}</li>
-                                    ))}
-                                </ol>
-                            )}
-
-                            {item.type === "alphabetical_list" && (
-                                <ol type="A" className="ml-6 text-gray-200 text-sm">
-                                    {item.listItems.map((listItem, index) => (
-                                        <li key={index}>{listItem}</li>
-                                    ))}
-                                </ol>
-                            )}
-                        </>
-                    )}
-
-                    {item.type === "document" && item.file && (
-                        <a
-                            href={item.file}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-sm text-blue-300 underline break-all"
-                        >
-                            {item.originalFilename || "View uploaded document"}
-                        </a>
-                    )}
-
                     {item.children && item.children.length > 0 && (
-                        <TreeRenderer items={item.children} />
+                        <div className="animate__animated animate__fadeIn">
+                            <TreeRenderer items={item.children} isRoot={false} />
+                        </div>
                     )}
                 </div>
             ))}

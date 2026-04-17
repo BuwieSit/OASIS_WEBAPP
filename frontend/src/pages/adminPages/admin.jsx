@@ -13,7 +13,7 @@ import { Link } from 'react-router-dom';
 import { AdminAPI } from "../../api/admin.api";
 import SvgLoader from '../../components/SvgLoader.jsx';
 import Subtitle from '../../utilities/subtitle.jsx';
-import { PieChart } from '../../components/Charts.jsx';
+import { OasisPieChart, OasisBarChart } from '../../components/Charts.jsx';
 
 export default function Admin() {
     const [dashboard, setDashboard] = useState(null);
@@ -65,10 +65,10 @@ export default function Admin() {
             try {
                 const res = await AdminAPI.getDashboard();
                 setDashboard(res.data);
-                console.log("Data returned: ", dashboard);
+                console.log("DASHBOARD DATA LOADED:", res.data); // Log res.data directly
             } catch (err) {
-                console.error("Dashboard error:", err);
-               
+                console.error("Dashboard error:", err.response?.data || err.message);
+                setDashboardError(err.message);
             } finally {
                 setLoadingDashboard(false);
             }
@@ -94,7 +94,7 @@ export default function Admin() {
 
     const handlePost = async (e) => {
         e.preventDefault();
-        setLastPostedTitle(title);
+        const currentTitle = title; // Capture title immediately
 
         if (!title || !content || !category) {
             const emptyFields = [];
@@ -115,19 +115,23 @@ export default function Admin() {
             return;
         }
 
+        const payload = {
+            title,
+            content,
+            category: CATEGORY_TO_ENUM[category] || category
+        };
+
+        console.log("DEBUG: Sending Payload to Local Backend:", payload);
+
         try {
-            await AdminAPI.createAnnouncement({
-                title,
-                content,
-                category: CATEGORY_TO_ENUM[category] || category
-            });
+            await AdminAPI.createAnnouncement(payload);
 
             setTitle("");
             setContent("");
             setCategory("HTE Related");
             setPopup({
                 title: "Success",
-                text: `Posted announcement: ${lastPostedTitle}`,
+                text: `Posted announcement: ${currentTitle}`,
                 icon: <Check size={50} />,
                 type: "success",
                 time: 2000
@@ -136,13 +140,29 @@ export default function Admin() {
             const res = await AdminAPI.getAnnouncements();
             setAnnouncements(res.data);
         } catch (err) {
-            console.error(err);
+            let errorMsg = "Server error";
+            
+            // If the server returns HTML (500 error), try to find the error message in the text
+            if (typeof err.response?.data === 'string' && err.response.data.includes("<html")) {
+                console.error("FULL SERVER HTML ERROR:", err.response.data);
+                // Try to extract a specific SQL error if it exists in the HTML
+                const sqlErrorMatch = err.response.data.match(/error: (.*)/i) || err.response.data.match(/column "(.*)"/i);
+                if (sqlErrorMatch) {
+                    errorMsg = `DB Error: ${sqlErrorMatch[0]}`;
+                } else {
+                    errorMsg = "Internal Server Error (Check Backend Terminal for SQL logs)";
+                }
+            } else {
+                errorMsg = err.response?.data?.message || err.message;
+            }
+
+            console.error("Post Error Details:", errorMsg);
             setPopup({
                 title: "Failed",
-                text: `Server error (check backend/API)`,
+                text: errorMsg,
                 icon: <X size={50} />,
                 type: "failed",
-                time: 2000
+                time: 5000 // Give more time to read the error
             });
         }
     };
@@ -347,20 +367,33 @@ export default function Admin() {
                     />
                 </Link>
 
-                <section className='w-full p-5 flex gap-3 justify-center items-center col-span-2 border border-gray-300'>
-                    <PieChart
-                        items={[
-                            {   label: "Active MOA", 
-                                value: dashboard?.metrics?.total_active_moas ?? "-", 
-                                color: "#2B6259" 
-                            },
-                            { 
-                                label: "Expired MOA", 
-                                value: dashboard?.metrics?.total_expired_moas ?? "-", 
-                                color: "#800020" 
-                            }
-                        ]}
-                    />
+                <section className='w-full p-10 grid grid-cols-1 md:grid-cols-2 gap-10 col-span-1 lg:col-span-3 border border-gray-200 rounded-3xl bg-white shadow-sm mt-5'>
+                    <div className="flex flex-col items-center">
+                        <Subtitle text="MOA Status Distribution" weight="font-bold" />
+                        <OasisPieChart
+                            items={[
+                                {   label: "Active MOA", 
+                                    value: dashboard?.metrics?.total_active_moas ?? 0, 
+                                    color: "#2B6259" 
+                                },
+                                { 
+                                    label: "Expired MOA", 
+                                    value: dashboard?.metrics?.total_expired_moas ?? 0, 
+                                    color: "#800020" 
+                                }
+                            ]}
+                        />
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <Subtitle text="System Overview Metrics" weight="font-bold" />
+                        <OasisBarChart
+                            data={[
+                                { name: 'Students', value: dashboard?.metrics?.total_students ?? 0 },
+                                { name: 'HTEs', value: dashboard?.metrics?.total_htes ?? 0 },
+                                { name: 'Prospects', value: dashboard?.metrics?.total_moa_prospects ?? 0 },
+                            ]}
+                        />
+                    </div>
                 </section>
             </section>        
 

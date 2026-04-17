@@ -17,7 +17,7 @@ export function RatingLabel({ rating }) {
             <Subtitle text={"Rating:"} weight="font-bold" size="text-[0.9rem]"/>
 
             {Array.from({ length: starsCount }).map((_, index) => (
-                <Star key={index} size={15}/>
+                <Star key={index} size={15} fill="yellow" className={rating >= starsCount ? "text-yellow-400" : "text-gray-300"} />
             ))}
         </div>
     );

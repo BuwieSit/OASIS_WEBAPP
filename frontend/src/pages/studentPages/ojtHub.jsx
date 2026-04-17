@@ -209,7 +209,7 @@ export function DynamicSection({ sectionKey, title, items = [] }) {
                             text={"No content available yet for this section."}
                         />
                     ) : (
-                        <StudentTreeRenderer items={items} sectionKey={sectionKey} />
+                        <StudentTreeRenderer items={items} level={0} />
                     )}
                 </Accordion>
             
@@ -217,46 +217,44 @@ export function DynamicSection({ sectionKey, title, items = [] }) {
     );
 }
 
-export function StudentTreeRenderer({ items = [], sectionKey }) {
+export function StudentTreeRenderer({ items = [], level = 0 }) {
     if (!items.length) return null;
 
     return (
-        <div className="w-full flex flex-col gap-5">
+        <div className={`w-full flex flex-col gap-6 ${level > 0 ? "ml-4 md:ml-8 border-l-2 border-gray-100 pl-4 md:pl-6 mt-4" : ""}`}>
             {items.map((item) => (
-                <>
-                    <StudentItemRenderer
-                        key={item.id}
-                        item={item}
-                        sectionKey={sectionKey}
-                    />
-                </>
-               
-                
+                <StudentItemRenderer
+                    key={item.id}
+                    item={item}
+                    level={level}
+                />
             ))}
         </div>
     );
 }
 
-export function StudentItemRenderer({ item, sectionKey }) {
+export function StudentItemRenderer({ item, level }) {
     const hasChildren = item.children && item.children.length > 0;
+
+    // Type styles based on nesting level
+    const headerSizes = ["text-lg md:text-xl", "text-md md:text-lg", "text-sm md:text-base"];
+    const currentHeaderSize = headerSizes[Math.min(level, headerSizes.length - 1)];
 
     if (item.type === "header") {
         return (
-            <div className="w-full flex flex-col gap-3 ">
-                <h2 className="font-oasis-text font-bold text-[1rem]">
+            <div className="w-full flex flex-col gap-2">
+                <h2 className={`font-oasis-text font-bold text-oasis-button-dark ${currentHeaderSize} tracking-tight`}>
                     {item.title}
                 </h2>
 
                 {item.description && (
-                    <p className="text-[0.8rem] text-black font-oasis-text whitespace-pre-wrap">
+                    <p className="text-[0.9rem] text-gray-700 font-oasis-text leading-relaxed whitespace-pre-wrap">
                         {item.description}
                     </p>
                 )}
 
                 {hasChildren && (
-                    <div className="pl-2">
-                        <StudentTreeRenderer items={item.children} sectionKey={sectionKey} />
-                    </div>
+                    <StudentTreeRenderer items={item.children} level={level + 1} />
                 )}
             </div>
         );
@@ -264,15 +262,13 @@ export function StudentItemRenderer({ item, sectionKey }) {
 
     if (item.type === "description") {
         return (
-            <div className="w-full flex flex-col gap-3">
-                <p className="text-[0.8rem] text-black font-oasis-text whitespace-pre-wrap">
+            <div className="w-full flex flex-col gap-2">
+                <p className="text-[0.9rem] text-gray-700 font-oasis-text leading-relaxed whitespace-pre-wrap">
                     {item.description || item.title}
                 </p>
 
                 {hasChildren && (
-                    <div className="pl-2">
-                        <StudentTreeRenderer items={item.children} sectionKey={sectionKey} />
-                    </div>
+                    <StudentTreeRenderer items={item.children} level={level + 1} />
                 )}
             </div>
         );
@@ -281,21 +277,20 @@ export function StudentItemRenderer({ item, sectionKey }) {
     if (item.type === "document") {
         return (
             <div className="w-full flex flex-col gap-3">
-                <FormDownloadable
-                    text={item.title}
-                    link={item.downloadUrl || item.file}
-                />
-
-                {item.description && (
-                    <p className="text-[0.9rem] font-oasis-text whitespace-pre-wrap">
-                        {item.description}
-                    </p>
-                )}
+                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
+                    <FormDownloadable
+                        text={item.title}
+                        link={item.downloadUrl || item.file}
+                    />
+                    {item.description && (
+                        <p className="text-[0.85rem] text-gray-500 font-oasis-text mt-2 italic whitespace-pre-wrap pl-1">
+                            {item.description}
+                        </p>
+                    )}
+                </div>
 
                 {hasChildren && (
-                    <div className="pl-2">
-                        <StudentTreeRenderer items={item.children} sectionKey={sectionKey} />
-                    </div>
+                    <StudentTreeRenderer items={item.children} level={level + 1} />
                 )}
             </div>
         );
@@ -308,91 +303,57 @@ export function StudentItemRenderer({ item, sectionKey }) {
     ) {
         return (
             <div className="w-full">
-                <ListBlock item={item} sectionKey={sectionKey} />
+                <ListBlock item={item} level={level} />
             </div>
         );
     }
 
     return (
-        <div className="w-full flex flex-col gap-3">
-            <p className="text-[0.95rem] font-oasis-text whitespace-pre-wrap">
+        <div className="w-full flex flex-col gap-2">
+            <p className="text-[0.95rem] font-oasis-text text-gray-800 leading-relaxed whitespace-pre-wrap">
                 {item.title}
             </p>
 
             {item.description && (
-                <p className="text-[0.9rem] font-oasis-text whitespace-pre-wrap">
+                <p className="text-[0.9rem] text-gray-600 font-oasis-text whitespace-pre-wrap">
                     {item.description}
                 </p>
             )}
 
             {hasChildren && (
-                <div className="pl-2">
-                    <StudentTreeRenderer items={item.children} sectionKey={sectionKey} />
-                </div>
+                <StudentTreeRenderer items={item.children} level={level + 1} />
             )}
         </div>
     );
 }
 
-export function ListBlock({ item, sectionKey }) {
+export function ListBlock({ item, level }) {
     const hasChildren = item.children && item.children.length > 0;
 
-    if (item.type === "numerical_list") {
-        return (
-            <ol className="list-decimal px-8 py-1 text-justify flex flex-col gap-2 text-[1rem] font-oasis-text">
-                <li>
+    const listStyles = {
+        numerical_list: "list-decimal",
+        bulleted_list: "list-disc",
+        alphabetical_list: "list-[lower-alpha]"
+    };
+
+    return (
+        <div className="w-full">
+            <ul className={`${listStyles[item.type] || "list-disc"} px-6 md:px-10 py-1 text-justify flex flex-col gap-3 text-[0.95rem] font-oasis-text text-gray-700`}>
+                <li className="leading-relaxed">
                     <span className="whitespace-pre-wrap">{item.title}</span>
 
                     {item.description && (
-                        <div className="whitespace-pre-wrap mt-1">{item.description}</div>
+                        <div className="text-[0.85rem] text-gray-500 italic mt-1 whitespace-pre-wrap">
+                            {item.description}
+                        </div>
                     )}
 
                     {hasChildren && (
-                        <div className="mt-2">
-                            <StudentTreeRenderer items={item.children} sectionKey={sectionKey} />
-                        </div>
-                    )}
-                </li>
-            </ol>
-        );
-    }
-
-    if (item.type === "bulleted_list") {
-        return (
-            <ul className="list-disc px-8 py-1 text-justify flex flex-col gap-2 text-[1rem] font-oasis-text">
-                <li>
-                    <span className="whitespace-pre-wrap">{item.title}</span>
-
-                    {item.description && (
-                        <div className="whitespace-pre-wrap mt-1">{item.description}</div>
-                    )}
-
-                    {hasChildren && (
-                        <div className="mt-2">
-                            <StudentTreeRenderer items={item.children} sectionKey={sectionKey} />
-                        </div>
+                        <StudentTreeRenderer items={item.children} level={level + 1} />
                     )}
                 </li>
             </ul>
-        );
-    }
-
-    return (
-        <ol className="list-[lower-alpha] px-8 py-1 text-justify flex flex-col gap-2 text-[1rem] font-oasis-text">
-            <li>
-                <span className="whitespace-pre-wrap">{item.title}</span>
-
-                {item.description && (
-                    <div className="whitespace-pre-wrap mt-1">{item.description}</div>
-                )}
-
-                {hasChildren && (
-                    <div className="mt-2">
-                        <StudentTreeRenderer items={item.children} sectionKey={sectionKey} />
-                    </div>
-                )}
-            </li>
-        </ol>
+        </div>
     );
 }
 

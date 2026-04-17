@@ -16,9 +16,14 @@ import { useScrollTop } from "../hooks/useScrollToTop.jsx";
 import { NotificationAPI } from "../api/notification.api";
 import { AnnounceButton } from "./button.jsx";
 
+import { getRole } from "../api/token";
+
 const API_BASE = api.defaults.baseURL;
 
 export function Header({ admin }) {
+    const userRole = getRole();
+    const isStudent = userRole === "student" || userRole === "STUDENT";
+    
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
     const [hasProfile, setHasProfile] = useState(false);
@@ -46,6 +51,7 @@ export function Header({ admin }) {
 
     useEffect(() => {
         async function fetchProfile() {
+            if (!isStudent) return;
             try{
                 const res = await api.get("/api/student/me");
                 const fetchedProfile = res.data.profile;
@@ -68,13 +74,14 @@ export function Header({ admin }) {
             
         }
         fetchProfile();
-    }, []);
+    }, [isStudent]);
 
     const [notifications, setNotifications] = useState([]);
     const hasUnread = notifications.some(n => !n.is_read && !n.is_saved);
     const unreadCount = notifications.filter(n => !n.is_read && !n.is_saved).length;
     
     const loadNotifications = async () => {
+        if (!isStudent) return;
         try {
             const res = await NotificationAPI.getStudentNotifications();
             setNotifications(res.data || []);
@@ -84,14 +91,16 @@ export function Header({ admin }) {
     };
 
     useEffect(() => {
-        loadNotifications();
-
-        const interval = setInterval(() => {
+        if (isStudent) {
             loadNotifications();
-        }, 5000);
 
-        return () => clearInterval(interval);
-    }, []);
+            const interval = setInterval(() => {
+                loadNotifications();
+            }, 5000);
+
+            return () => clearInterval(interval);
+        }
+    }, [isStudent]);
 
     if (!admin && (!user || !profile)) return null;
 
@@ -303,7 +312,10 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
     )
 }
 
-export function StudentHeader({ showNavigation = true }) {
+export function StudentHeader({ showNavigation = true, notifications = [], setNotifications = () => {} }) {
+    const userRole = getRole();
+    const isStudent = userRole === "student" || userRole === "STUDENT";
+
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
     const [hasProfile, setHasProfile] = useState(false);
@@ -327,46 +339,31 @@ export function StudentHeader({ showNavigation = true }) {
 
     useEffect(() => {
         async function fetchProfile() {
-        const res = await api.get("/api/student/me");
-        const fetchedProfile = res.data.profile;
-            
-        // ✅ NORMALIZE IMAGE URL ON FETCH
-        if (fetchedProfile?.photo_path) {
-            fetchedProfile.photo_url = `${API_BASE}${fetchedProfile.photo_path}`;
-            setHasProfile(true);
-        } else {
-            setHasProfile(false);
-        }
-        setUser(res.data.user);
-        setProfile(fetchedProfile);
-        setHasProfile(true);
-            
+            if (!isStudent) return;
+            try {
+                const res = await api.get("/api/student/me");
+                const fetchedProfile = res.data.profile;
+                    
+                // ✅ NORMALIZE IMAGE URL ON FETCH
+                if (fetchedProfile?.photo_path) {
+                    fetchedProfile.photo_url = `${API_BASE}${fetchedProfile.photo_path}`;
+                    setHasProfile(true);
+                } else {
+                    setHasProfile(false);
+                }
+                setUser(res.data.user);
+                setProfile(fetchedProfile);
+                setHasProfile(true);
+            } catch (err) {
+                console.warn("Student profile fetch failed (Localhost check):", err.message);
+            }
         }
 
         fetchProfile();
-    }, []);
+    }, [isStudent]);
 
-    const [notifications, setNotifications] = useState([]);
     const hasUnread = notifications.some(n => !n.is_read && !n.is_saved);
     const unreadCount = notifications.filter(n => !n.is_read && !n.is_saved).length;
-    useEffect(() => {
-        loadNotifications();
-
-        const interval = setInterval(() => {
-            loadNotifications();
-        }, 5000);
-
-        return () => clearInterval(interval);
-    }, []);
-
-    const loadNotifications = async () => {
-        try {
-            const res = await NotificationAPI.getStudentNotifications();
-            setNotifications(res.data || []);
-        } catch (err) {
-            console.error("Failed to load notifications:", err);
-        }
-    };
 
     const scrolled = useScrollTop(50);
 

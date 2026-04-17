@@ -8,7 +8,7 @@ import fallbackImg from "../../assets/htePlaceholder.png";
 import { fetchHTEById, downloadMOA, submitHteReview } from "../../api/student.service";
 import { StatusView } from "../../utilities/tableUtil";
 import SvgLoader from "../../components/SvgLoader";
-import { ChevronLeft, ChevronRight, Home, LinkIcon, MapPinned, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronUp, Home, LinkIcon, MapPinned, Star } from "lucide-react";
 import { AddReviewCard } from "../../utilities/card";
 import SearchBar from "../../components/searchBar";
 import { Dropdown } from "../../components/adminComps";
@@ -108,7 +108,10 @@ export default function HteProfile() {
 
   return (
     <MainScreen>
-      <Link to={"/htedirectory"}><AnnounceButton icon={<Home/>} btnText="Go Back"/></Link>
+      <Link to={"/htedirectory"} className="w-[80%] p-4 flex items-center justify-center gap-5 group transition ease-in-out duration-100 rounded-full hover:bg-oasis-header hover:text-white mb-5">
+        <ChevronUp size={30} className="transition ease-in-out duration-200 rotate-180  group-hover:rotate-0"/>
+        <Subtitle text={"Go back"} size={"1rem"}/>
+      </Link>
       <div className="w-[90%] flex flex-col lg:flex-row gap-10">
 
         {/* FIRST COLUMN */}

@@ -14,8 +14,9 @@ import { ViewModal } from '../../components/popupModal';
 import filePdf from "../../assets/resume.pdf";
 import api from "../../api/axios";
 
-export default function Student() {
+const API_BASE = api.defaults.baseURL;
 
+export default function Student() {
     const [tableData, setTableData] = useState([]);
     const [user, setUser] = useState(null); 
     const [profile, setProfile] = useState(null);

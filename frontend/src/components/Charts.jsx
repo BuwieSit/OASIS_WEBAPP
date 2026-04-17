@@ -1,73 +1,115 @@
-import { useMemo, useState, useEffect } from "react";
-import Subtitle from "../utilities/subtitle";
+import React from 'react';
+import {
+    PieChart,
+    Pie,
+    Cell,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+} from 'recharts';
 
-export function PieChart({ items = [] }) {
-    const total = useMemo(
-        () => items.reduce((sum, item) => sum + item.value, 0),
-        [items]
-    );
-    const gradient = useMemo(() => {
-        if (!total) return "";
-        let current = 0;
-        return items
-            .map(item => {
+/**
+ * A visually appealing Pie Chart for MOA status or similar metrics.
+ */
+export function OasisPieChart({ items = [] }) {
+    // Filter out items with no value to prevent chart errors
+    const data = items.filter(item => item.value > 0);
 
-                const percentage = (item.value / total) * 100;
-                const start = current;
-                const end = current + percentage;
-                current = end;
-                return `${item.color} ${start}% ${end}%`;
-            })
-            .join(", ");
-
-    }, [items, total]);
-
-    const [animatedGradient, setAnimatedGradient] = useState("");
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setAnimatedGradient(gradient);
-        }, 50);
-
-        return () => clearTimeout(timer);
-    }, [gradient]);
+    if (data.length === 0) {
+        return (
+            <div className="flex items-center justify-center h-64 text-gray-400 italic">
+                No data available for chart
+            </div>
+        );
+    }
 
     return (
-        <div className="flex flex-col items-center gap-4">
-            
-            {/* PIE */}
-            <div
-                className="w-80 aspect-square rounded-full transition-all duration-700"
-                style={{
-                    background: `conic-gradient(${animatedGradient})`
-                }}
-            />
-
-            {/* LEGEND */}
-            <div className="flex gap-2">
-                {items.map((item, i) => {
-
-                    const percent = total
-                        ? ((item.value / total) * 100).toFixed(1)
-                        : 0;
-
-                    return (
-                        <div
-                            key={i}
-                            className="flex items-center gap-2"
-                        >
-                            <Subtitle text={item.label}/>
-
-                            <div
-                                className="w-4 h-4 rounded-sm"
-                                style={{ background: item.color }}
+        <div className="w-full h-[350px] flex flex-col items-center">
+            <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                    <Pie
+                        data={data}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                        nameKey="label"
+                        animationDuration={1500}
+                        animationBegin={200}
+                    >
+                        {data.map((entry, index) => (
+                            <Cell 
+                                key={`cell-${index}`} 
+                                fill={entry.color || '#8884d8'} 
+                                stroke="none"
                             />
+                        ))}
+                    </Pie>
+                    <Tooltip 
+                        contentStyle={{ 
+                            borderRadius: '12px', 
+                            border: 'none', 
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
+                        }} 
+                    />
+                    <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        iconType="circle"
+                    />
+                </PieChart>
+            </ResponsiveContainer>
+        </div>
+    );
+}
 
-                            <Subtitle text={item.value} weight={"font-bold"}/>
-                        </div>
-                    );
-                })}
-            </div>
+/**
+ * A Bar Chart for comparing general metrics (Students, HTEs, etc.)
+ */
+export function OasisBarChart({ data = [] }) {
+    return (
+        <div className="w-full h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                    data={data}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                    <XAxis 
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fill: '#666', fontSize: 12 }}
+                    />
+                    <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fill: '#666', fontSize: 12 }}
+                    />
+                    <Tooltip 
+                        cursor={{ fill: '#f5f5f5' }}
+                        contentStyle={{ 
+                            borderRadius: '12px', 
+                            border: 'none', 
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
+                        }} 
+                    />
+                    <Bar 
+                        dataKey="value" 
+                        fill="#2B6259" 
+                        radius={[6, 6, 0, 0]} 
+                        barSize={40}
+                        animationDuration={1500}
+                    />
+                </BarChart>
+            </ResponsiveContainer>
         </div>
     );
 }

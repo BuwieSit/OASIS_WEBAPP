@@ -91,12 +91,13 @@ export function CoursesButton({ onClick, isActive, text, type = "button"}) {
         <HoverLift>
             <button type={type} onClick={onClick}  
               className={`
-                rounded-3xl border bg-white 
+                rounded-3xl border  
                 text-black font-bold font-oasis-text text-[0.8rem] 
                 px-4 py-2 cursor-pointer
-                hover:bg-oasis-header hover:border-transparent hover:drop-shadow-[0px_2px_2px_rgba(0,0,0,0.2)] 
+                hover:bg-oasis-header hover:text-white hover:drop-shadow-[0px_2px_2px_rgba(0,0,0,0.2)] 
                 transition duration-100 ease-out 
-                ${isActive ? "bg-oasis-header border-transparent drop-shadow-[0px_2px_2px_rgba(0,0,0,0.2)]" : "bg-oasis-header"}`}>{text}</button>
+                active:scale-90
+                ${isActive ? "bg-oasis-header drop-shadow-[0px_2px_2px_rgba(0,0,0,0.2)] text-white" : "bg-white"}`}>{text}</button>
         </HoverLift>
             
         </>

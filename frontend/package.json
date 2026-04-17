@@ -28,7 +28,8 @@
     "react-hook-form": "^7.68.0",
     "react-lottie": "^1.2.10",
     "react-pdf": "^10.3.0",
-    "react-router-dom": "^7.10.1"
+    "react-router-dom": "^7.10.1",
+    "recharts": "^3.8.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
