@@ -12,6 +12,13 @@ import Subtitle from '../utilities/subtitle';
 const ORBI_BASE_URL = import.meta.env.VITE_ORBI_API_URL || "http://127.0.0.1:5050";
 const MAX_HISTORY = 12;
 
+function extractMoaLink(replyText) {
+    if (!replyText) return null;
+
+    const match = String(replyText).match(/https?:\/\/[^\s]+/i);
+    return match ? match[0] : null;
+}
+
 export default function OrbiChatbot() {
     const { open, animate, onBubble, closeChat, handleClick } = useChatbotToggle();
     const [userData, setUserData] = useState({
@@ -95,13 +102,14 @@ export function FloatingChat({ open, onClose, userId, role }) {
         {
             id: 1,
             sender: "orbi",
-            text: "Hi! I’m ORBI. Ask me about your OJT portfolio, internship steps, or the MOA process.",
+            text: "Hi! I’m ORBI. Ask me about your OJT portfolio, internship steps, MOA process, or HTE records.",
             followUps: [
                 "What are the OJT portfolio requirements?",
                 "What should I do before internship?",
                 "How does the MOA process work?"
             ],
-            isLoading: false
+            isLoading: false,
+            moaLink: null
         }
     ]);
 
@@ -160,7 +168,8 @@ export function FloatingChat({ open, onClose, userId, role }) {
             id: timestamp,
             sender: "user",
             text: trimmedMessage,
-            isLoading: false
+            isLoading: false,
+            moaLink: null
         };
 
         const loadingId = timestamp + 1;
@@ -169,7 +178,8 @@ export function FloatingChat({ open, onClose, userId, role }) {
             sender: "orbi",
             text: "",
             isLoading: true,
-            followUps: []
+            followUps: [],
+            moaLink: null
         };
 
         setMessages((prev) => [...clearOldFollowUps(prev), userMessage, loadingMessage]);
@@ -196,12 +206,16 @@ export function FloatingChat({ open, onClose, userId, role }) {
                 throw new Error(data?.error || "Failed to get ORBI response.");
             }
 
+            const replyText = data?.reply || "No response.";
+            const moaLink = extractMoaLink(replyText);
+
             setMessages((prev) =>
                 prev.map((msg) =>
                     msg.id === loadingId
                         ? {
                             ...msg,
-                            text: data?.reply || "No response.",
+                            text: replyText,
+                            moaLink,
                             isLoading: false,
                             followUps: Array.isArray(data?.follow_ups) ? data.follow_ups.slice(0, 3) : [],
                             shortReply: data?.short_reply || "",
@@ -222,7 +236,8 @@ export function FloatingChat({ open, onClose, userId, role }) {
                             ...msg,
                             text: "⚠️ ORBI is not responding right now. Please make sure the ORBI server is running.",
                             isLoading: false,
-                            followUps: []
+                            followUps: [],
+                            moaLink: null
                         }
                         : msg
                 )
@@ -276,9 +291,8 @@ export function FloatingChat({ open, onClose, userId, role }) {
                 <div className="w-full border-b px-5 py-2 flex justify-between items-center">
                     <div className="flex items-center justify-between w-full">
                         <div className="w-full flex items-center justify-start">
-                            <img src={orbi} alt='orbi' className='w-10 aspect-square'/>
-
-                            <Subtitle text={"ORBI Assistant"} color={"text-oasis-header"} size={"text-[1rem]"}/>
+                            <img src={orbi} alt='orbi' className='w-10 aspect-square' />
+                            <Subtitle text={"ORBI Assistant"} color={"text-oasis-header"} size={"text-[1rem]"} />
                         </div>
 
                         <div className="flex gap-4">
@@ -316,6 +330,7 @@ export function FloatingChat({ open, onClose, userId, role }) {
                                 isUser={chat.sender === "user"}
                                 text={chat.text}
                                 isLoading={chat.isLoading}
+                                moaLink={chat.moaLink}
                             />
 
                             {chat.sender === "orbi" &&
