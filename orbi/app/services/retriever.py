@@ -1,5 +1,6 @@
 import json
 import re
+import os
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 
@@ -10,8 +11,8 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 KNOWLEDGE_BASE_DIR = BASE_DIR / "knowledge_base"
 CACHED_KB = None
 
-BACKEND_URL = "http://127.0.0.1:5001/api/orbi"
-BACKEND_PUBLIC_BASE = "http://127.0.0.1:5001"
+BACKEND_URL = os.getenv("BACKEND_URL", "https://your-backend-service.onrender.com/api/orbi")
+BACKEND_PUBLIC_BASE = os.getenv("BACKEND_PUBLIC_BASE", "https://your-backend-service.onrender.com")
 
 STOPWORDS = {
     "what", "is", "are", "the", "a", "an", "for", "of", "to", "in", "on", "at",
