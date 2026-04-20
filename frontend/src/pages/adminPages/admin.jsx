@@ -264,7 +264,7 @@ export default function Admin() {
                         ribbonColor={"bg-yellow-500"}
                         cardTitle="Total MOAs"
                         cardIcon={<Book color="#377268" />}
-                        cardValue={
+                        cardNumber={
                             dashboardLoading ? "Loading..." :
                             dashboardError ? "-" :
                             dashboard?.metrics
