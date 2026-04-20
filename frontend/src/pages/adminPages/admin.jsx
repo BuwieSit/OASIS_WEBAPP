@@ -281,7 +281,7 @@ export default function Admin() {
                 <Link to={"/admMoaOverview"}>
                     <AdmCard
                         hasRibbon={true}
-                        ribbonColor={"bg-green-500"}
+                        ribbonColor={"bg-oasis-header"}
                         cardTitle="Active MOAs"
                         cardIcon={<Book color="#377268" />}
                         cardNumber={

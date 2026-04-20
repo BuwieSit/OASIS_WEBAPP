@@ -62,19 +62,21 @@ export function AdmCard({
     return (
       <>
       
-        <div className="p-3  w-full min-w-70 min-h-42 font-oasis-text text-[0.8rem] flex flex-col justify-between items-center border border-gray-300 transition ease-in-out hover:bg-oasis-blue relative">
+        <div className="p-5 w-full min-h-42 font-oasis-text text-[0.8rem] flex flex-col justify-between items-center border border-gray-200 rounded-3xl shadow-sm transition-all duration-300 ease-in-out hover:bg-oasis-blue hover:shadow-md relative overflow-hidden bg-white">
           {hasRibbon && 
-            <div className={`w-[10%] h-[30%] ${ribbonColor ? ribbonColor : "bg-oasis-header"} absolute top-0 left-0`}/>
+            <div className={`w-2 h-1/3 ${ribbonColor ? ribbonColor : "bg-oasis-header"} absolute top-0 left-0 rounded-br-lg`}/>
           }
 
-          <section className={`w-full ${hasRibbon ? "pl-10" : ""} flex flex-row justify-between items-center gap-2`}>
-              <p className="text-wrap text-[0.9rem] font-bold text-oasis-header">{cardTitle}</p>
-              {cardIcon}
+          <section className={`w-full ${hasRibbon ? "pl-6" : ""} flex flex-row justify-between items-start gap-4`}>
+              <p className="text-wrap text-[0.95rem] font-bold text-oasis-header leading-tight">{cardTitle}</p>
+              <div className="shrink-0 p-2 bg-gray-50 rounded-xl">
+                {cardIcon}
+              </div>
           </section>
 
-          <section className={`w-full ${hasRibbon ? "pl-5" : ""} flex flex-col justify-start items-start`}>
-            <p className="text-[3rem] font-semibold">{cardNumber}</p>
-            <p>as of {cardDate}</p>
+          <section className={`w-full ${hasRibbon ? "pl-6" : ""} flex flex-col justify-start items-start mt-4`}>
+            <p className="text-[2.5rem] md:text-[3rem] font-bold tracking-tighter leading-none text-gray-800">{cardNumber}</p>
+            <p className="text-gray-400 mt-1 font-medium italic">as of {cardDate}</p>
           </section>
 
         </div>
