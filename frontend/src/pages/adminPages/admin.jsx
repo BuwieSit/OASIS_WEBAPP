@@ -264,14 +264,12 @@ export default function Admin() {
                         ribbonColor={"bg-yellow-500"}
                         cardTitle="Total MOAs"
                         cardIcon={<Book color="#377268" />}
-                        cardValue={
-                            dashboardLoading ? "Loading..." :
+                        cardNumber={
+                            loadingDashboard ? <SvgLoader size={20} /> :
                             dashboardError ? "-" :
-                            dashboard?.metrics
-                                ? (dashboard?.metrics?.total_active_moas ?? 0) +
-                                (dashboard?.metrics?.total_expired_moas ?? 0)
-                                : "-"
-                            }
+                            dashboard?.metrics?.total_active_moas + 
+                            dashboard?.metrics?.total_expired_moas ?? "-"
+                        }
                         cardDate={
                             dashboard?.last_updated
                                 ? new Date(dashboard.last_updated).toLocaleDateString()
@@ -525,5 +523,3 @@ export default function Admin() {
         </AdminScreen>
     );
 }
-
-
