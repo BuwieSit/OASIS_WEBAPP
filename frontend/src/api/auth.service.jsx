@@ -60,3 +60,22 @@ export async function me() {
 export function logout() {
   clearToken();
 }
+
+export async function sendResetOtp(email) {
+  const res = await api.post("/api/auth/forgot-password/send-otp", { email });
+  return res.data;
+}
+
+export async function verifyResetOtp(email, otp) {
+  const res = await api.post("/api/auth/forgot-password/verify-otp", { email, otp });
+  return res.data;
+}
+
+export async function resetPassword(email, password, confirm_password) {
+  const res = await api.post("/api/auth/forgot-password/reset", {
+    email,
+    password,
+    confirm_password,
+  });
+  return res.data;
+}

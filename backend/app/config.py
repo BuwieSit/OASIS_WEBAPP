@@ -44,6 +44,14 @@ class Config:
     )
 
     OTP_DEV_PRINT = os.getenv("OTP_DEV_PRINT", "1") == "1"
+    
+    MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")
+    MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
+    MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "1") == "1"
+    MAIL_USERNAME = os.getenv("MAIL_USERNAME", "")
+    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "")
+    MAIL_FROM = os.getenv("MAIL_FROM", MAIL_USERNAME)
+    MAIL_TIMEOUT = int(os.getenv("MAIL_TIMEOUT", "30"))
 
     # 1 hour
     JWT_ACCESS_TOKEN_EXPIRES = 60 * 60

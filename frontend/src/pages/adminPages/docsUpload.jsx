@@ -104,11 +104,15 @@ function normalizeTreeForSave(items) {
 
 function extractSectionMeta(items) {
     const headerItem = items.find(
-        (item) => item.parentId === null && item.type === "header" && item.isSectionMeta
+        (item) =>
+            typeof item.id === "string" &&
+            item.id.startsWith("section-header-")
     );
 
     const descriptionItem = items.find(
-        (item) => item.parentId === null && item.type === "description" && item.isSectionMeta
+        (item) =>
+            typeof item.id === "string" &&
+            item.id.startsWith("section-description-")
     );
 
     return {
@@ -148,7 +152,16 @@ function buildItemsWithSectionMeta(sectionState) {
 }
 
 function stripMetaItems(items) {
-    return items.filter((item) => !item.isSectionMeta);
+    return items.filter(
+        (item) =>
+            !(
+                typeof item.id === "string" &&
+                (
+                    item.id.startsWith("section-header-") ||
+                    item.id.startsWith("section-description-")
+                )
+            )
+    );
 }
 
 export default function DocsUpload() {
@@ -238,8 +251,15 @@ export default function DocsUpload() {
         const itemToInsert = {
             id: crypto.randomUUID(),
             type: payload.type,
-            title: payload.title,
-            description: payload.description || null,
+            title:
+                payload.title ||
+                (payload.type === "description"
+                    ? (payload.description || "").trim()
+                    : payload.listItems?.find(i => i.trim() !== "")?.trim() || ""),
+            description:
+                payload.description || (
+                    payload.listItems?.length ? payload.listItems.join("\n") : null
+                ),
             parentId: payload.parentId || null,
             file: payload.file || null,
             originalFilename: payload.originalFilename || null,
@@ -623,8 +643,21 @@ export function DocsAddModal({
 
             onCreate({
                 type: selectedTypeValue,
-                title: title.trim() || (selectedTypeValue === "description" ? description.trim() : null),
-                description: (selectedTypeValue === "description" || selectedTypeValue === "document") ? description.trim() : null,
+                title:
+                    title.trim() ||
+                    (selectedTypeValue === "description"
+                        ? description.trim()
+                        : isListType
+                            ? listItems.find(i => i.trim() !== "")?.trim() || selectedTypeValue.replace("_", " ")
+                            : null),
+
+                description:
+                    (selectedTypeValue === "description" || selectedTypeValue === "document")
+                        ? description.trim()
+                        : isListType
+                            ? listItems.filter(i => i.trim() !== "").join("\n")
+                            : null,
+
                 listItems: isListType ? listItems.filter(i => i.trim() !== "") : null,
                 parentId: isChecked ? parentOptionMap[parent] || null : null,
                 file: uploadedFile?.file || null,

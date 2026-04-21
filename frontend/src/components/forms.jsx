@@ -6,7 +6,10 @@ import { useAuth } from "../context/authContext";
 import {
   sendOtp,
   verifyOtp,
-  completeRegistration
+  completeRegistration,
+  sendResetOtp,
+  verifyResetOtp,
+  resetPassword
 } from "../api/auth.service";
 import Subtitle from "../utilities/subtitle";
 import { Eye, EyeClosed } from "lucide-react";
@@ -399,14 +402,13 @@ export function ForgotPassword() {
 
     try {
 
-      // /auth/send-otp-reset
       if (step === STEPS.EMAIL) {
-        await sendOtp(user);
+        await sendResetOtp(user);
         setStep(STEPS.OTP);
       }
 
       else if (step === STEPS.OTP) {
-        await verifyOtp(user, otp);
+        await verifyResetOtp(user, otp);
         setStep(STEPS.PASSWORD);
       }
 
@@ -415,8 +417,9 @@ export function ForgotPassword() {
           setErrMsg("Invalid password entry");
           return;
         }
-        await resetPassword(user, pwd);
-        navigate("/access");
+
+        await resetPassword(user, pwd, matchPwd);
+        navigate("/access?form=login");
       }
 
     } catch (err) {

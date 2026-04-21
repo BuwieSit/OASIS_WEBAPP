@@ -9,6 +9,8 @@ from app.services.otp_service import create_otp, verify_otp
 from app.services.email_service import send_otp_email
 from app.utils.security import hash_password, verify_password
 from app.utils.validators import is_student_webmail, normalize_identifier
+from app.models.otp import OtpPurpose, OtpCode
+from app.services.email_service import send_otp_email, send_reset_password_otp_email
 
 auth_bp = Blueprint("auth_bp", __name__, url_prefix="/api/auth")
 
@@ -23,15 +25,16 @@ def register_send_otp():
     if not is_student_webmail(email):
         return jsonify({"error": "Only @iskolarngbayan.pup.edu.ph emails can register as student"}), 400
 
-    # If user already exists and verified, block
     existing = db.session.query(User).filter(User.email == email).first()
     if existing and existing.is_verified:
         return jsonify({"error": "account already exists"}), 409
 
-    code = create_otp(email=email, purpose=OtpPurpose.REGISTER, minutes_valid=10)
-    send_otp_email(email, code)
-
-    return jsonify({"message": "OTP sent (check backend console if dev)"}), 200
+    try:
+        code = create_otp(email=email, purpose=OtpPurpose.REGISTER, minutes_valid=10)
+        send_otp_email(email, code)
+        return jsonify({"message": "OTP sent to your email"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @auth_bp.post("/verify-otp")
 def register_verify_otp():
@@ -147,3 +150,85 @@ def me():
     if not user:
         return jsonify({"error": "user not found"}), 404
     return jsonify(user.to_public_dict()), 200
+
+
+@auth_bp.post("/forgot-password/send-otp")
+def forgot_password_send_otp():
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+
+    if not email:
+        return jsonify({"error": "email is required"}), 400
+
+    if not is_student_webmail(email):
+        return jsonify({"error": "Only @iskolarngbayan.pup.edu.ph emails are allowed"}), 400
+
+    user = db.session.query(User).filter(User.email == email).first()
+    if not user:
+        return jsonify({"error": "account not found"}), 404
+
+    if not user.is_verified:
+        return jsonify({"error": "account not verified"}), 403
+
+    try:
+        code = create_otp(email=email, purpose=OtpPurpose.RESET_PASSWORD, minutes_valid=10)
+        send_reset_password_otp_email(email, code)
+        return jsonify({"message": "Password reset OTP sent to your email"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@auth_bp.post("/forgot-password/verify-otp")
+def forgot_password_verify_otp():
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    otp = (data.get("otp") or "").strip()
+
+    if not email or not otp:
+        return jsonify({"error": "email and otp are required"}), 400
+
+    ok = verify_otp(email=email, purpose=OtpPurpose.RESET_PASSWORD, code=otp)
+    if not ok:
+        return jsonify({"error": "invalid or expired OTP"}), 400
+
+    return jsonify({"message": "OTP verified"}), 200
+
+
+@auth_bp.post("/forgot-password/reset")
+def forgot_password_reset():
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+    confirm_password = data.get("confirm_password") or ""
+
+    if not email or not password or not confirm_password:
+        return jsonify({"error": "email, password, confirm_password are required"}), 400
+
+    if not is_student_webmail(email):
+        return jsonify({"error": "Only @iskolarngbayan.pup.edu.ph emails are allowed"}), 400
+
+    if password != confirm_password:
+        return jsonify({"error": "passwords do not match"}), 400
+
+    used = (
+        db.session.query(OtpCode)
+        .filter(
+            OtpCode.email == email,
+            OtpCode.purpose == OtpPurpose.RESET_PASSWORD,
+            OtpCode.used_at.isnot(None),
+        )
+        .order_by(OtpCode.used_at.desc())
+        .first()
+    )
+
+    if not used:
+        return jsonify({"error": "OTP not verified"}), 400
+
+    user = db.session.query(User).filter(User.email == email).first()
+    if not user:
+        return jsonify({"error": "account not found"}), 404
+
+    user.password_hash = hash_password(password)
+    db.session.commit()
+
+    return jsonify({"message": "Password reset successful"}), 200
