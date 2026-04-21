@@ -1,7 +1,7 @@
 import Subtitle from "../utilities/subtitle";
 import { usePagination } from "../hooks/usePagination";
 
-export default function OasisTable({ columns = [], data = [], children }) {
+export default function OasisTable({ columns = [], data = [], children, onRowClick }) {
         
     const { page, setPage, displayData, totalPages } = usePagination(data, 10); 
 
@@ -66,7 +66,8 @@ export default function OasisTable({ columns = [], data = [], children }) {
                     displayData.map((row, rowIndex) => (
                         <tr
                             key={row.id ?? `${page}-${rowIndex}`}
-                            className="bg-white transition hover:bg-gray-200 text-center border-b border-gray-200"
+                            className={`bg-white transition hover:bg-gray-200 text-center border-b border-gray-200 ${onRowClick ? "cursor-pointer" : ""}`}
+                            onClick={() => onRowClick?.(row)}
                         >
                             {columns.map((col, colIndex) => (
                                 <td key={colIndex} 

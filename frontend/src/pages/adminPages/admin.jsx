@@ -251,12 +251,12 @@ export default function Admin() {
 
             {/* TITLE */}
             <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b border-gray-400 py-5'>
-                <Title text="Admin Dashboard" size='text-[2rem]'/>
+                <Title text="Admin Dashboard" size='text-[1.5rem] md:text-[2rem]'/>
                 <Subtitle text={"Overview of admin information, and management of announcements."}/>
             </div>
 
-            {/* CARDS */}
-            <section className="w-[90%] p-5 gap-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+            {/* METRICS & CHARTS GRID */}
+            <section className="w-[90%] p-2 md:p-5 gap-4 md:gap-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
 
                 <Link to={"/admMoaOverview"}>
                     <AdmCard
@@ -367,156 +367,182 @@ export default function Admin() {
                     />
                 </Link>
 
-                <section className='w-full p-10 grid grid-cols-1 md:grid-cols-2 gap-10 col-span-1 lg:col-span-3 border border-gray-200 rounded-3xl bg-white shadow-sm mt-5'>
-                    <div className="flex flex-col items-center">
+                {/* CHARTS SUB-GRID */}
+                <div className='col-span-1 sm:col-span-2 lg:col-span-3 grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 md:p-10 border border-gray-200 rounded-3xl bg-white shadow-sm mt-5'>
+                    <div className="flex flex-col items-center w-full min-w-0">
                         <Subtitle text="MOA Status Distribution" weight="font-bold" />
-                        <OasisPieChart
-                            items={[
-                                {   label: "Active MOA", 
-                                    value: dashboard?.metrics?.total_active_moas ?? 0, 
-                                    color: "#2B6259" 
-                                },
-                                { 
-                                    label: "Expired MOA", 
-                                    value: dashboard?.metrics?.total_expired_moas ?? 0, 
-                                    color: "#800020" 
-                                }
-                            ]}
-                        />
+                        <div className="w-full flex justify-center overflow-hidden">
+                            <OasisPieChart
+                                items={[
+                                    {   label: "Active MOA", 
+                                        value: dashboard?.metrics?.total_active_moas ?? 0, 
+                                        color: "#2B6259" 
+                                    },
+                                    { 
+                                        label: "Expired MOA", 
+                                        value: dashboard?.metrics?.total_expired_moas ?? 0, 
+                                        color: "#800020" 
+                                    }
+                                ]}
+                            />
+                        </div>
                     </div>
-                    <div className="flex flex-col items-center">
+                    <div className="flex flex-col items-center w-full min-w-0">
                         <Subtitle text="System Overview Metrics" weight="font-bold" />
-                        <OasisBarChart
-                            data={[
-                                { name: 'Students', value: dashboard?.metrics?.total_students ?? 0 },
-                                { name: 'HTEs', value: dashboard?.metrics?.total_htes ?? 0 },
-                                { name: 'Prospects', value: dashboard?.metrics?.total_moa_prospects ?? 0 },
-                            ]}
-                        />
+                        <div className="w-full flex justify-center overflow-hidden">
+                            <OasisBarChart
+                                data={[
+                                    { name: 'Students', value: dashboard?.metrics?.total_students ?? 0 },
+                                    { name: 'HTEs', value: dashboard?.metrics?.total_htes ?? 0 },
+                                    { name: 'Prospects', value: dashboard?.metrics?.total_moa_prospects ?? 0 },
+                                ]}
+                            />
+                        </div>
                     </div>
-                </section>
-            </section>        
+                </div>
+            </section>
 
-            <div className='flex justify-start items-start w-[90%]'>
-                <Title text={"Post Announcements"} />
+            <div className='flex justify-start items-start w-[90%] mb-5'>
+                <Title text={"Post Announcements"} size="text-[1.5rem] md:text-[2rem]" />
             </div>
 
-            <section className='p-5 w-[90%]  flex flex-row justify-between items-start gap-5 font-oasis-text text-oasis-button-dark'>
-                <form
-                    className='w-[70%] min-h-24 p-10 bg-admin-element flex flex-col items-start justify-center gap-5 text-black rounded-3xl'
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        handlePost(e);
-                    }}
-                >
-                    <SingleField
-                        labelText="Announcement Title"
-                        fieldHolder="Enter title..."
-                        fieldId="title"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                    />
+            <section className='w-full px-4 md:px-0 md:w-[90%] grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10 font-oasis-text text-oasis-button-dark min-w-0'>
+                {/* POSTING FORM & FEED */}
+                <div className='lg:col-span-8 flex flex-col gap-6 w-full min-w-0'>
+                    <form
+                        className='w-full p-4 md:p-6 lg:p-10 bg-admin-element flex flex-col items-start justify-center gap-5 text-black rounded-3xl shadow-sm overflow-hidden box-border min-w-0'
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            handlePost(e);
+                        }}
+                    >
+                        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-5 min-w-0">
+                            <div className="md:col-span-2 w-full min-w-0">
+                                <SingleField
+                                    labelText="Announcement Title"
+                                    fieldHolder="Enter title..."
+                                    fieldId="title"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                />
+                            </div>
 
-                    <MultiField
-                        labelText="Announcement Content"
-                        fieldHolder="Enter contents..."
-                        fieldId="content"
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                    />
+                            <div className="md:col-span-2 w-full min-w-0">
+                                <MultiField
+                                    labelText="Announcement Content"
+                                    fieldHolder="Enter contents..."
+                                    fieldId="content"
+                                    value={content}
+                                    onChange={(e) => setContent(e.target.value)}
+                                />
+                            </div>
 
-                    <div className='w-full'>
-                        <Dropdown
-                            labelText="Select Category"
-                            categories={categories}
-                            value={category}
-                            onChange={setCategory}
-                        />
-
-                        <section className='flex flex-row items-start justify-start gap-10 mt-10'>
-                            <AnnounceButton btnText="Post" type="submit" />
-                        </section>
-                    </div>
-
-                    <Label labelText={"Filter Announcements"} />
-                    <section id='announcements' className='w-full flex flex-row items-center justify-start gap-5'>
-                        {["All", "HTE Related", "Deadlines", "Newly Approved HTEs", "Events and Webinars", "Others"].map(f => (
-                            <Filter
-                                key={f}
-                                text={f}
-                                onClick={() => setActiveFilter(f)}
-                                isActive={activeFilter === f}
-                            />
-                        ))}
-                    </section>
-
-                    <div className="w-full">
-                        <Label labelText={"Search by Title"} />
-                        <input
-                            className="w-full p-3 bg-white border border-gray-300 rounded-xl outline-none"
-                            placeholder="Search announcements title..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
-
-                    <div className='w-full flex flex-col gap-3 max-h-100 overflow-y-auto p-5'>
-                        {filteredAnnouncements.map(a => (
-                            <section
-                                key={a.id}
-                                className="w-full bg-oasis-gradient rounded-3xl px-5 flex flex-row items-center justify-evenly shadow-[2px_2px_2px_rgba(0,0,0,1)]"
-                            >
-                                <div className="p-5 w-full text-black rounded-2xl">
-                                    <p className="text-[0.8rem] text-black italic font-normal mb-5">
-                                        {a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"}
-                                    </p>
-                                    <h3 className="text-[1rem] font-bold">{a.title}</h3>
-                                    <p className="text-[0.8rem] font-medium line-clamp-2">{a.content}</p>
-                                </div>
-
-                                <div className="w-[50%] flex flex-row gap-10">
-                                    <AnnounceButton
-                                        icon={<Eye />}
-                                        btnText="View"
-                                        onClick={() => setSelectedAnnouncement(a)}
-                                    />
-                                    <AnnounceButton
-                                        btnText="Delete"
-                                        onClick={() => {
-                                            setAnnouncementToDelete(a);
-                                            setDeleteModalShow(true);
-                                        }}
-                                    />
-                                </div>
-                            </section>
-                        ))}
-                    </div>
-                    
-                </form>
-
-                <div id='notifications' className='w-[25%] rounded-3xl min-h-24 max-h-screen px-10 overflow-y-auto bg-admin-element'>
-                    <div className='sticky top-0 bg-admin-element w-full'>
-                        <p className='text-[0.8rem] mb-5 font-black py-5'>Notifications</p>
-                    </div>
-                    
-
-                    {alerts.length === 0 && (
-                        <p className="text-[0.7rem] text-gray-500">No alerts</p>
-                    )}
-
-                    {alerts.map(alert => (
-                        <div key={alert.id}>
-                            <div
-                                className='w-full bg-white p-3 mb-3 rounded-2xl rounded-tl-none text-black border border-oasis-button-dark hover:bg-oasis-gradient transition cursor-pointer'
-                            >
-                                <h3 className='text-[0.8rem] font-bold'>{alert.title}</h3>
-                                <p className='text-[0.7rem] font-light line-clamp-2'>{alert.message}</p>
-                                <p className='text-[0.65rem] text-gray-600 mt-1'>
-                                    {alert.date ? new Date(alert.date).toLocaleDateString() : ""}
-                                </p>
+                            <div className='w-full min-w-0'>
+                                <Dropdown
+                                    labelText="Select Category"
+                                    categories={categories}
+                                    value={category}
+                                    onChange={setCategory}
+                                />
+                            </div>
+                            
+                            <div className='flex items-end w-full min-w-0'>
+                                <AnnounceButton btnText="Post" type="submit" className="w-full" />
                             </div>
                         </div>
-                    ))}
+
+                        <div className="w-full mt-5 max-w-full min-w-0">
+                            <Label labelText={"Filter Announcements"} />
+                            <section id='announcements' className='w-full flex flex-wrap items-center justify-start gap-2 mt-2 overflow-hidden'>
+                                {["All", "HTE Related", "Deadlines", "Newly Approved HTEs", "Events and Webinars", "Others"].map(f => (
+                                    <Filter
+                                        key={f}
+                                        text={f}
+                                        onClick={() => setActiveFilter(f)}
+                                        isActive={activeFilter === f}
+                                    />
+                                ))}
+                            </section>
+                        </div>
+
+                        <div className="w-full max-w-full min-w-0">
+                            <Label labelText={"Search by Title"} />
+                            <div className="w-full mt-2 min-w-0">
+                                <input
+                                    className="w-full max-w-full p-3 bg-white border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-oasis-header transition-all text-sm md:text-base box-border min-w-0"
+                                    placeholder="Search announcements title..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className='w-full flex flex-col gap-4 max-h-[500px] md:max-h-[600px] overflow-y-auto p-1 md:p-2 custom-scrollbar overflow-x-hidden min-w-0'>
+                            {filteredAnnouncements.length === 0 ? (
+                                <p className="text-center text-gray-500 py-10 italic text-sm">No announcements found</p>
+                            ) : (
+                                filteredAnnouncements.map(a => (
+                                    <section
+                                        key={a.id}
+                                        className="w-full bg-oasis-gradient rounded-2xl p-3 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-md border border-gray-100 box-border min-w-0 overflow-hidden"
+                                    >
+                                        <div className="w-full min-w-0 flex-1 overflow-hidden">
+                                            <p className="text-[0.6rem] md:text-[0.7rem] text-black italic font-normal mb-0.5">
+                                                {a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"}
+                                            </p>
+                                            <h3 className="text-[0.85rem] md:text-[1rem] font-bold text-gray-800 truncate block w-full">{a.title}</h3>
+                                            <p className="text-[0.7rem] md:text-[0.8rem] font-medium line-clamp-2 text-gray-600 break-words">{a.content}</p>
+                                        </div>
+
+                                        <div className="flex flex-row gap-2 w-full md:w-auto shrink-0 mt-1 md:mt-0">
+                                            <AnnounceButton
+                                                icon={<Eye size={12}/>}
+                                                btnText="View"
+                                                onClick={() => setSelectedAnnouncement(a)}
+                                                className="flex-1 md:flex-none py-1 px-2 text-[0.6rem] md:text-xs"
+                                            />
+                                            <AnnounceButton
+                                                icon={<Trash size={12}/>}
+                                                btnText="Delete"
+                                                onClick={() => {
+                                                    setAnnouncementToDelete(a);
+                                                    setDeleteModalShow(true);
+                                                }}
+                                                className="flex-1 md:flex-none py-1 px-2 text-[0.6rem] md:text-xs"
+                                            />
+                                        </div>
+                                    </section>
+                                ))
+                            )}
+                        </div>
+                    </form>
+                </div>
+
+                {/* NOTIFICATIONS SIDEBAR */}
+                <div id='notifications' className='lg:col-span-4 w-full rounded-3xl bg-admin-element flex flex-col max-h-[1000px] shadow-sm border border-gray-100 overflow-hidden'>
+                    <div className='sticky top-0 bg-admin-element w-full px-6 lg:px-10 py-5 border-b border-gray-200 z-10'>
+                        <p className='text-[0.9rem] font-black'>System Notifications</p>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto px-6 lg:px-10 py-5 flex flex-col gap-4 custom-scrollbar">
+                        {alerts.length === 0 && (
+                            <p className="text-[0.8rem] text-gray-500 italic text-center py-10">No alerts available</p>
+                        )}
+
+                        {alerts.map(alert => (
+                            <div key={alert.id}>
+                                <div
+                                    className='w-full bg-white p-4 rounded-2xl border-l-4 border-l-oasis-button-dark border border-gray-100 hover:shadow-md transition-all cursor-default'
+                                >
+                                    <h3 className='text-[0.8rem] font-bold text-gray-800'>{alert.title}</h3>
+                                    <p className='text-[0.75rem] font-light text-gray-600 mt-1'>{alert.message}</p>
+                                    <p className='text-[0.65rem] text-gray-400 mt-2 font-medium'>
+                                        {alert.date ? new Date(alert.date).toLocaleDateString() : ""}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </section>
 

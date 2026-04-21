@@ -12,6 +12,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { AdminAPI } from "../../api/admin.api";
 import { Check, Download, FileCheck, Save, Upload, X, PlusCircle } from 'lucide-react';
 import { ConfirmModal, GeneralPopupModal } from '../../components/popupModal.jsx';
+import HteDetailModal from '../../components/HteDetailModal.jsx';
 
 export default function AdmOperations() {
     const [data, setData] = useState([]);
@@ -25,6 +26,7 @@ export default function AdmOperations() {
     const uploadRef = useRef(null);
 
     const [activeFilter, setActiveFilter] = useState("");
+    const [selectedHte, setSelectedHte] = useState(null);
     // =============================
     // ADD HTE FORM STATE
     // =============================
@@ -403,7 +405,11 @@ export default function AdmOperations() {
                 onChange={handleUploadFile}
             />
 
-            <OasisTable columns={columns} data={data}>
+            <OasisTable 
+                columns={columns} 
+                data={data}
+                onRowClick={(row) => setSelectedHte(row)}
+            >
                 <div className="w-full flex flex-row justify-between items-center gap-4 mt-4">
                     <div className='flex flex-row gap-3 items-center justify-start'>
                         <Subtitle
@@ -452,6 +458,12 @@ export default function AdmOperations() {
                     </div>
                 </div>
             </OasisTable>
+
+            <HteDetailModal 
+                visible={!!selectedHte} 
+                hte={selectedHte} 
+                onClose={() => setSelectedHte(null)} 
+            />
 
             {/* TOGGLE ADD HTE BUTTON */}
             <div className="w-[90%] flex justify-end mt-5">

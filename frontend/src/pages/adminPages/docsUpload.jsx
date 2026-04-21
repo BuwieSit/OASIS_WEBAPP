@@ -75,6 +75,20 @@ function insertItemIntoTree(items, newItem) {
     });
 }
 
+function removeItemFromTree(items, targetId) {
+    return items
+        .filter((item) => item.id !== targetId)
+        .map((item) => {
+            if (item.children?.length) {
+                return {
+                    ...item,
+                    children: removeItemFromTree(item.children, targetId)
+                };
+            }
+            return item;
+        });
+}
+
 function normalizeTreeForSave(items) {
     return items.map((item) => ({
         id: item.id,
@@ -143,6 +157,7 @@ export default function DocsUpload() {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [deleteItemConfirm, setDeleteItemConfirm] = useState(null);
     const [popup, setPopup] = useState(null);
 
     const [sections, setSections] = useState({
@@ -242,6 +257,52 @@ export default function DocsUpload() {
         setShowModal(false);
     }
 
+    async function handleDeleteItem(item) {
+        try {
+            setSaving(true);
+            
+            // 1. Calculate the new state with the item removed
+            const updatedItems = removeItemFromTree(activeSectionState.items, item.id);
+            const tempState = {
+                ...activeSectionState,
+                items: updatedItems
+            };
+
+            // 2. Persist the new structure to the backend
+            // Note: We use the same logic as handleSaveSection but with the updated items
+            let itemsToSave = buildItemsWithSectionMeta(tempState);
+            const normalizedItems = normalizeTreeForSave(itemsToSave);
+            
+            await AdminAPI.saveDocuments(activeFilter, normalizedItems);
+
+            // 3. Update local state on success
+            setSections((prev) => ({
+                ...prev,
+                [activeFilter]: tempState
+            }));
+            
+            setPopup({
+                title: "Deleted",
+                text: `"${item.title}" and its children have been removed from the database.`,
+                icon: <Trash size={50} />,
+                type: "success",
+                time: 2000
+            });
+        } catch (error) {
+            console.error("Failed to delete item from database:", error);
+            setPopup({
+                title: "Error",
+                text: "Failed to delete item from database. Please try again.",
+                icon: <X size={50} />,
+                type: "failed",
+                time: 2000
+            });
+        } finally {
+            setSaving(false);
+            setDeleteItemConfirm(null);
+        }
+    }
+
     async function handleSaveSection() {
         try {
             setSaving(true);
@@ -260,6 +321,7 @@ export default function DocsUpload() {
                         type: "failed",
                         time: 2000
                     });
+                    setSaving(false);
                     return;
                 }
 
@@ -271,6 +333,7 @@ export default function DocsUpload() {
                         type: "failed",
                         time: 2000
                     });
+                    setSaving(false);
                     return;
                 }
 
@@ -381,6 +444,13 @@ export default function DocsUpload() {
                     onCancel={() => setShowConfirmModal(false)}
                 />
             }
+            {deleteItemConfirm && (
+                <ConfirmModal
+                    confText={`delete "${deleteItemConfirm.title}" and all its children?`}
+                    onConfirm={() => handleDeleteItem(deleteItemConfirm)}
+                    onCancel={() => setDeleteItemConfirm(null)}
+                />
+            )}
             
             <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b border-gray-400 py-5'>
                 <Title text="Documents Upload" size='text-[2.2rem]'/>
@@ -433,6 +503,7 @@ export default function DocsUpload() {
                                             items={[
                                                 ...buildItemsWithSectionMeta(activeSectionState)
                                             ]}
+                                            onDelete={(item) => setDeleteItemConfirm(item)}
                                         />
                                     </div>
                                 </div>

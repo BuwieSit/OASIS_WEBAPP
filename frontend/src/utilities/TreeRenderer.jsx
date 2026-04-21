@@ -6,7 +6,9 @@ import {
     ListOrdered, 
     List, 
     FileText, 
-    CornerDownRight 
+    CornerDownRight,
+    Trash,
+    
 } from 'lucide-react';
 
 const TYPE_ICONS = {
@@ -33,19 +35,19 @@ const LIST_TYPES = [
     "alphabetical_list"
 ];
 
-export function TreeRenderer({ items = [], isRoot = true }) {
+export function TreeRenderer({ items = [], isRoot = true, onDelete }) {
     if (!items || items.length === 0) return null;
 
     return (
         <div className={`${isRoot ? "" : "ml-6 border-l-2 border-gray-100 pl-4 mt-2"}`}>
             {items.map((item, index) => (
-                <div key={item.id} className="relative mb-4 group">
+                <div key={item.id} className="relative mb-4 group/node">
                     {/* Visual Connector for nested items */}
                     {!isRoot && (
                         <div className="absolute -left-4 top-3 w-4 border-t-2 border-gray-100" />
                     )}
 
-                    <div className="flex items-start gap-3 bg-white p-3 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-start gap-3 bg-white p-3 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative">
                         <div className="mt-1 bg-gray-50 p-1.5 rounded-lg">
                             {TYPE_ICONS[item.type] || <FileText size={14} />}
                         </div>
@@ -55,11 +57,22 @@ export function TreeRenderer({ items = [], isRoot = true }) {
                                 <span className="font-bold text-oasis-button-dark text-sm uppercase tracking-wider">
                                     {TYPE_LABELS[item.type]}
                                 </span>
-                                {item.children && item.children.length > 0 && (
-                                    <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-500">
-                                        {item.children.length} nested
-                                    </span>
-                                )}
+                                <div className="flex items-center gap-2">
+                                    {item.children && item.children.length > 0 && (
+                                        <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-500">
+                                            {item.children.length} nested
+                                        </span>
+                                    )}
+                                    {!item.isSectionMeta && (
+                                        <button 
+                                            onClick={() => onDelete?.(item)}
+                                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                            title="Delete item"
+                                        >
+                                            <Trash size={14} />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
                             {item.title && (
@@ -107,7 +120,7 @@ export function TreeRenderer({ items = [], isRoot = true }) {
 
                     {item.children && item.children.length > 0 && (
                         <div className="animate__animated animate__fadeIn">
-                            <TreeRenderer items={item.children} isRoot={false} />
+                            <TreeRenderer items={item.children} isRoot={false} onDelete={onDelete} />
                         </div>
                     )}
                 </div>
@@ -115,3 +128,4 @@ export function TreeRenderer({ items = [], isRoot = true }) {
         </div>
     );
 }
+

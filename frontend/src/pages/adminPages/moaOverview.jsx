@@ -7,6 +7,7 @@ import {
     ViewMoaButton
 } from "../../utilities/tableUtil.jsx";
 import { GeneralPopupModal, ViewModal } from '../../components/popupModal';
+import HteDetailModal from '../../components/HteDetailModal.jsx';
 import useQueryParam from '../../hooks/useQueryParams.jsx';
 import { useEffect, useState } from 'react';
 import Subtitle from '../../utilities/subtitle.jsx';
@@ -27,6 +28,8 @@ export default function MoaOverview() {
     const [successModal, setSuccessModal] = useState(false);
     const [action, setAction] = useState("");
     const [lastStatus, setLastStatus] = useState("");
+
+    const [selectedHte, setSelectedHte] = useState(null);
 
     const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -345,6 +348,7 @@ export default function MoaOverview() {
                     <OasisTable
                         columns={currentMoaColumns}
                         data={currentMoas}
+                        onRowClick={(row) => setSelectedHte(row.hte)}
                     />
                 </>
             )}
@@ -359,10 +363,17 @@ export default function MoaOverview() {
                         <OasisTable
                             columns={prospectMoaColumns}
                             data={prospectMoas}
+                            onRowClick={(row) => setSelectedHte(row)}
                         />
                     )}
                 </>
             )}
+
+            <HteDetailModal 
+                visible={!!selectedHte} 
+                hte={selectedHte} 
+                onClose={() => setSelectedHte(null)} 
+            />
 
         </AdminScreen>
     );

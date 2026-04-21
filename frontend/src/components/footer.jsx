@@ -18,11 +18,12 @@ export default function Footer({ onOpenModal }) {
                 </section>
 
                 {/* MIDDLE: Link Sections */}
-                <section className="w-full lg:w-3/5 grid grid-cols-1 md:grid-cols-3 gap-8">
+                <section className="w-full lg:w-3/5 grid grid-cols-1 md:grid-cols-3 gap-10">
                     
                     <ul className="flex flex-col items-center lg:items-start text-sm">
                         <Title text={"Contact Info"}/>
-                        <li className="mt-2 text-center lg:text-left">Email: oasisofficial@gmail.com</li>
+                        <li className="mt-2 text-center lg:text-left">Email:
+                            oasiskomunidevs@gmail.com</li>
                     </ul>
 
                     <ul className="flex flex-col items-center lg:items-start text-sm">
