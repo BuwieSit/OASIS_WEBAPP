@@ -4,6 +4,7 @@ import { CircleX, Bookmark, BookmarkCheck } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { NotificationAPI } from "../api/notification.api";
 import useOutsideClick from "./OutsideClick";
+import { NotificationModal } from "../components/userModal";
 
 export default function Notifications({ 
     open,
@@ -18,12 +19,21 @@ export default function Notifications({
     const [activeFilter, setActiveFilter] = useState("All");
     const [loading, setLoading] = useState(false);
     const [processingId, setProcessingId] = useState(null);
+    const [selectedNotification, setSelectedNotification] = useState(null);
 
     const dropdownRef = useRef(null);
 
     useOutsideClick(dropdownRef, () => {
         onClose();
     });
+
+    const counts = useMemo(() => {
+        return {
+            All: notifications.filter(n => !n.is_saved).length,
+            Unread: notifications.filter(n => !n.is_read && !n.is_saved).length,
+            Saved: notifications.filter(n => n.is_saved).length
+        };
+    }, [notifications]);
 
     useEffect(() => {
         if (open) {
@@ -116,7 +126,10 @@ export default function Notifications({
     };
 
     const handleNotificationClick = async (item) => {
-        await handleMarkAsRead(item.id);
+        setSelectedNotification(item);
+        if (!item.is_read) {
+            await handleMarkAsRead(item.id);
+        }
     };
 
     const filteredNotifications = useMemo(() => {
@@ -173,86 +186,94 @@ export default function Notifications({
     if (!show) return null;
 
     return (
-        <div
-            className={`w-100 h-[70%] p-5 fixed top-1/2 right-0 -translate-x-[10%] -translate-y-[55%] bg-[rgba(255,255,255,0.5)] backdrop-blur-2xl z-150 rounded-3xl shadow-[0px_0px_5px_rgba(0,0,0,0.5)] ${animationClass}`}
-            ref={dropdownRef}
-        >
-            <section className="w-full flex flex-row justify-start items-center gap-5 px-3">
-                <div onClick={() => setActiveFilter("All")}>
-                    <Filter text={"All"} isActive={activeFilter === "All"} />
-                </div>
-
-                <div onClick={() => setActiveFilter("Unread")}>
-                    <Filter text={"Unread"} isActive={activeFilter === "Unread"} />
-                </div>
-
-                <div onClick={() => setActiveFilter("Saved")}>
-                    <Filter text={"Saved"} isActive={activeFilter === "Saved"} />
-                </div>
-
-                <CircleX
-                    className="absolute right-[5%] cursor-pointer"
-                    color="#54A194"
-                    size={30}
-                    onClick={handleClose}
-                />
-            </section>
-
-            <div className="mt-3 h-[85%] flex flex-col pt-2 justify-start items-center overflow-y-auto">
-                
-                {loading ? (
-                    <div className="w-[90%] p-3">
-                        <Subtitle text={"Loading notifications..."} />
+        <>
+            <NotificationModal 
+                visible={!!selectedNotification} 
+                onClose={() => setSelectedNotification(null)}
+                notification={selectedNotification}
+            />
+            <div
+                className={`w-100 h-[70%] p-5 fixed top-1/2 right-0 -translate-x-[10%] -translate-y-[55%] bg-[rgba(255,255,255,0.5)] backdrop-blur-2xl z-150 rounded-3xl shadow-[0px_0px_5px_rgba(0,0,0,0.5)] ${animationClass}`}
+                ref={dropdownRef}
+            >
+                <section className="w-full flex flex-row justify-start items-center gap-5 px-3">
+                    <div onClick={() => setActiveFilter("All")}>
+                        <Filter text={`All (${counts.All})`} isActive={activeFilter === "All"} />
                     </div>
-                ) : filteredNotifications.length === 0 ? (
-                    <div className="w-[90%] p-3 rounded-2xl shadow-[0px_0px_5px_rgba(0,0,0,0.5)] bg-white">
-                        <Subtitle text={getEmptyStateText()} />
+
+                    <div onClick={() => setActiveFilter("Unread")}>
+                        <Filter text={`Unread (${counts.Unread})`} isActive={activeFilter === "Unread"} />
                     </div>
-                ) : (
-                    filteredNotifications.map((item) => (
-                        <div
-                            key={item.id}
-                            onClick={() => handleNotificationClick(item)}
-                            className={`w-[90%] p-3 rounded-2xl flex flex-col gap-3 mt-3 shadow-[0px_0px_5px_rgba(0,0,0,0.5)] mb-3 cursor-pointer transition-all ${
-                                item.is_read ? "bg-white" : "bg-[#EAF7F4]"
-                            }`}
-                        >
-                            <section className="flex w-full justify-between items-start gap-3">
-                                <div className="flex-1">
-                                    <Subtitle
-                                        text={item.title || "Notification"}
-                                        weight={"font-bold"}
-                                        size={"text-[0.9rem]"}
-                                    />
-                                    <Subtitle
-                                        text={formatRelativeTime(item.created_at)}
-                                        size={"text-[0.75rem]"}
-                                    />
-                                </div>
 
-                                <button
-                                    type="button"
-                                    onClick={(e) => handleToggleSave(e, item.id)}
-                                    disabled={processingId === item.id}
-                                    className="cursor-pointer p-1 rounded-lg hover:bg-gray-100 transition"
-                                    title={item.is_saved ? "Unsave notification" : "Save notification"}
-                                >
-                                    {item.is_saved ? (
-                                        <BookmarkCheck size={18} color="#54A194" />
-                                    ) : (
-                                        <Bookmark size={18} color="#54A194" />
-                                    )}
-                                </button>
-                            </section>
+                    <div onClick={() => setActiveFilter("Saved")}>
+                        <Filter text={`Saved (${counts.Saved})`} isActive={activeFilter === "Saved"} />
+                    </div>
 
-                            <Subtitle
-                                text={item.message || "No message available."}
-                                size={"text-[0.85rem]"}
-                            />
+                    <CircleX
+                        className="absolute right-[5%] cursor-pointer"
+                        color="#54A194"
+                        size={30}
+                        onClick={handleClose}
+                    />
+                </section>
+
+                <div className="mt-3 h-[85%] flex flex-col pt-2 justify-start items-center overflow-y-auto">
+                    
+                    {loading ? (
+                        <div className="w-[90%] p-3">
+                            <Subtitle text={"Loading notifications..."} />
                         </div>
-                    ))
-                )}
+                    ) : filteredNotifications.length === 0 ? (
+                        <div className="w-[90%] p-3 rounded-2xl shadow-[0px_0px_5px_rgba(0,0,0,0.5)] bg-white">
+                            <Subtitle text={getEmptyStateText()} />
+                        </div>
+                    ) : (
+                        filteredNotifications.map((item) => (
+                            <div
+                                key={item.id}
+                                onClick={() => handleNotificationClick(item)}
+                                className={`w-[90%] p-3 rounded-2xl flex flex-col gap-3 mt-3 shadow-[0px_0px_5px_rgba(0,0,0,0.5)] mb-3 cursor-pointer transition-all ${
+                                    item.is_read ? "bg-white" : "bg-[#EAF7F4]"
+                                }`}
+                            >
+                                <section className="flex w-full justify-between items-start gap-3">
+                                    <div className="flex-1">
+                                        <Subtitle
+                                            text={item.title || "Notification"}
+                                            weight={"font-bold"}
+                                            size={"text-[0.9rem]"}
+                                        />
+                                        <Subtitle
+                                            text={formatRelativeTime(item.created_at)}
+                                            size={"text-[0.75rem]"}
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={(e) => handleToggleSave(e, item.id)}
+                                        disabled={processingId === item.id}
+                                        className="cursor-pointer p-1 rounded-lg hover:bg-gray-100 transition"
+                                        title={item.is_saved ? "Unsave notification" : "Save notification"}
+                                    >
+                                        {item.is_saved ? (
+                                            <BookmarkCheck size={18} color="#54A194" />
+                                        ) : (
+                                            <Bookmark size={18} color="#54A194" />
+                                        )}
+                                    </button>
+                                </section>
+
+                                <Subtitle
+                                    text={item.message || "No message available."}
+                                    size={"text-[0.85rem]"}
+                                    className="line-clamp-2"
+                                />
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
-        </div>
+        </>
     );
 }

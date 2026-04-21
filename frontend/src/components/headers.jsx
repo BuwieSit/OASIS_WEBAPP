@@ -20,7 +20,7 @@ import { getRole } from "../api/token";
 
 const API_BASE = api.defaults.baseURL;
 
-export function Header({ admin }) {
+export function Header({ admin, notifications = [], setNotifications = () => {} }) {
     const userRole = getRole();
     const isStudent = userRole === "student" || userRole === "STUDENT";
     
@@ -76,32 +76,9 @@ export function Header({ admin }) {
         fetchProfile();
     }, [isStudent]);
 
-    const [notifications, setNotifications] = useState([]);
     const hasUnread = notifications.some(n => !n.is_read && !n.is_saved);
     const unreadCount = notifications.filter(n => !n.is_read && !n.is_saved).length;
     
-    const loadNotifications = async () => {
-        if (!isStudent) return;
-        try {
-            const res = await NotificationAPI.getStudentNotifications();
-            setNotifications(res.data || []);
-        } catch (err) {
-            console.error("Failed to load notifications:", err);
-        }
-    };
-
-    useEffect(() => {
-        if (isStudent) {
-            loadNotifications();
-
-            const interval = setInterval(() => {
-                loadNotifications();
-            }, 5000);
-
-            return () => clearInterval(interval);
-        }
-    }, [isStudent]);
-
     if (!admin && (!user || !profile)) return null;
 
     return (
@@ -388,40 +365,34 @@ export function StudentHeader({ showNavigation = true, notifications = [], setNo
                 <NavItem to="/ojthub" label="OJT Hub" isOpen={true}/>
                 <NavItem to="/announcements" label="Announcement" isOpen={true}/>
 
-                {scrolled ? 
-                    <div className="animate__animate animate__bounceIn absolute right-0 p-5 flex gap-3 items-center">
+                {/* NOTIFICATIONS & PROFILE (SCROLLED) */}
+                <div className={`flex gap-3 items-center absolute right-0 p-5 transition-all duration-300 ${scrolled ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10 pointer-events-none"}`}>
+                    <HoverLift onClick={() => handleDropdownClick("notifs")}>
+                            <div className="relative cursor-pointer">
+                                {hasUnread ? (
+                                    <BellDot className="hidden md:block lg:block" size={28} color="#54A194"/>
+                                ) : (
+                                    <Bell className="hidden md:block lg:block" size={28} color="#54A194" />
+                                )}
 
-                        <HoverLift onClick={() => handleDropdownClick("notifs")}>
-                                <div className="relative">
-                                    {hasUnread ? (
-                                        <BellDot className="hidden md:block lg:block" size={28} color="#54A194"/>
-                                    ) : (
-                                        <Bell className="hidden md:block lg:block" size={28} color="#54A194" />
-                                    )}
+                                {unreadCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-oasis-red text-white text-[10px] min-w-4 h-4 px-1 flex items-center justify-center rounded-full">
+                                        {unreadCount > 99 ? "99+" : unreadCount}
+                                    </span>
+                                )}
+                            </div>
+                    </HoverLift>
 
-                                    {unreadCount > 0 && (
-                                        <span className="absolute -top-1 -right-1 bg-oasis-red text-white text-[10px] min-w-4 h-4 px-1 flex items-center justify-center rounded-full">
-                                            {unreadCount > 99 ? "99+" : unreadCount}
-                                        </span>
-                                    )}
-                                </div>
-                        </HoverLift>
-
-                        <HoverLift 
-                            onClick={() => handleDropdownClick("profile")}
-                        >
-                            <img
-                            className="w-8 rounded-full object-cover aspect-square hidden md:block lg:block"
-                            src={profile?.photo_url}
-                            alt="Profile"
-                            />
-
-                        </HoverLift>
-
-                    </div>
-                    : 
-                    
-                    ""}
+                    <HoverLift 
+                        onClick={() => handleDropdownClick("profile")}
+                    >
+                        <img
+                        className="w-8 rounded-full object-cover aspect-square hidden md:block lg:block cursor-pointer"
+                        src={profile?.photo_url}
+                        alt="Profile"
+                        />
+                    </HoverLift>
+                </div>
             </ul>
         </div>
             {activeDropdown === "profile" && (

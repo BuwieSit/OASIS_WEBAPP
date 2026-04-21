@@ -1,6 +1,6 @@
-import { StudentProfileScreen } from "../../layouts/profileScreen";
+import MainScreen from "../../layouts/mainScreen";
 import Subtitle from "../../utilities/subtitle";
-import { SquarePen, Activity, Eye, EyeClosed} from "lucide-react";
+import { SquarePen, Activity, Eye, EyeClosed, User, Mail, ShieldCheck, GraduationCap, Calendar } from "lucide-react";
 import testPfp from "../../assets/testprofile.png";
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
@@ -22,7 +22,8 @@ export default function StudentProfile() {
   const [photoPreview, setPhotoPreview] = useState(null);
 
   useEffect(() => {
-      async function fetchProfile() {
+    async function fetchProfile() {
+      try {
         const res = await api.get("/api/student/me");
         const fetchedProfile = res.data.profile;
 
@@ -30,26 +31,23 @@ export default function StudentProfile() {
           ? `${API_BASE}${fetchedProfile.photo_path}`
           : null;
 
-        const fetchedFullName = `${fetchedProfile.first_name || ""} ${fetchedProfile.middle_initial || ""} ${fetchedProfile.last_name || ""}`;
-        
         setUser(res.data.user);
         setProfile(fetchedProfile);
         setFirstName(fetchedProfile.first_name || "");
         setLastName(fetchedProfile.last_name || "");
         setMiddleInitial(fetchedProfile.middle_initial || "");
-        setFullName(fetchedFullName);
         setOjtAdviser(fetchedProfile.ojt_adviser || "");
         setProgram(fetchedProfile._program || "");
+      } catch (err) {
+        console.error("Failed to fetch profile", err);
       }
-
+    }
     fetchProfile();
   }, []);
 
   if (!user || !profile) return null;
 
-  const displayFullname = `${profile.first_name || "—"} 
-                          ${profile.middle_initial || ""}
-                          ${profile.last_name || ""}`;
+  const displayFullname = `${profile.first_name || ""} ${profile.middle_initial ? profile.middle_initial + "." : ""} ${profile.last_name || ""}`;
 
   const saveProfile = async () => {
     try {
@@ -59,303 +57,288 @@ export default function StudentProfile() {
         last_name: lastName.trim(),
         ojt_adviser: ojtAdviser,
         _program: Program,
-    };
+      };
 
       if (password && password.trim() !== "") {
         profileData.password = password;
       }
       const response = await api.patch("/api/student/me", profileData);
 
-       setProfile(prev => ({
-          ...prev,
-          ...response.data.profile   
+      setProfile(prev => ({
+        ...prev,
+        ...response.data.profile   
       }));
       setPassword("");
       setIsEditing(false);
-      
       alert("Profile updated successfully!");
     } catch (err) {
-      console.error("Full error:", err); 
-      console.error("Error response:", err?.response?.data); 
       alert(err?.response?.data?.error || "Failed to update profile");
     }
   };
 
   return (
-    <StudentProfileScreen>
-      <div className="
-          bg-white
-          p-4 sm:p-5
-          w-full max-w-[95%] md:w-[90%]
-          border rounded-3xl
-          backdrop-blur-3xl
-
-          grid
-          grid-cols-1
-          lg:grid-cols-2
-
-          gap-5
-      ">
-      
-        {/* ========== LEFT COLUMN ========== */}
-        <div className="
-            w-full
-            h-auto
-            p-2 sm:p-3
-            flex flex-col
-            gap-5
-            justify-start
-            items-center
-        ">
-          {/* Student Account (Read Only) */}
-          <Subtitle text={displayFullname} size="text-[1.5rem]" color={"text-oasis-button-dark"} weight="font-bold"/>          
-          {/* Profile Picture */}
-          <div className="relative">
-            <img
-              src={photoPreview || profile.photo_url || testPfp}
-              className="w-32 h-32 rounded-full object-cover object-center shadow-lg"
-              alt="Profile"
-              
-            />
-            
-            {/* Edit Icon Button */}
-            <label className="absolute bottom-0 right-0 bg-[#2d5f5d] text-white p-2 rounded-full cursor-pointer hover:bg-[#234948] shadow-md transition-colors">
-              <SquarePen size={16} />
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={async (e) => {
-                  const file = e.target.files[0];
-                  if (!file) return;
-
-                  const previewUrl = URL.createObjectURL(file);
-                  setPhotoPreview(previewUrl);
-
-                  const formData = new FormData();
-                  formData.append("photo", file);
-
-                  try {
-                    const res = await api.patch("/api/student/me/photo", formData);
-                    setProfile((prev) => ({
-                      ...prev,
-                      photo_path: res.data.photo_path,
-                      photo_url: `${API_BASE}${res.data.photo_path}`,
-                    }));
-                  } catch (err) {
-                    alert(err?.response?.data?.error || "Photo upload failed");
-                  }
-                }}
-              />
-            </label>
-          </div>
-
-          {/* Email Display (Read Only) */}
-          <div className="w-full">
-            <label className="block mb-2 text-sm font-semibold text-gray-600">Email</label>
-            <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg break-all">
-              {user.email}
+    <MainScreen>
+      <div className="w-full max-w-6xl mx-auto p-4 md:p-6 animate__animated animate__fadeIn">
+        
+        {/* HERO SECTION / HEADER CARD */}
+        <div className="relative bg-white rounded-[2.5rem] shadow-xl overflow-hidden mb-8 border border-gray-100">
+          <div className="absolute top-0 left-0 w-full h-32 bg-linear-to-r from-oasis-header to-oasis-button-dark opacity-90"></div>
+          
+          <div className="relative pt-16 pb-8 px-8 flex flex-col md:flex-row items-center md:items-end gap-6">
+            {/* Profile Image with Edit Overlay */}
+            <div className="relative group">
+              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white shadow-2xl overflow-hidden bg-gray-100">
+                <img
+                  src={photoPreview || profile.photo_url || testPfp}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  alt="Profile"
+                />
+              </div>
+              <label className="absolute bottom-2 right-2 bg-white text-oasis-header p-2.5 rounded-full cursor-pointer hover:bg-oasis-blue transition-all shadow-lg border border-gray-100">
+                <SquarePen size={18} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const previewUrl = URL.createObjectURL(file);
+                    setPhotoPreview(previewUrl);
+                    const formData = new FormData();
+                    formData.append("photo", file);
+                    try {
+                      const res = await api.patch("/api/student/me/photo", formData);
+                      setProfile((prev) => ({
+                        ...prev,
+                        photo_path: res.data.photo_path,
+                        photo_url: `${API_BASE}${res.data.photo_path}`,
+                      }));
+                    } catch (err) {
+                      alert("Photo upload failed");
+                    }
+                  }}
+                />
+              </label>
             </div>
-          </div>
 
-          {/* User Activity Card */}
-          <div className="w-full bg-[#2d5f5d] text-white p-4 rounded-2xl shadow-md">
-            <h3 className="font-bold mb-3 flex items-center gap-2">
-              <Activity size={20} />
-              User Activity
-            </h3>
-            <div className="space-y-2 text-sm">
-              <div>
-                <p className="opacity-80">First access to site:</p>
-                <p className="font-semibold">
+            {/* Name & Badge */}
+            <div className="flex-1 text-center md:text-left mb-2">
+              <h1 className="text-3xl md:text-4xl font-black text-gray-800 font-oasis-text">
+                {displayFullname}
+              </h1>
+              <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
+                <span className="bg-oasis-blue/30 text-oasis-button-dark px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                  Student Account
+                </span>
+                <span className="bg-gray-100 text-gray-500 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                  PUP ITech
+                </span>
+              </div>
+            </div>
+
+            {/* Edit Trigger Button */}
+            {!isEditing && (
+              <button 
+                onClick={() => setIsEditing(true)}
+                className="bg-oasis-header text-white px-8 py-3 rounded-2xl font-bold hover:bg-oasis-button-dark transition-all shadow-lg shadow-oasis-header/20 active:scale-95"
+              >
+                Edit Profile
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-20">
+          
+          {/* LEFT COLUMN: ACCOUNT INFO */}
+          <div className="lg:col-span-4 space-y-6">
+            
+            {/* EMAIL CARD */}
+            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100">
+              <div className="flex items-center gap-3 mb-4 text-oasis-header">
+                <Mail size={20} />
+                <span className="text-xs font-black uppercase tracking-widest">Account Access</span>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <p className="text-xs text-gray-500 mb-1">Registered Email</p>
+                <p className="font-bold text-gray-800 break-all">{user.email}</p>
+              </div>
+            </div>
+
+            {/* ACTIVITY CARD */}
+            <div className="bg-oasis-button-dark text-white p-6 rounded-[2rem] shadow-xl relative overflow-hidden group">
+              <Activity className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 rotate-12 transition-transform group-hover:rotate-45 duration-700" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-6">
+                  <Calendar size={20} className="text-oasis-blue" />
+                  <span className="text-xs font-black uppercase tracking-widest text-oasis-blue">System Activity</span>
+                </div>
+                <p className="text-sm opacity-70 mb-1">First access to platform:</p>
+                <p className="text-lg font-bold leading-tight">
                   {new Date(user.created_at).toLocaleDateString('en-US', {
                     weekday: 'long',
-                    year: 'numeric',
                     month: 'long',
                     day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    year: 'numeric'
                   })}
                 </p>
+                <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-xs font-medium opacity-80">Account Secure & Active</span>
+                </div>
               </div>
             </div>
           </div>
 
-        </div>
-
-        {/* ========== RIGHT COLUMN ========== */}
-        <div className="w-full h-auto p-3 flex flex-col gap-5 justify-start items-start lg:border-l lg:pl-8">
-
-          {/* NAME */}
-          <div className="w-full">
-
-            {isEditing ? (
-                <div className="w-full flex flex-col sm:flex-row gap-3">
-                  <SingleField
-                    hasBorder={true}
-                    fieldHolder={"First name"}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    value={firstName}
-                  />
-                  <SingleField
-                    hasBorder={true}
-                    fieldHolder={"Middle Initial"}
-                    onChange={(e) => setMiddleInitial(e.target.value.charAt(0).toUpperCase())}
-                    value={middleInitial}
-                  />
-                  <SingleField
-                    hasBorder={true}
-                    fieldHolder={"Last name"}
-                    onChange={(e) => setLastName(e.target.value)}
-                    value={lastName}
-                  />
-                  
-                </div>
-
-
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div>
-                    <label className="block mb-2 text-sm font-semibold text-gray-600">First name</label>
-                    <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
-                        {firstName || "-"}
-                    </div>
-                </div>
-              
-                <div>
-                    <label className="block mb-2 text-sm font-semibold text-gray-600">Middle Initial</label>
-                    <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
-                        {middleInitial || "-"}
-                    </div>
-                </div>
-
-                <div>
-                    <label className="block mb-2 text-sm font-semibold text-gray-600">Last Name</label>
-                    <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
-                        {lastName || "-"}
-                    </div>
-                </div>
-
-            </div>
-              
-            )}
-          </div>
-
-          {/* OJT Adviser Field */}
-          <div className="w-full">
-            <label className="block mb-2 text-sm font-semibold text-gray-600">OJT Adviser</label>
-            {isEditing ? (
-              
-              <select 
-                className="w-full p-3 bg-white text-black border rounded outline-none cursor-pointer"
-                value={ojtAdviser}
-                onChange={(e) => setOjtAdviser(e.target.value)}
-              >
-                <option value="">Select Adviser</option>
-                <option value="Dr. Juan Dela Cruz">Dr. Juan Dela Cruz</option>
-                <option value="Prof. Maria Santos">Prof. Maria Santos</option>
-                <option value="Engr. Pedro Reyes">Engr. Pedro Reyes</option>
-                <option value="Dr. Ana Garcia">Dr. Ana Garcia</option>
-              </select>
-            ) : (
-              <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
-                {ojtAdviser || "Not assigned"}
+          {/* RIGHT COLUMN: PROFILE FIELDS */}
+          <div className="lg:col-span-8">
+            <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 h-full">
+              <div className="flex items-center gap-3 mb-8">
+                <ShieldCheck size={24} className="text-oasis-header" />
+                <h2 className="text-xl font-bold text-gray-800">Personal & Academic Details</h2>
               </div>
-            )}  
-          </div>
 
-          {/* OJT Program Field */}
-          <div className="w-full">
-            <label className="block mb-2 text-sm font-semibold text-gray-600">OJT Program</label>
-            {isEditing ? (
-              <select 
-                className="w-full p-3 bg-white text-black border rounded outline-none cursor-pointer"
-                value={Program}
-                onChange={(e) => setProgram(e.target.value)}
-              >
-                <option value="">Select Program</option>
-                <option value="DIT">Diploma in Information Technology</option>
-                <option value="DEET">Diploma in Electrical Engineering</option>
-                <option value="DLMOT">Diploma in Legal Management Technology</option>
-                <option value="DCVET">Diploma in Civil Engineering</option>
-              </select>
-            ) : (
-              <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
-                {Program || "Not assigned"}
-              </div>
-            )}
-          </div>
-
-          {/* Password Field */}
-          <div className="w-full">
-            <label className="relative mb-2 text-sm font-semibold text-gray-600 flex flex-col gap-2">
-              Password
-              {isEditing ? (
-                <div className="w-full flex items-center justify-center gap-3">
-                  <input
-                    type={showPassword ? "text": "password"}
-                    className="w-full p-3 bg-white text-black border rounded outline-none"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter new password"
-                  />
-                  {showPassword ? 
-                    <Eye onClick={() => setShowPassword(false)} size={35} color="#2B6259" className="z-20 cursor-pointer"/>
-                  : 
-                    <EyeClosed onClick={() => setShowPassword(true)} size={35} color="#2B6259" className="z-20 cursor-pointer"/>
-                  }
-                  
-                </div>
-                  
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 
-              ) : (
-                <div className="w-full p-3 bg-[#2d5f5d] text-white rounded-lg">
-                  **********
+                {/* NAME FIELDS */}
+                <div className="md:col-span-2 space-y-4">
+                  <div className="flex items-center gap-2 text-oasis-header mb-2">
+                    <User size={16} />
+                    <span className="text-[0.65rem] font-black uppercase tracking-tighter">Full Identity</span>
+                  </div>
+                  
+                  {isEditing ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <SingleField labelText="First Name" fieldHolder="First name" onChange={(e) => setFirstName(e.target.value)} value={firstName} hasBorder />
+                      <SingleField labelText="M.I." fieldHolder="M.I." onChange={(e) => setMiddleInitial(e.target.value.charAt(0).toUpperCase())} value={middleInitial} hasBorder />
+                      <SingleField labelText="Last Name" fieldHolder="Last name" onChange={(e) => setLastName(e.target.value)} value={lastName} hasBorder />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <ReadOnlyField label="First Name" value={firstName} />
+                      <ReadOnlyField label="Middle Initial" value={middleInitial} />
+                      <ReadOnlyField label="Last Name" value={lastName} />
+                    </div>
+                  )}
+                </div>
+
+                {/* ADVISER FIELD */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-oasis-header mb-2">
+                    <GraduationCap size={16} />
+                    <span className="text-[0.65rem] font-black uppercase tracking-tighter">OJT Mentor</span>
+                  </div>
+                  {isEditing ? (
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-400 ml-1">Select Adviser</label>
+                      <select 
+                        className="w-full p-3.5 bg-gray-50 text-gray-800 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-oasis-header transition-all cursor-pointer"
+                        value={ojtAdviser}
+                        onChange={(e) => setOjtAdviser(e.target.value)}
+                      >
+                        <option value="">Select Adviser</option>
+                        <option value="Dr. Juan Dela Cruz">Dr. Juan Dela Cruz</option>
+                        <option value="Prof. Maria Santos">Prof. Maria Santos</option>
+                        <option value="Engr. Pedro Reyes">Engr. Pedro Reyes</option>
+                        <option value="Dr. Ana Garcia">Dr. Ana Garcia</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <ReadOnlyField label="Current Adviser" value={ojtAdviser || "Not assigned"} />
+                  )}
+                </div>
+
+                {/* PROGRAM FIELD */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-oasis-header mb-2">
+                    <GraduationCap size={16} />
+                    <span className="text-[0.65rem] font-black uppercase tracking-tighter">Academic Program</span>
+                  </div>
+                  {isEditing ? (
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-400 ml-1">Select Program</label>
+                      <select 
+                        className="w-full p-3.5 bg-gray-50 text-gray-800 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-oasis-header transition-all cursor-pointer"
+                        value={Program}
+                        onChange={(e) => setProgram(e.target.value)}
+                      >
+                        <option value="">Select Program</option>
+                        <option value="DIT">Diploma in Information Technology</option>
+                        <option value="DEET">Diploma in Electrical Engineering</option>
+                        <option value="DLMOT">Diploma in Legal Management Technology</option>
+                        <option value="DCVET">Diploma in Civil Engineering</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <ReadOnlyField label="Program / Course" value={Program || "Not assigned"} />
+                  )}
+                </div>
+
+                {/* PASSWORD FIELD */}
+                <div className="md:col-span-2 space-y-4 pt-4 border-t border-gray-50">
+                  <div className="flex items-center gap-2 text-oasis-header mb-2">
+                    <ShieldCheck size={16} />
+                    <span className="text-[0.65rem] font-black uppercase tracking-tighter">Security</span>
+                  </div>
+                  {isEditing ? (
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-400 ml-1">New Password</label>
+                      <div className="relative group">
+                        <input
+                          type={showPassword ? "text": "password"}
+                          className="w-full p-3.5 bg-gray-50 text-gray-800 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-oasis-header transition-all"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Leave blank to keep current"
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-oasis-header hover:text-oasis-button-dark transition-colors"
+                        >
+                          {showPassword ? <Eye size={20} /> : <EyeClosed size={20} />}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <ReadOnlyField label="Account Password" value="••••••••••••" />
+                  )}
+                </div>
+              </div>
+
+              {/* ACTIONS */}
+              {isEditing && (
+                <div className="flex flex-col sm:flex-row justify-end gap-4 mt-12 animate__animated animate__fadeInUp">
+                  <button 
+                    onClick={() => setIsEditing(false)}
+                    className="px-10 py-3 rounded-2xl font-bold text-gray-500 hover:bg-gray-100 transition-all border border-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={saveProfile}
+                    className="px-12 py-3 bg-oasis-header text-white rounded-2xl font-bold hover:bg-oasis-button-dark transition-all shadow-xl shadow-oasis-header/20 hover:scale-105 active:scale-95"
+                  >
+                    Save Changes
+                  </button>
                 </div>
               )}
-
-            </label>
+            </div>
           </div>
-          
-          {!isEditing ? (
-            <div className="w-full flex justify-center gap-3 mt-4">
-              <button 
-                className="bg-[#2d5f5d] text-white px-8 py-2 rounded-lg hover:bg-[#234948] transition-colors font-semibold shadow-md"
-                onClick={() => setIsEditing(true)}
-              >
-                Edit Details
-              </button>
-            </div>
-          ) : (
-            <div className="w-full flex justify-center gap-3 mt-4">
-              <button 
-                className="bg-gray-400 text-white px-8 py-2 rounded-lg hover:bg-gray-500 transition-colors font-semibold shadow-md"
-                onClick={() => setIsEditing(false)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="bg-[#2d5f5d] text-white px-8 py-2 rounded-lg hover:bg-[#234948] transition-colors font-semibold shadow-md"
-                onClick={saveProfile}
-              >
-                Submit
-              </button>
-             
-            </div>
-          )}
-
         </div>
-
       </div>
-    </StudentProfileScreen>
+    </MainScreen>
   );
 }
 
-export function SectionHeader({ icon, text }) {
+function ReadOnlyField({ label, value }) {
   return (
-    <div className="w-full p-2 flex items-center justify-center gap-1 relative backdrop-blur-3xl bg-oasis-blue shadow-[2px_2px_3px_rgba(0,0,0,0.5)]">
-      {icon}
-      <Subtitle text={text} size={"text-[1rem]"} />
+    <div className="space-y-1">
+      <label className="text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest ml-1">{label}</label>
+      <div className="w-full p-3.5 bg-gray-50 text-gray-800 rounded-2xl border border-gray-100 font-medium">
+        {value}
+      </div>
     </div>
   );
 }

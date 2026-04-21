@@ -105,3 +105,55 @@ export function AnnouncementModal({ visible, onClose, title, content, date, time
         </div>
     );
 }
+
+export function NotificationModal({ visible, onClose, notification }) {
+    if (!visible || !notification) return null;
+
+    const parseNotificationDate = (dateString) => {
+        if (!dateString) return null;
+        const date = dateString.endsWith("Z") ? new Date(dateString) : new Date(`${dateString}Z`);
+        return date.toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' });
+    };
+
+    return (
+        <div className="fixed inset-0 z-200 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl overflow-hidden flex flex-col animate__animated animate__zoomIn animate__faster">
+                
+                {/* HEADER */}
+                <div className="p-8 bg-oasis-gradient flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[0.65rem] font-black uppercase tracking-widest text-oasis-button-dark opacity-60">
+                            Notification Detail
+                        </span>
+                        <button onClick={onClose} className="p-2 hover:bg-black/5 rounded-full transition-colors">
+                            <X size={20} className="text-oasis-button-dark" />
+                        </button>
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-800 leading-tight mt-1">
+                        {notification.title}
+                    </h2>
+                    <span className="text-xs text-gray-500 font-medium italic">
+                        {parseNotificationDate(notification.created_at)}
+                    </span>
+                </div>
+
+                {/* CONTENT */}
+                <div className="p-8 flex-1 overflow-y-auto max-h-[60vh] custom-scrollbar">
+                    <p className="text-sm md:text-base text-gray-700 leading-relaxed font-oasis-text">
+                        {notification.message}
+                    </p>
+                </div>
+
+                {/* FOOTER */}
+                <div className="p-6 bg-gray-50 flex justify-end">
+                    <button 
+                        onClick={onClose}
+                        className="px-8 py-2.5 bg-oasis-header text-white rounded-xl font-bold text-sm hover:bg-oasis-button-dark transition-all shadow-lg shadow-oasis-header/20"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}

@@ -22,8 +22,13 @@ export default function Footer({ onOpenModal }) {
                     
                     <ul className="flex flex-col items-center lg:items-start text-sm">
                         <Title text={"Contact Info"}/>
-                        <li className="mt-2 text-center lg:text-left">Email:
-                            oasiskomunidevs@gmail.com</li>
+                        <li className="mt-2 text-center lg:text-left">
+                            <a href="mailto:oasiskomunidevs@gmail.com">
+                                Email:
+                                oasiskomunidevs@gmail.com
+                            </a>
+                            
+                        </li>
                     </ul>
 
                     <ul className="flex flex-col items-center lg:items-start text-sm">

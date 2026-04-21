@@ -3,11 +3,35 @@ import Footer from '../components/footer'
 import OrbiChatbot from '../components/OrbiChatbot';
 import ProspectMoaForm from '../components/prospectMoaForm';
 import { AnnouncementModal } from '../components/userModal';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { NotificationAPI } from '../api/notification.api';
+import { getRole } from '../api/token';
 
 export default function MainScreen({ children, showHeader = true, hasTopMargin = true }) {
+    const userRole = getRole();
+    const isAdmin = userRole === "admin" || userRole === "ADMIN";
+    const isStudent = userRole === "student" || userRole === "STUDENT";
 
     const [activeModal, setActiveModal] = useState(null);
+    const [notifications, setNotifications] = useState([]);
+
+    const loadNotifications = async () => {
+        if (!isStudent) return;
+        try {
+            const res = await NotificationAPI.getStudentNotifications();
+            setNotifications(res.data || []);
+        } catch (err) {
+            console.error("Failed to load notifications:", err);
+        }
+    };
+
+    useEffect(() => {
+        if (isStudent) {
+            loadNotifications();
+            const interval = setInterval(loadNotifications, 5000);
+            return () => clearInterval(interval);
+        }
+    }, [isStudent]);
 
     const getModalContent = () => {
         switch (activeModal) {
@@ -118,8 +142,17 @@ export default function MainScreen({ children, showHeader = true, hasTopMargin =
 
     return (
         <div className="w-full h-full bg-page-white flex flex-col justify-center items-center overflow-x-hidden overflow-y-auto">
-            <Header />
-            {showHeader ? <StudentHeader /> : ""}
+            {isAdmin ? (
+                <Header admin notifications={notifications} setNotifications={setNotifications} />
+            ) : (
+                <Header notifications={notifications} setNotifications={setNotifications} />
+            )}
+            {showHeader ? (
+                <StudentHeader 
+                    notifications={notifications} 
+                    setNotifications={setNotifications} 
+                />
+            ) : ""}
             {hasTopMargin ? <div className='mt-25'></div> : ""}
             
             {children}

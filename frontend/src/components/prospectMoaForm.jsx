@@ -69,6 +69,7 @@ export default function ProspectMoaForm() {
 
     const [errMsg, setErrMsg] = useState("");
     const [successMsg, setSuccessMsg] = useState("");
+    const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
     const initialFormData = {
         company_name: "",
@@ -107,18 +108,30 @@ export default function ProspectMoaForm() {
         "contact_number",
     ];
 
+    const isEmailValid = (email) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    };
+
     const emptyFields = requiredFields.filter(
         (field) => !String(formData[field] || "").trim()
     );
 
-    const readableFields = emptyFields.map((field) =>
-        field.replaceAll("_", " ")
-    );
+    const invalidFields = [];
+    if (formData.contact_email && !isEmailValid(formData.contact_email)) {
+        invalidFields.push("contact_email (invalid format)");
+    }
+
+    const allErrors = [
+        ...emptyFields.map(f => f.replaceAll("_", " ")),
+        ...invalidFields.map(f => f.replaceAll("_", " "))
+    ];
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setAttemptedSubmit(true);
 
-        if (emptyFields.length > 0) {
+        if (allErrors.length > 0) {
             return;
         }
 
@@ -137,9 +150,9 @@ export default function ProspectMoaForm() {
 
         try {
             await submitMoaProspect(payload);
-            // alert("MOA Prospect submitted successfully.");
             setSuccessMsg("MOA Prospect submitted successfully.");
             setFormData(initialFormData);
+            setAttemptedSubmit(false);
 
             const fileInput = document.getElementById("moa_file");
             if (fileInput) {
@@ -308,12 +321,12 @@ export default function ProspectMoaForm() {
                                 onChange={handleChange("contact_number")}
                             />
 
-                            {readableFields.length > 0 && (
+                            {attemptedSubmit && allErrors.length > 0 && (
                                 <Subtitle
                                     color="text-red-600"
                                     size="text-[0.8rem]"
                                     isItalic
-                                    text={`${readableFields.join(", ")} ${readableFields.length > 1 ? "are" : "is"} required`}
+                                    text={`${allErrors.join(", ")} ${allErrors.length > 1 ? "are" : "is"} invalid or required`}
                                 />
                             )}
 
