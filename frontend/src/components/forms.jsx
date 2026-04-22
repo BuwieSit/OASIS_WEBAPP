@@ -400,20 +400,29 @@ export function ForgotPassword() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (step !== STEPS.PASSWORD) return;
-
-    if (!validPwd || !validMatch) {
-      setErrMsg("Invalid password entry");
-      return;
-    }
-
+    
     try {
-      await resetPassword(user, pwd, matchPwd);
-      navigate("/access?form=login");
+      if (step === STEPS.EMAIL) {
+        if (!validName) return;
+        await sendResetOtp(user);
+        setStep(STEPS.OTP);
+      } else if (step === STEPS.OTP) {
+        if (!validOtp) return;
+        await verifyResetOtp(user, otp);
+        setStep(STEPS.PASSWORD);
+      } else if (step === STEPS.PASSWORD) {
+        if (!validPwd || !validMatch) {
+          setErrMsg("Invalid password entry");
+          return;
+        }
+        await resetPassword(user, pwd, matchPwd);
+        navigate("/access?form=login");
+      }
     } catch (err) {
+      console.error("Forgot Password Error:", err);
       setErrMsg(
         err?.response?.data?.error ||
-        "Password reset failed."
+        "An error occurred. Please try again."
       );
     }
   };
