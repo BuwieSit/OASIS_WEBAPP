@@ -5,6 +5,7 @@ from datetime import date, datetime
 import io
 import os
 import uuid
+import requests
 from werkzeug.utils import secure_filename
 from openpyxl import Workbook, load_workbook
 
@@ -73,9 +74,6 @@ def _parse_number(val):
 
 
 def _compute_validity_years(signed_at, expires_at):
-    """
-    Fallback computation from dates.
-    """
     if not signed_at or not expires_at:
         return None
 
@@ -87,10 +85,6 @@ def _compute_validity_years(signed_at, expires_at):
 
 
 def _compute_validity_years_from_months(validity_months):
-    """
-    Main computation for manual HTE add:
-    months -> years
-    """
     if validity_months is None:
         return None
 
@@ -106,10 +100,6 @@ def _compute_validity_years_from_months(validity_months):
 
 
 def _compute_expiry_date_from_months(signed_at, validity_months):
-    """
-    Main computation for manual HTE add:
-    signed_at + months -> expiry date
-    """
     if not signed_at or validity_months is None:
         return None
 
@@ -127,17 +117,11 @@ def _compute_expiry_date_from_months(signed_at, validity_months):
     year += (month - 1) // 12
     month = ((month - 1) % 12) + 1
 
-    # Keep existing convention to avoid invalid dates
     day = min(signed_at.day, 28)
     return date(year, month, day)
 
 
 def _resolve_moa_dates_and_validity(signed_at=None, expires_at=None, validity_months=None, validity_years=None):
-    """
-    Priority:
-    1. signed_at + validity_months => compute expires_at and validity_years
-    2. signed_at + expires_at => compute validity_years
-    """
     if signed_at and validity_months is not None:
         expires_at = _compute_expiry_date_from_months(signed_at, validity_months)
         validity_years = _compute_validity_years_from_months(validity_months)
@@ -198,6 +182,150 @@ def _overview_query(status):
     return query.order_by(HostTrainingEstablishment.company_name)
 
 
+def _normalize_text(value):
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def _clean_moa_link(value):
+    link = _normalize_text(value)
+    if not link:
+        return ""
+
+    lowered = link.lower()
+    invalid_values = {
+        "link to scanned moa",
+        "linke to scanned moa",
+        "n/a",
+        "na",
+        "-",
+        "--",
+        "none",
+        "null",
+    }
+
+    if lowered in invalid_values:
+        return ""
+
+    return link
+
+
+def _is_http_url(value):
+    if not value:
+        return False
+    value = str(value).strip().lower()
+    return value.startswith("http://") or value.startswith("https://")
+
+
+def download_gdrive_file(url, upload_root):
+    """
+    Download a publicly shared Google Drive file and save it locally.
+    Returns a relative uploads path on success, otherwise None.
+    """
+    def _get_confirm_token(response):
+        for key, value in response.cookies.items():
+            if key.startswith("download_warning"):
+                return value
+        return None
+
+    def _save_response_content(response, destination):
+        with open(destination, "wb") as f:
+            for chunk in response.iter_content(32768):
+                if chunk:
+                    f.write(chunk)
+
+    try:
+        if not url:
+            print("GDRIVE: empty URL")
+            return None
+
+        url = str(url).strip()
+
+        if not _is_http_url(url):
+            print("GDRIVE: invalid URL format:", url)
+            return None
+
+        if "drive.google.com" not in url:
+            print("GDRIVE: non-drive URL, skipping:", url)
+            return None
+
+        if not upload_root:
+            print("GDRIVE: UPLOAD_ROOT not set")
+            return None
+
+        if "id=" in url:
+            file_id = url.split("id=")[-1].split("&")[0]
+        elif "/d/" in url:
+            file_id = url.split("/d/")[1].split("/")[0]
+        else:
+            print("GDRIVE: could not extract file id from URL:", url)
+            return None
+
+        session = requests.Session()
+        base_url = "https://drive.google.com/uc?export=download"
+
+        response = session.get(
+            base_url,
+            params={"id": file_id},
+            stream=True,
+            timeout=20
+        )
+
+        token = _get_confirm_token(response)
+        if token:
+            response = session.get(
+                base_url,
+                params={"id": file_id, "confirm": token},
+                stream=True,
+                timeout=20
+            )
+
+        if response.status_code != 200:
+            print(f"GDRIVE: bad status {response.status_code} for {url}")
+            return None
+
+        content_type = (response.headers.get("Content-Type") or "").lower()
+        if "text/html" in content_type:
+            print(f"GDRIVE: got HTML instead of file for {url}")
+            return None
+
+        upload_dir = os.path.join(upload_root, "moa")
+        os.makedirs(upload_dir, exist_ok=True)
+
+        ext = ".pdf"
+        content_disp = response.headers.get("Content-Disposition") or ""
+        if "filename=" in content_disp:
+            raw_name = content_disp.split("filename=")[-1].strip().strip('"')
+            _, guessed_ext = os.path.splitext(raw_name)
+            if guessed_ext:
+                ext = guessed_ext.lower()
+
+        filename = f"moa_{uuid.uuid4().hex}{ext}"
+        abs_path = os.path.join(upload_dir, filename)
+
+        _save_response_content(response, abs_path)
+
+        if not os.path.exists(abs_path):
+            print(f"GDRIVE: file was not created for {url}")
+            return None
+
+        if os.path.getsize(abs_path) == 0:
+            print(f"GDRIVE: downloaded file is empty for {url}")
+            try:
+                os.remove(abs_path)
+            except OSError:
+                pass
+            return None
+
+        print(f"GDRIVE: downloaded successfully -> {abs_path}")
+        return f"uploads/moa/{filename}"
+
+    except Exception as e:
+        print("GDRIVE download failed:", e)
+        return None
+
+
 @admin_hte_bp.get("")
 @jwt_required()
 def get_htes():
@@ -205,7 +333,6 @@ def get_htes():
         return jsonify({"error": "forbidden"}), 403
 
     status = request.args.get("status")
-
     rows = _overview_query(status).all()
 
     results = []
@@ -214,7 +341,6 @@ def get_htes():
         expires_at = moa.expires_at if moa and moa.expires_at else hte.moa_expiry_date
         validity_years = hte.moa_validity
 
-        # fallback only if stored validity is missing
         if signed_at and expires_at and validity_years is None:
             validity_years = _compute_validity_years(signed_at, expires_at)
 
@@ -252,13 +378,11 @@ def export_htes_excel():
         return jsonify({"error": "forbidden"}), 403
 
     status = request.args.get("status")
-
     rows = _overview_query(status).all()
 
     wb = Workbook()
     ws = wb.active
     ws.title = "HTE Overview"
-
     ws.append(EXCEL_HEADERS)
 
     for hte, moa in rows:
@@ -334,23 +458,45 @@ def import_htes_excel():
         def get(h):
             return row[header_to_idx[h]].value
 
-        company_name = (get("COMPANY NAME") or "").strip() if isinstance(get("COMPANY NAME"), str) else get("COMPANY NAME")
-        if not company_name:
+        company_name_raw = get("COMPANY NAME")
+        company_name = _normalize_text(company_name_raw)
+
+        if not company_name or company_name.upper() == "COMPANY NAME":
             failed_rows.append({"row": r_idx, "error": "Missing COMPANY NAME"})
             continue
 
-        industry = (get("NATURE OF BUSINESS") or "").strip() if isinstance(get("NATURE OF BUSINESS"), str) else (get("NATURE OF BUSINESS") or "")
-        contact_person = (get("CONTACT PERSON") or "").strip() if isinstance(get("CONTACT PERSON"), str) else (get("CONTACT PERSON") or "")
-        contact_position = (get("POSITION") or "").strip() if isinstance(get("POSITION"), str) else (get("POSITION") or "")
-        contact_number = (get("CONTACT NUMBER") or "").strip() if isinstance(get("CONTACT NUMBER"), str) else (get("CONTACT NUMBER") or "")
-        contact_email = (get("EMAIL ADDRESS") or "").strip() if isinstance(get("EMAIL ADDRESS"), str) else (get("EMAIL ADDRESS") or "")
-        address = (get("COMPANY ADDRESS") or "").strip() if isinstance(get("COMPANY ADDRESS"), str) else (get("COMPANY ADDRESS") or "")
-        moa_status = (get("MOA STATUS") or "PENDING")
-        course = (get("COURSE") or "")
+        industry = _normalize_text(get("NATURE OF BUSINESS")) or "N/A"
+        contact_person = _normalize_text(get("CONTACT PERSON")) or "N/A"
+        contact_position = _normalize_text(get("POSITION")) or "N/A"
+        contact_number = _normalize_text(get("CONTACT NUMBER")) or "N/A"
+        contact_email = _normalize_text(get("EMAIL ADDRESS")) or "N/A"
+        address = _normalize_text(get("COMPANY ADDRESS")) or "N/A"
+        moa_status = _normalize_text(get("MOA STATUS")) or "PENDING"
+        course = _normalize_text(get("COURSE")) or None
         signed_at = _parse_date(get("DATE NOTARIZED"))
         validity_months = _parse_number(get("VALIDITY"))
         expires_at = _parse_date(get("EXPIRY DATE"))
-        moa_link = (get("LINKE TO SCANNED MOA") or "")
+        moa_link = _clean_moa_link(get("LINKE TO SCANNED MOA"))
+
+        moa_file_path = None
+
+        if moa_link:
+            if _is_http_url(moa_link):
+                upload_root = current_app.config.get("UPLOAD_ROOT")
+                moa_file_path = download_gdrive_file(moa_link, upload_root)
+
+                if not moa_file_path:
+                    failed_rows.append({
+                        "row": r_idx,
+                        "error": "MOA link could not be downloaded",
+                        "link": moa_link
+                    })
+            else:
+                failed_rows.append({
+                    "row": r_idx,
+                    "error": "Invalid MOA link format",
+                    "link": moa_link
+                })
 
         if validity_months is not None:
             signed_at, expires_at, validity_years = _resolve_moa_dates_and_validity(
@@ -369,64 +515,74 @@ def import_htes_excel():
         except Exception:
             moa_status = "PENDING"
 
-        hte = HostTrainingEstablishment.query.filter_by(company_name=str(company_name).strip()).first()
-        if not hte:
-            hte = HostTrainingEstablishment(
-                company_name=str(company_name).strip(),
-                industry=str(industry) if industry else "N/A",
-                address=str(address) if address else "N/A",
-                description=None,
-                website=None,
-                contact_person=str(contact_person) if contact_person else "N/A",
-                contact_position=str(contact_position) if contact_position else "N/A",
-                contact_number=str(contact_number) if contact_number else "N/A",
-                contact_email=str(contact_email) if contact_email else "N/A",
-                moa_status=moa_status,
-                course=str(course) if course else None,
-                moa_signed_at=signed_at,
-                moa_validity=validity_years,
-                moa_expiry_date=expires_at,
-                moa_file_path=str(moa_link) if moa_link else None,
-            )
-            db.session.add(hte)
-            db.session.flush()
-            created_htes += 1
-        else:
-            hte.industry = str(industry) if industry else hte.industry
-            hte.address = str(address) if address else hte.address
-            hte.contact_person = str(contact_person) if contact_person else hte.contact_person
-            hte.contact_position = str(contact_position) if contact_position else hte.contact_position
-            hte.contact_number = str(contact_number) if contact_number else hte.contact_number
-            hte.contact_email = str(contact_email) if contact_email else hte.contact_email
-            hte.course = str(course) if course else hte.course
-            hte.moa_status = moa_status
-            hte.moa_signed_at = signed_at
-            hte.moa_validity = validity_years
-            hte.moa_expiry_date = expires_at
-            if moa_link:
-                hte.moa_file_path = str(moa_link)
-            updated_htes += 1
+        try:
+            with db.session.begin_nested():
+                hte = HostTrainingEstablishment.query.filter_by(company_name=company_name).first()
 
-        if signed_at and expires_at:
-            existing_moa = (
-                MemorandumOfAgreement.query
-                .filter_by(hte_id=hte.id, signed_at=signed_at, expires_at=expires_at)
-                .first()
-            )
-            if not existing_moa:
-                db.session.add(MemorandumOfAgreement(
-                    hte_id=hte.id,
-                    signed_at=signed_at,
-                    expires_at=expires_at,
-                    status=moa_status,
-                    document_path=str(moa_link) if moa_link else None
-                ))
-                created_moas += 1
-            else:
-                existing_moa.status = moa_status
-                if moa_link:
-                    existing_moa.document_path = str(moa_link)
-                updated_moas += 1
+                if not hte:
+                    hte = HostTrainingEstablishment(
+                        company_name=company_name,
+                        industry=industry,
+                        address=address,
+                        description=None,
+                        website=None,
+                        contact_person=contact_person,
+                        contact_position=contact_position,
+                        contact_number=contact_number,
+                        contact_email=contact_email,
+                        moa_status=moa_status,
+                        course=course,
+                        moa_signed_at=signed_at,
+                        moa_validity=validity_years,
+                        moa_expiry_date=expires_at,
+                        moa_file_path=moa_file_path or (moa_link if moa_link else None),
+                    )
+                    db.session.add(hte)
+                    db.session.flush()
+                    created_htes += 1
+                else:
+                    hte.industry = industry or hte.industry
+                    hte.address = address or hte.address
+                    hte.contact_person = contact_person or hte.contact_person
+                    hte.contact_position = contact_position or hte.contact_position
+                    hte.contact_number = contact_number or hte.contact_number
+                    hte.contact_email = contact_email or hte.contact_email
+                    hte.course = course or hte.course
+                    hte.moa_status = moa_status
+                    hte.moa_signed_at = signed_at
+                    hte.moa_validity = validity_years
+                    hte.moa_expiry_date = expires_at
+                    if moa_link:
+                        hte.moa_file_path = moa_file_path or moa_link
+                    updated_htes += 1
+
+                if signed_at and expires_at:
+                    existing_moa = (
+                        MemorandumOfAgreement.query
+                        .filter_by(hte_id=hte.id, signed_at=signed_at, expires_at=expires_at)
+                        .first()
+                    )
+
+                    if not existing_moa:
+                        db.session.add(MemorandumOfAgreement(
+                            hte_id=hte.id,
+                            signed_at=signed_at,
+                            expires_at=expires_at,
+                            status=moa_status,
+                            document_path=moa_file_path or (moa_link if moa_link else None)
+                        ))
+                        created_moas += 1
+                    else:
+                        existing_moa.status = moa_status
+                        if moa_link:
+                            existing_moa.document_path = moa_file_path or moa_link
+                        updated_moas += 1
+
+        except Exception as e:
+            failed_rows.append({
+                "row": r_idx,
+                "error": f"Row processing failed: {str(e)}"
+            })
 
     db.session.commit()
 
@@ -478,7 +634,7 @@ def create_hte_manual():
         status = "PENDING"
 
     signed_at = _parse_date(form.get("signed_at"))
-    validity_months = _parse_number(form.get("validity"))  # input is in months
+    validity_months = _parse_number(form.get("validity"))
 
     expires_at = None
     validity_years = None
@@ -523,19 +679,15 @@ def create_hte_manual():
         address=address,
         description=description,
         website=website,
-
         contact_person=contact_person,
         contact_position=contact_position,
         contact_number=contact_number,
         contact_email=contact_email,
-
         moa_status=status,
         course=course_value,
-
         moa_signed_at=signed_at,
         moa_validity=validity_years,
         moa_expiry_date=expires_at,
-
         moa_file_path=moa_path,
         thumbnail_path=thumbnail_path,
     )
