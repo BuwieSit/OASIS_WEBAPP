@@ -13,7 +13,7 @@ export function CarouselItem({ thumbnail, hteName = "Name of HTE", hteAddress = 
     return (
         <>
                 {/* PARENT WRAPPER */}
-                <div className="embla__slide w-60 h-80 overflow-hidden hover:cursor-pointer" onClick={onClick}>
+                <div className="embla__slide w-60 h-80 overflow-hidden hover:cursor-grab active:cursor-grabbing" onClick={onClick}>
 
                 {/* IMAGE WRAPPER */}
                 <div 
@@ -71,7 +71,7 @@ const EmblaCarousel = (props) => {
       
       <div className="embla__viewport" ref={emblaRef}>
  
-        <div className="embla__container">
+        <div className="embla__container ">
           {slides.map((slide, index) => (
             <CarouselItem 
                 key={index} 

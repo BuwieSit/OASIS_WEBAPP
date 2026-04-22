@@ -194,6 +194,7 @@ export function DynamicSection({ sectionKey, title, items = [] }) {
         }
         return null;
     };
+
     const headerTitle = findFirstHeader(items) || title || "Section Content";
     return (
         <section className='w-full flex flex-col items-start justify-center gap-5'>
@@ -201,7 +202,7 @@ export function DynamicSection({ sectionKey, title, items = [] }) {
             <Title text={title} isAnimated={false} id={sectionKey} />
             <div className='w-full border'></div>
 
-
+                
                 <Accordion headerText={headerTitle}>
                     {items.length === 0 ? (
                         <Subtitle
@@ -212,6 +213,7 @@ export function DynamicSection({ sectionKey, title, items = [] }) {
                         <StudentTreeRenderer items={items} level={0} />
                     )}
                 </Accordion>
+
             
         </section>
     );
@@ -276,23 +278,10 @@ export function StudentItemRenderer({ item, level }) {
 
     if (item.type === "document") {
         return (
-            <div className="w-full flex flex-col gap-3">
-                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
-                    <FormDownloadable
-                        text={item.title}
-                        link={item.downloadUrl || item.file}
-                    />
-                    {item.description && (
-                        <p className="text-[0.85rem] text-gray-500 font-oasis-text mt-2 italic whitespace-pre-wrap pl-1">
-                            {item.description}
-                        </p>
-                    )}
-                </div>
-
-                {hasChildren && (
-                    <StudentTreeRenderer items={item.children} level={level + 1} />
-                )}
-            </div>
+            <FormDownloadable
+                text={item.title}
+                link={item.downloadUrl || item.file}
+            />
         );
     }
 

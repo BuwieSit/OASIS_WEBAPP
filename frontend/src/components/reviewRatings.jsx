@@ -2,16 +2,16 @@ import { useInView } from "../hooks/useInView";
 import { Star } from "lucide-react";
 
 
-export default function ReviewRatings() {
-    const ratings = [
-        { stars: 5, count: 928 },
-        { stars: 4, count: 602 },
-        { stars: 3, count: 205 },
-        { stars: 2, count: 203 },
-        { stars: 1, count: 200 },
+export default function ReviewRatings({ distribution }) {
+    const ratings = distribution || [
+        { stars: 5, count: 0 },
+        { stars: 4, count: 0 },
+        { stars: 3, count: 0 },
+        { stars: 2, count: 0 },
+        { stars: 1, count: 0 },
     ];
 
-    const maxCount = Math.max(...ratings.map(r => r.count));
+    const maxCount = Math.max(...ratings.map(r => r.count), 0);
     const [ref, isVisible] = useInView();
 
     return (
@@ -24,7 +24,7 @@ export default function ReviewRatings() {
                     {/* STARS */}
                     <div className="w-24 flex justify-end gap-1">
                         {Array.from({ length: rating.stars }).map((_, i) => (
-                            <Star/>
+                            <Star key={i} size={14} fill="#2B6259" color="#2B6259" />
                         ))}
                     </div>
 
@@ -33,7 +33,7 @@ export default function ReviewRatings() {
                         <div
                             className="h-full bg-oasis-dark rounded-full transition-[width] duration-700 ease-out"
                             style={{
-                                width: isVisible
+                                width: isVisible && maxCount > 0
                                     ? `${(rating.count / maxCount) * 100}%`
                                     : "0%",
                             }}

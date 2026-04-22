@@ -28,8 +28,8 @@ export function submitMoaProspect(formData) {
   });
 }
 
-export function getHteReviews(hteId) {
-  return api.get(`/api/student/htes/${hteId}/reviews`);
+export function getHteReviews(hteId, params = {}) {
+  return api.get(`/api/student/htes/${hteId}/reviews`, { params });
 }
 
 export function submitHteReview(hteId, payload) {
