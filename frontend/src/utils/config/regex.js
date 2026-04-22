@@ -1,4 +1,4 @@
-export const USER_REGEX = /^[a-z]+[a-z][a-z]+@iskolarngbayan\.pup\.edu\.ph$/;
+export const USER_REGEX = /^[a-z0-9.]+@iskolarngbayan\.pup\.edu\.ph$/;
 
 export const PWD_REGEX =/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
