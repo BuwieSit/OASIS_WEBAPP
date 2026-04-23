@@ -15,10 +15,10 @@ export default function NavItem({
 }) {
     return (
         <li>
-            <HoverLift>
+            <HoverLift onClick={onClick}>
                 {isTrigger ? (
   
-                     <NavLink to={to} className="w-full" onClick={onClick}>
+                     <NavLink to={to} className="w-full">
                         <div
                             className={`
                                 flex items-center w-full cursor-pointer
@@ -46,7 +46,6 @@ export default function NavItem({
                     (
                         <div
                             className="w-full"
-                            onClick={onClick}
                         >
                             <div
                                 className={`

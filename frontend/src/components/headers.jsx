@@ -2,7 +2,7 @@ import LogoWrap from "../utilities/logoWrap";
 import oasisLogo from "../assets/oasisLogo.png";
 import NavItem from "./navItem";
 import HoverLift from "./hoverLift";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Bell, BellDot, LayoutDashboard, ChevronLeft, Cog, FileText, Upload, Users, LogOut, Menu, UserRoundCog, ChevronUp } from "lucide-react";
 import Notifications from "../utilities/notifications";
 import { UserRound, BellIcon } from "lucide-react";
@@ -15,6 +15,7 @@ import { ConfirmModal } from "./popupModal";
 import { useScrollTop } from "../hooks/useScrollToTop.jsx";
 import { NotificationAPI } from "../api/notification.api";
 import { AnnounceButton } from "./button.jsx";
+import useOutsideClick from "../utilities/OutsideClick";
 
 import { getRole } from "../api/token";
 
@@ -30,6 +31,15 @@ export function Header({ admin, notifications = [], setNotifications = () => {} 
 
     const [animationClass, setAnimationClass] = useState("");
     const [activeDropdown, setActiveDropdown] = useState(null);
+
+    const { logoutUser } = useAuth();
+    const navigate = useNavigate();
+    const [confirmation, setConfirmation] = useState(false);
+
+    const handleLogout = () => {
+        logoutUser();
+        navigate("/access")
+    }
     
     const toggleDropdown = (name) => {
         setActiveDropdown((prev) => (prev === name ? null : name));
@@ -117,11 +127,11 @@ export function Header({ admin, notifications = [], setNotifications = () => {} 
 
                     <HoverLift onClick={() => handleDropdownClick("notifs")}>
                         {!admin && (
-                            <div className="relative">
+                            <div className="relative hidden md:block">
                                 {hasUnread ? (
-                                    <BellDot className="hidden md:block lg:block" size={28} color="#54A194"/>
+                                    <BellDot size={28} color="#54A194"/>
                                 ) : (
-                                    <Bell className="hidden md:block lg:block" size={28} color="#54A194" />
+                                    <Bell size={28} color="#54A194" />
                                 )}
 
                                 {unreadCount > 0 && (
@@ -147,8 +157,7 @@ export function Header({ admin, notifications = [], setNotifications = () => {} 
                     
                     {/* MOBILE */}
                     <Menu onClick={() => toggleDropdown("menu")} className="md:hidden lg:hidden absolute left-[5%] cursor-pointer" color="#54A194" />
-                    <UserRoundCog onClick={() => toggleDropdown("profile")} className="md:hidden lg:hidden absolute right-[5%] cursor-pointer" color="#54A194"/>
-            
+    
                     
                 </div>
             </header>
@@ -156,8 +165,39 @@ export function Header({ admin, notifications = [], setNotifications = () => {} 
 
             {/* MOBILE */}
             <div className="block md:hidden">
-                {activeDropdown === "menu" && <NavigationDropdown />}
-                {activeDropdown === "profile" && <ProfileDropdown />}
+                {confirmation && 
+                    <ConfirmModal confText="logout?" onLogOut={handleLogout} onCancel={() => setConfirmation(false)}/>
+                }
+                {activeDropdown === "menu" && (
+                    <NavigationDropdown 
+                        onClose={() => setActiveDropdown(null)} 
+                        onLogout={() => {
+                            setConfirmation(true);
+                            setActiveDropdown(null);
+                        }} 
+                        onNotifications={() => setActiveDropdown("notifs")}
+                        unreadCount={unreadCount}
+                    />
+                )}
+                {activeDropdown === "profile" && (
+                    <ProfileDropdown 
+                        onClose={() => setActiveDropdown(null)}
+                        onLogout={() => {
+                            setConfirmation(true);
+                            setActiveDropdown(null);
+                        }} 
+                        onNotifications={() => setActiveDropdown("notifs")} 
+                        unreadCount={unreadCount}
+                    />
+                )}
+                {activeDropdown === "notifs" && (
+                    <Notifications
+                        open={activeDropdown === "notifs"}
+                        onClose={() => setActiveDropdown(null)}
+                        notifications={notifications}
+                        setNotifications={setNotifications}
+                    />
+                )}
             </div>
 
             {/* DESKTOP */}
@@ -190,10 +230,6 @@ export function LandingHeader() {
         items-center bg-linear-to-t from-oasis-blue via-oasis-blue to-oasis-dark min-h-15 px-5 shadow-[0_5px_10px_rgba(0,0,0,0.3)] z-90">
             <LogoWrap />
             <img src={oasisLogo} className="absolute left-1/2 -translate-x-1/2 w-25 aspect-auto"/> 
-            <div className="flex gap-3 items-center">
-                <Link to={"/access?form=login"}><AnnounceButton btnText="Log In"/></Link>
-                <Link to={"/access?form=register"}><AnnounceButton btnText="Sign in"/></Link>
-            </div>
         </header>
     )
 }
@@ -300,6 +336,15 @@ export function StudentHeader({ showNavigation = true, notifications = [], setNo
     const [animationClass, setAnimationClass] = useState("");
     const [activeDropdown, setActiveDropdown] = useState(null);
 
+    const { logoutUser } = useAuth();
+    const navigate = useNavigate();
+    const [confirmation, setConfirmation] = useState(false);
+
+    const handleLogout = () => {
+        logoutUser();
+        navigate("/access")
+    }
+
     const handleDropdownClick = (dropdown) => {
         setActiveDropdown((prev) => {
             if (prev === dropdown) {
@@ -346,6 +391,9 @@ export function StudentHeader({ showNavigation = true, notifications = [], setNo
 
     return (
         <div>
+            {confirmation && 
+                <ConfirmModal confText="logout?" onLogOut={handleLogout} onCancel={() => setConfirmation(false)}/>
+            }
             <div
             className={`
                 fixed top-15 left-0 w-full
@@ -402,7 +450,7 @@ export function StudentHeader({ showNavigation = true, notifications = [], setNo
                     className={animationClass}
                     items={[
                         { text: "Profile", to: "/student-profile" },
-                        { text: "Log out" },
+                        { text: "Log out", onClick: () => setConfirmation(true) },
                     ]}
                 />
             )}
@@ -426,32 +474,60 @@ export function StudentHeader({ showNavigation = true, notifications = [], setNo
     );
 }
 
-export function NavigationDropdown() {
+export function NavigationDropdown({ onClose, onLogout, onNotifications, unreadCount }) {
     return (
-        <>
-            <div className={`fixed w-50 h-full p-5 block md:hidden lg:hidden aspect-square backdrop-blur-md bg-white/30 shadow-lg left-0 top-15 -translate-x-[0%] -translate-y-[0%] z-100 transition-all duration-300 ease-in-out rounded-b-3xl`}>
-                <ul className="w-full flex flex-col gap-5 items-start justify-center">
-                    <NavItem to="/home" label="Home" isOpen={true}/>
-                    <NavItem to="/htedirectory" label="HTE Directory" isOpen={true}/>
-                    <NavItem to="/ojthub" label="OJT Hub" isOpen={true}/>
-                    <NavItem to="/announcements" label="Announcement" isOpen={true}/>
-                </ul>     
-            </div>
-        </>
+        <div 
+            className={`fixed w-64 h-fit p-5 block md:hidden lg:hidden backdrop-blur-md bg-white/80 shadow-2xl left-0 top-15 z-100 transition-all duration-300 ease-in-out rounded-br-3xl`}
+        >
+            <ul className="w-full flex flex-col gap-6 items-start justify-center list-none">
+                <Subtitle text="Navigation" size="text-[0.7rem]" color="text-gray-400" className="mt-2 uppercase tracking-widest"/>
+                <NavItem to="/home" label="Home" isOpen={true} onClick={onClose}/>
+                <NavItem to="/htedirectory" label="HTE Directory" isOpen={true} onClick={onClose}/>
+                <NavItem to="/ojthub" label="OJT Hub" isOpen={true} onClick={onClose}/>
+                <NavItem to="/announcements" label="Announcement" isOpen={true} onClick={onClose}/>
+                
+                <hr className="w-full border-gray-100" />
+                
+                <Subtitle text="User" size="text-[0.7rem]" color="text-gray-400" className="mt-2 uppercase tracking-widest"/>
+                <NavItem to="/student-profile" label="Profile" isOpen={true} onClick={onClose}/>
+                <NavItem 
+                    isNotLink={true} 
+                    label="Notifications" 
+                    isOpen={true} 
+                    onClick={onNotifications}
+                    iconRight={unreadCount > 0 && (
+                        <span className="bg-oasis-red text-white text-[10px] min-w-4 h-4 px-1 flex items-center justify-center rounded-full ml-2">
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                        </span>
+                    )}
+                />
+                <NavItem isNotLink={true} label="Log out" isOpen={true} onClick={onLogout}/>
+            </ul>     
+        </div>
     )
 }
 
-export function ProfileDropdown() {
+export function ProfileDropdown({ onLogout, onNotifications, onClose, unreadCount }) {
     return (
-        <>
-            <div className={`fixed w-50 h-full p-5 block md:hidden lg:hidden aspect-square backdrop-blur-md bg-white/30 shadow-lg right-0 top-15 -translate-x-[0%] -translate-y-[0%] z-100 transition-all duration-300 ease-in-out rounded-b-3xl`}>
-                <ul className="w-full flex flex-col gap-5 items-start justify-center">
-                    <NavItem to="/student-profile" label="Profile" isOpen={true}/>
-                    <NavItem isTrigger={true} label="Notifications" isOpen={true}/>
-                    <NavItem isTrigger={true} label="Log out" isOpen={true}/>
-                </ul>     
-            </div>
-            
-        </>
+        <div 
+            className={`fixed w-64 h-fit p-5 block md:hidden lg:hidden backdrop-blur-md bg-white/80 shadow-2xl right-0 top-15 z-100 transition-all duration-300 ease-in-out rounded-bl-3xl`}
+        >
+            <ul className="w-full flex flex-col gap-6 items-start justify-center list-none">
+                <Subtitle text="Account" size="text-[0.7rem]" color="text-gray-400" className="mt-2 uppercase tracking-widest"/>
+                <NavItem to="/student-profile" label="Profile" isOpen={true} onClick={onClose}/>
+                <NavItem 
+                    isNotLink={true} 
+                    label="Notifications" 
+                    isOpen={true} 
+                    onClick={onNotifications}
+                    iconRight={unreadCount > 0 && (
+                        <span className="bg-oasis-red text-white text-[10px] min-w-4 h-4 px-1 flex items-center justify-center rounded-full ml-2">
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                        </span>
+                    )}
+                />
+                <NavItem isNotLink={true} label="Log out" isOpen={true} onClick={onLogout}/>
+            </ul>     
+        </div>
     )
 }

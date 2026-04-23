@@ -1,8 +1,16 @@
 import { useEffect } from "react";
 
-export default function useOutsideClick(ref, handler) {
+export default function useOutsideClick(ref, handler, enabled = true) {
     useEffect(() => {
+        if (!enabled) return;
+
         const listener = (event) => {
+            // If the element is no longer in the document, ignore the click
+            // This happens if a click causes a re-render that removes the clicked element
+            if (!document.body.contains(event.target)) {
+                return;
+            }
+
             if (!ref.current || ref.current.contains(event.target)) {
                 return;
             }
@@ -16,5 +24,5 @@ export default function useOutsideClick(ref, handler) {
             document.removeEventListener("mousedown", listener);
             document.removeEventListener("touchstart", listener);
         };
-    }, [ref, handler]);
+    }, [ref, handler, enabled]);
 }

@@ -22,10 +22,17 @@ export default function Notifications({
     const [selectedNotification, setSelectedNotification] = useState(null);
 
     const dropdownRef = useRef(null);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     useOutsideClick(dropdownRef, () => {
         onClose();
-    });
+    }, !isMobile);
 
     const counts = useMemo(() => {
         return {
@@ -193,7 +200,7 @@ export default function Notifications({
                 notification={selectedNotification}
             />
             <div
-                className={`w-100 h-[70%] p-5 fixed top-1/2 right-0 -translate-x-[10%] -translate-y-[55%] bg-[rgba(255,255,255,0.5)] backdrop-blur-2xl z-150 rounded-3xl shadow-[0px_0px_5px_rgba(0,0,0,0.5)] ${animationClass}`}
+                className={`w-[min(40rem,95vw)] h-[90%] p-5 fixed top-1/2 md:right-0 md:left-auto left-1/2 md:translate-x-[-10%] -translate-x-1/2 -translate-y-1/2 bg-[rgba(255,255,255,0.8)] backdrop-blur-3xl z-150 rounded-3xl shadow-[0px_0px_20px_rgba(0,0,0,0.3)] ${animationClass}`}
                 ref={dropdownRef}
             >
                 <section className="w-full flex flex-row justify-start items-center gap-5 px-3">

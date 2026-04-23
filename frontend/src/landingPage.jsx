@@ -43,20 +43,34 @@ export default function LandingPage() {
                     isVideo={true}
                     resourceTitle="What is OASIS?"
                 />
-                <div className='relative w-full h-screen p-5 flex flex-col justify-center items-center gap-5'>
-                    <Title text={"One system for every OJT need."} size='text-[4rem]'/>
-                    <Subtitle color={"text-oasis-header"} text={"Track internships, manage records, and access essential information with OASIS – OJT Administration Support and Information System."} isItalic={true} size={"1rem"} className={"w-[50%]"} isCenter={true}/>
-                    <Link to={"/access"}><Button text={"Get started"}/></Link>
+                <div className='relative w-full h-[85vh] md:h-screen p-6 flex flex-col justify-center items-center gap-8'>
+                    <Title 
+                        text={"One system for every OJT need."} 
+                        size='text-[2.5rem] sm:text-[3.5rem] md:text-[4.5rem] leading-[1.1]'
+                    />
+                    <Subtitle 
+                        color={"text-oasis-header"} 
+                        text={"Track internships, manage records, and access essential information with OASIS – OJT Administration Support and Information System."} 
+                        isItalic={true} 
+                        size={"text-lg md:text-xl"} 
+                        className={"w-[95%] sm:w-[80%] md:w-[60%] lg:w-[50%] opacity-90 leading-relaxed"} 
+                        isCenter={true}
+                    />
+                    <Link to={"/access"} className="mt-6 transform transition hover:scale-105 active:scale-95">
+                        <Button text={"Get started"} className="px-10 py-4 text-lg"/>
+                    </Link>
                 </div>
 
-                <div className='w-full min-h-150 h-auto pb-5 pt-5 bg-oasis-blue flex flex-wrap flex-col items-center justify-center'>
-                     <section className='w-full flex flex-col gap-2 mt-10'>
-                        <Title text={"Tools to Streamline OJT Management"} size='text-[2.5rem]'/>
+                <div className='w-full min-h-[60vh] h-auto pb-20 pt-10 bg-oasis-blue flex flex-col items-center justify-center px-5'>
+                     <section className='w-full flex flex-col gap-2 mb-10'>
+                        <Title 
+                            text={"Tools to Streamline OJT Management"} 
+                            size='text-[1.8rem] sm:text-[2.2rem] md:text-[2.5rem]'
+                        />
                     </section>
                     
 
-                    <div className="w-[80%] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 pt-10 pb-10 justify-center place-items-center">
-
+                    <div className="w-full sm:w-[90%] lg:w-[80%] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-center place-items-center">
                         <TutorialCard onClick={() => setOpenView(true)}/>
                         <TutorialCard onClick={() => setOpenView(true)}/>
                         <TutorialCard onClick={() => setOpenView(true)}/>

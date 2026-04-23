@@ -135,8 +135,8 @@ export default function Student() {
     
     return(
         <>
-            <MainScreen hasTopMargin={true}>
-                
+            <MainScreen hasTopMargin={false}>
+                <div className="mt-20"/>
                 <ViewModal 
                     visible={openView}
                     onClose={() => setOpenView(false)}
