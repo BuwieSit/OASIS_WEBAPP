@@ -12,19 +12,29 @@ export default function UserDropdownSettings({ open, onClose, className, items }
     
     const dropdownRef = useRef(null);
 
+    const handleClose = () => {
+        setAnimationClass("bubble-close");
+        setTimeout(() => {
+            if (onClose) onClose();
+        }, 200);
+    };
+
     useOutsideClick(dropdownRef, () => {
-        onClose();
+        handleClose();
     });
 
     useEffect(() => {
         if (open) {
-            setShow(true)
+            setShow(true);
             setAnimationClass("bubble-pop");
         } else {
             setAnimationClass("bubble-close");
-            setShow(false);
+            const timeout = setTimeout(() => {
+                setShow(false);
+            }, 200);
+            return () => clearTimeout(timeout);
         }
-    }, [open])
+    }, [open]);
 
     if (!show) return null;
 

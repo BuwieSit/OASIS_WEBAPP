@@ -31,7 +31,7 @@ export default function Notifications({
     }, []);
 
     useOutsideClick(dropdownRef, () => {
-        onClose();
+        handleClose();
     }, !isMobile);
 
     const counts = useMemo(() => {

@@ -43,11 +43,11 @@ export default function MoaOverview() {
     ];
     const prospectStatusColors = {
         EMAILED_TO_HTE: "text-oasis-aqua",
-        FOR_SIGNATURE: "text-oasis-blue",
+        FOR_SIGNATURE: "text-oasis-gray",
         ULCO: "text-oasis-header",
         RETRIEVED_FROM_ULCO: "text-oasis-button-light",
         APPROVED: "text-green-500",
-        CANCELLED: "text-red-500"
+        CANCELLED: "text-oasis-red"
     };
 
     useEffect(() => {

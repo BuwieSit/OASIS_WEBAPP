@@ -5,15 +5,17 @@ export default function useOutsideClick(ref, handler, enabled = true) {
         if (!enabled) return;
 
         const listener = (event) => {
-            // If the element is no longer in the document, ignore the click
-            // This happens if a click causes a re-render that removes the clicked element
-            if (!document.body.contains(event.target)) {
+            if (!ref.current) {
                 return;
             }
 
-            if (!ref.current || ref.current.contains(event.target)) {
+            // Using composedPath() is more reliable when elements might be removed from the DOM
+            // during the event lifecycle (like when clicking a filter that changes state/re-renders)
+            const path = event.composedPath();
+            if (path.includes(ref.current)) {
                 return;
             }
+
             handler(event);
         };
 
