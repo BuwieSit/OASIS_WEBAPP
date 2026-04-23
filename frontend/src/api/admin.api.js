@@ -131,5 +131,13 @@ export const AdminAPI = {
     unarchiveStudent(id) {
         return api.patch(`/api/admin/students/${id}/unarchive`);
     },
+
+    getMoaFileBlob(id) {
+        return api.get(`/api/admin/moas/${id}/file`, {
+            responseType: "blob"
+        });
+    }
 };
+
+
 
