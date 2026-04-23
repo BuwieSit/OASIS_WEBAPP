@@ -369,11 +369,12 @@ export default function MoaOverview() {
                 </>
             )}
 
-            <HteDetailModal 
-                visible={!!selectedHte} 
-                hte={selectedHte} 
-                onClose={() => setSelectedHte(null)} 
-            />
+            
+        <HteDetailModal 
+            visible={!!selectedHte} 
+            hte={selectedHte} 
+            onClose={() => setSelectedHte(null)} 
+        />
 
         </AdminScreen>
     );

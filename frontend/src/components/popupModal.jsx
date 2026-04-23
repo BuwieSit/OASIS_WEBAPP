@@ -38,7 +38,7 @@ export function GeneralPopupModal({
     if (!visible) return null;
 
     return (
-        <div className={`animate__animated animate__faster ${isExiting ? "animate__fadeOutUp" : "animate__fadeInDown"} fixed top-0 translate-y-5 min-w-[30%] p-3 pl-5 rounded-[5px] flex items-center justify-center font-oasis-text font-bold duration-300 transition ease-in-out z-100 border bg-white
+        <div className={`animate__animated animate__faster ${isExiting ? "animate__fadeOutUp" : "animate__fadeInDown"} fixed top-0 translate-y-5 min-w-[30%] p-3 pl-5 rounded-[5px] flex items-center justify-center font-oasis-text font-bold duration-300 transition ease-in-out z-200 border bg-white
             ${isSuccess && "text-oasis-button-dark border-oasis-button-dark"}
             ${isFailed && "text-oasis-red border-oasis-red"} 
             ${isNeutral && "text-[#36454F] border-gray-400"}
