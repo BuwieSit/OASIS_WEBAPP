@@ -1,6 +1,7 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 from flask_jwt_extended import jwt_required, get_jwt
 from sqlalchemy.orm import aliased
+import io
 
 from app.extensions import db
 from app.models import MemorandumOfAgreement, HostTrainingEstablishment
@@ -75,6 +76,10 @@ def get_moas():
             "expires_at": expires_at.isoformat() if expires_at else None,
             "validity_years": validity_years,
             "document_path": moa_row.document_path if moa_row else None,
+            "document_filename": getattr(moa_row, "document_filename", None) if moa_row else None,
+            "document_mime_type": getattr(moa_row, "document_mime_type", None) if moa_row else None,
+            "document_size": getattr(moa_row, "document_size", None) if moa_row else None,
+            "has_document_blob": bool(getattr(moa_row, "document_blob", None)) if moa_row else False,
             "hte": {
                 "id": hte.id,
                 "company_name": hte.company_name,
@@ -85,3 +90,30 @@ def get_moas():
         })
 
     return jsonify(results), 200
+
+
+@admin_moa_bp.get("/<int:moa_id>/file")
+@jwt_required()
+def get_moa_file(moa_id: int):
+    claims = get_jwt()
+    if claims.get("role") != UserRole.ADMIN.value:
+        return jsonify({"error": "forbidden"}), 403
+
+    moa = MemorandumOfAgreement.query.get(moa_id)
+    if not moa:
+        return jsonify({"error": "not found"}), 404
+
+    document_blob = getattr(moa, "document_blob", None)
+    if not document_blob:
+        return jsonify({"error": "file not found"}), 404
+
+    filename = getattr(moa, "document_filename", None) or f"moa_{moa.id}.pdf"
+    mime_type = getattr(moa, "document_mime_type", None) or "application/pdf"
+
+    return send_file(
+        io.BytesIO(document_blob),
+        mimetype=mime_type,
+        as_attachment=False,
+        download_name=filename,
+        max_age=0
+    )

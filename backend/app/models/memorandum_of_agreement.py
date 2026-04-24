@@ -17,6 +17,12 @@ class MemorandumOfAgreement(db.Model):
 
     document_path = db.Column(db.String(255), nullable=True)
 
+    # NEW: actual file stored in DB
+    document_filename = db.Column(db.String(255), nullable=True)
+    document_mime_type = db.Column(db.String(100), nullable=True)
+    document_blob = db.Column(db.LargeBinary, nullable=True)
+    document_size = db.Column(db.Integer, nullable=True)
+
     status = db.Column(
         db.Enum("ACTIVE", "PENDING", "EXPIRED", name="moa_status_enum"),
         nullable=False,

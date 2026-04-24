@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request, send_file, current_app
 from flask_jwt_extended import jwt_required, get_jwt
 from sqlalchemy.orm import aliased
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import io
 import os
 import uuid
@@ -13,25 +13,12 @@ from app.extensions import db
 from app.models import HostTrainingEstablishment, MemorandumOfAgreement
 from app.models.user import UserRole
 
-admin_hte_bp = Blueprint(
-    "admin_hte_bp",
-    __name__,
-    url_prefix="/api/admin/htes"
-)
+admin_hte_bp = Blueprint("admin_hte_bp", __name__, url_prefix="/api/admin/htes")
 
 EXCEL_HEADERS = [
-    "COMPANY NAME",
-    "NATURE OF BUSINESS",
-    "CONTACT PERSON",
-    "POSITION",
-    "CONTACT NUMBER",
-    "EMAIL ADDRESS",
-    "COMPANY ADDRESS",
-    "MOA STATUS",
-    "COURSE",
-    "DATE NOTARIZED",
-    "VALIDITY",
-    "EXPIRY DATE",
+    "COMPANY NAME", "NATURE OF BUSINESS", "CONTACT PERSON", "POSITION",
+    "CONTACT NUMBER", "EMAIL ADDRESS", "COMPANY ADDRESS", "MOA STATUS",
+    "COURSE", "DATE NOTARIZED", "VALIDITY", "EXPIRY DATE",
     "LINKE TO SCANNED MOA",
 ]
 
@@ -42,25 +29,37 @@ def _admin_only():
 
 
 def _parse_date(val):
-    """
-    Supports:
-    - Excel datetime/date
-    - MM/DD/YYYY
-    - YYYY-MM-DD
-    - empty
-    """
     if val is None or val == "":
         return None
+
     if isinstance(val, datetime):
         return val.date()
+
     if isinstance(val, date):
         return val
+
+    if isinstance(val, (int, float)):
+        # Year-only values like 2022
+        if 1900 <= int(val) <= 2100:
+            return date(int(val), 1, 1)
+
+        # Excel serial date values like 44662
+        try:
+            return date(1899, 12, 30) + timedelta(days=int(val))
+        except Exception:
+            return None
+
     s = str(val).strip()
-    for fmt in ("%m/%d/%Y", "%Y-%m-%d"):
+
+    if s.isdigit() and 1900 <= int(s) <= 2100:
+        return date(int(s), 1, 1)
+
+    for fmt in ("%m/%d/%Y", "%Y-%m-%d", "%Y"):
         try:
             return datetime.strptime(s, fmt).date()
         except ValueError:
             pass
+
     return None
 
 
@@ -71,6 +70,50 @@ def _parse_number(val):
         return float(val)
     except Exception:
         return None
+
+
+def _parse_validity_months(val):
+    if val is None or val == "":
+        return None
+
+    if isinstance(val, (int, float)):
+        return int(float(val))
+
+    s = str(val).strip().upper()
+
+    if not s:
+        return None
+
+    number = "".join(ch for ch in s if ch.isdigit() or ch == ".")
+
+    if "YEAR" in s:
+        return int(float(number) * 12) if number else None
+
+    if "MONTH" in s:
+        return int(float(number)) if number else None
+
+    try:
+        return int(float(s))
+    except Exception:
+        return None
+
+
+def _normalize_text(value):
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def _normalize_moa_status(value):
+    status = _normalize_text(value).upper()
+
+    if status in {"WITH MOA", "WITHMOA", "ACTIVE", "APPROVED"}:
+        return "ACTIVE"
+
+    if status in {"EXPIRED"}:
+        return "EXPIRED"
+
+    return "PENDING"
 
 
 def _compute_validity_years(signed_at, expires_at):
@@ -113,7 +156,6 @@ def _compute_expiry_date_from_months(signed_at, validity_months):
 
     year = signed_at.year
     month = signed_at.month + validity_months
-
     year += (month - 1) // 12
     month = ((month - 1) % 12) + 1
 
@@ -182,12 +224,6 @@ def _overview_query(status):
     return query.order_by(HostTrainingEstablishment.company_name)
 
 
-def _normalize_text(value):
-    if value is None:
-        return ""
-    return str(value).strip()
-
-
 def _clean_moa_link(value):
     link = _normalize_text(value)
     if not link:
@@ -218,22 +254,12 @@ def _is_http_url(value):
     return value.startswith("http://") or value.startswith("https://")
 
 
-def download_gdrive_file(url, upload_root):
-    """
-    Download a publicly shared Google Drive file and save it locally.
-    Returns a relative uploads path on success, otherwise None.
-    """
+def download_gdrive_file_to_bytes(url):
     def _get_confirm_token(response):
         for key, value in response.cookies.items():
             if key.startswith("download_warning"):
                 return value
         return None
-
-    def _save_response_content(response, destination):
-        with open(destination, "wb") as f:
-            for chunk in response.iter_content(32768):
-                if chunk:
-                    f.write(chunk)
 
     try:
         if not url:
@@ -250,10 +276,6 @@ def download_gdrive_file(url, upload_root):
             print("GDRIVE: non-drive URL, skipping:", url)
             return None
 
-        if not upload_root:
-            print("GDRIVE: UPLOAD_ROOT not set")
-            return None
-
         if "id=" in url:
             file_id = url.split("id=")[-1].split("&")[0]
         elif "/d/" in url:
@@ -265,12 +287,7 @@ def download_gdrive_file(url, upload_root):
         session = requests.Session()
         base_url = "https://drive.google.com/uc?export=download"
 
-        response = session.get(
-            base_url,
-            params={"id": file_id},
-            stream=True,
-            timeout=20
-        )
+        response = session.get(base_url, params={"id": file_id}, stream=True, timeout=20)
 
         token = _get_confirm_token(response)
         if token:
@@ -278,7 +295,7 @@ def download_gdrive_file(url, upload_root):
                 base_url,
                 params={"id": file_id, "confirm": token},
                 stream=True,
-                timeout=20
+                timeout=20,
             )
 
         if response.status_code != 200:
@@ -286,40 +303,30 @@ def download_gdrive_file(url, upload_root):
             return None
 
         content_type = (response.headers.get("Content-Type") or "").lower()
+
         if "text/html" in content_type:
             print(f"GDRIVE: got HTML instead of file for {url}")
             return None
 
-        upload_dir = os.path.join(upload_root, "moa")
-        os.makedirs(upload_dir, exist_ok=True)
-
-        ext = ".pdf"
+        filename = f"moa_{uuid.uuid4().hex}.pdf"
         content_disp = response.headers.get("Content-Disposition") or ""
+
         if "filename=" in content_disp:
             raw_name = content_disp.split("filename=")[-1].strip().strip('"')
-            _, guessed_ext = os.path.splitext(raw_name)
-            if guessed_ext:
-                ext = guessed_ext.lower()
+            if raw_name:
+                filename = secure_filename(raw_name)
 
-        filename = f"moa_{uuid.uuid4().hex}{ext}"
-        abs_path = os.path.join(upload_dir, filename)
-
-        _save_response_content(response, abs_path)
-
-        if not os.path.exists(abs_path):
-            print(f"GDRIVE: file was not created for {url}")
+        file_bytes = response.content
+        if not file_bytes:
+            print(f"GDRIVE: empty file bytes for {url}")
             return None
 
-        if os.path.getsize(abs_path) == 0:
-            print(f"GDRIVE: downloaded file is empty for {url}")
-            try:
-                os.remove(abs_path)
-            except OSError:
-                pass
-            return None
-
-        print(f"GDRIVE: downloaded successfully -> {abs_path}")
-        return f"uploads/moa/{filename}"
+        return {
+            "filename": filename,
+            "mime_type": response.headers.get("Content-Type", "application/pdf"),
+            "blob": file_bytes,
+            "size": len(file_bytes),
+        }
 
     except Exception as e:
         print("GDRIVE download failed:", e)
@@ -364,6 +371,8 @@ def get_htes():
                 "expires_at": expires_at.isoformat() if expires_at else None,
                 "validity_years": validity_years,
                 "document_path": moa.document_path,
+                "document_filename": getattr(moa, "document_filename", None),
+                "document_size": getattr(moa, "document_size", None),
             },
             "moa_validity_years": validity_years
         })
@@ -438,7 +447,10 @@ def import_htes_excel():
     wb = load_workbook(f, data_only=True)
     ws = wb.active
 
-    header_row = [str(c.value).strip() if c.value is not None else "" for c in next(ws.iter_rows(min_row=1, max_row=1))]
+    header_row = [
+        str(c.value).strip() if c.value is not None else ""
+        for c in next(ws.iter_rows(min_row=1, max_row=1))
+    ]
     header_to_idx = {h: i for i, h in enumerate(header_row)}
 
     missing = [h for h in EXCEL_HEADERS if h not in header_to_idx]
@@ -458,8 +470,7 @@ def import_htes_excel():
         def get(h):
             return row[header_to_idx[h]].value
 
-        company_name_raw = get("COMPANY NAME")
-        company_name = _normalize_text(company_name_raw)
+        company_name = _normalize_text(get("COMPANY NAME"))
 
         if not company_name or company_name.upper() == "COMPANY NAME":
             failed_rows.append({"row": r_idx, "error": "Missing COMPANY NAME"})
@@ -471,21 +482,20 @@ def import_htes_excel():
         contact_number = _normalize_text(get("CONTACT NUMBER")) or "N/A"
         contact_email = _normalize_text(get("EMAIL ADDRESS")) or "N/A"
         address = _normalize_text(get("COMPANY ADDRESS")) or "N/A"
-        moa_status = _normalize_text(get("MOA STATUS")) or "PENDING"
+        moa_status = _normalize_moa_status(get("MOA STATUS"))
         course = _normalize_text(get("COURSE")) or None
         signed_at = _parse_date(get("DATE NOTARIZED"))
-        validity_months = _parse_number(get("VALIDITY"))
+        validity_months = _parse_validity_months(get("VALIDITY"))
         expires_at = _parse_date(get("EXPIRY DATE"))
         moa_link = _clean_moa_link(get("LINKE TO SCANNED MOA"))
 
-        moa_file_path = None
+        moa_file_data = None
 
         if moa_link:
             if _is_http_url(moa_link):
-                upload_root = current_app.config.get("UPLOAD_ROOT")
-                moa_file_path = download_gdrive_file(moa_link, upload_root)
+                moa_file_data = download_gdrive_file_to_bytes(moa_link)
 
-                if not moa_file_path:
+                if not moa_file_data:
                     failed_rows.append({
                         "row": r_idx,
                         "error": "MOA link could not be downloaded",
@@ -498,22 +508,12 @@ def import_htes_excel():
                     "link": moa_link
                 })
 
-        if validity_months is not None:
-            signed_at, expires_at, validity_years = _resolve_moa_dates_and_validity(
-                signed_at=signed_at,
-                expires_at=None,
-                validity_months=validity_months,
-                validity_years=None
-            )
-        else:
-            validity_years = _compute_validity_years(signed_at, expires_at)
-
-        try:
-            moa_status = str(moa_status).strip().upper()
-            if moa_status not in ("ACTIVE", "PENDING", "EXPIRED"):
-                moa_status = "PENDING"
-        except Exception:
-            moa_status = "PENDING"
+        signed_at, expires_at, validity_years = _resolve_moa_dates_and_validity(
+            signed_at=signed_at,
+            expires_at=expires_at,
+            validity_months=validity_months,
+            validity_years=None
+        )
 
         try:
             with db.session.begin_nested():
@@ -535,7 +535,7 @@ def import_htes_excel():
                         moa_signed_at=signed_at,
                         moa_validity=validity_years,
                         moa_expiry_date=expires_at,
-                        moa_file_path=moa_file_path or (moa_link if moa_link else None),
+                        moa_file_path=moa_link if moa_link else None,
                     )
                     db.session.add(hte)
                     db.session.flush()
@@ -553,7 +553,7 @@ def import_htes_excel():
                     hte.moa_validity = validity_years
                     hte.moa_expiry_date = expires_at
                     if moa_link:
-                        hte.moa_file_path = moa_file_path or moa_link
+                        hte.moa_file_path = moa_link
                     updated_htes += 1
 
                 if signed_at and expires_at:
@@ -569,14 +569,30 @@ def import_htes_excel():
                             signed_at=signed_at,
                             expires_at=expires_at,
                             status=moa_status,
-                            document_path=moa_file_path or (moa_link if moa_link else None)
+                            document_path=moa_link if moa_link else None,
+                            document_filename=moa_file_data["filename"] if moa_file_data else None,
+                            document_mime_type=moa_file_data["mime_type"] if moa_file_data else None,
+                            document_blob=moa_file_data["blob"] if moa_file_data else None,
+                            document_size=moa_file_data["size"] if moa_file_data else None,
                         ))
                         created_moas += 1
                     else:
                         existing_moa.status = moa_status
                         if moa_link:
-                            existing_moa.document_path = moa_file_path or moa_link
+                            existing_moa.document_path = moa_link
+
+                        if moa_file_data:
+                            existing_moa.document_filename = moa_file_data["filename"]
+                            existing_moa.document_mime_type = moa_file_data["mime_type"]
+                            existing_moa.document_blob = moa_file_data["blob"]
+                            existing_moa.document_size = moa_file_data["size"]
+
                         updated_moas += 1
+                else:
+                    failed_rows.append({
+                        "row": r_idx,
+                        "error": "MOA not created because DATE NOTARIZED and/or VALIDITY/EXPIRY DATE could not be parsed"
+                    })
 
         except Exception as e:
             failed_rows.append({
@@ -629,26 +645,20 @@ def create_hte_manual():
     eligible_courses_raw = form.get("eligible_courses")
     course_value = eligible_courses_raw if eligible_courses_raw else None
 
-    status = (form.get("status") or "PENDING").strip().upper()
-    if status not in ("ACTIVE", "PENDING", "EXPIRED"):
-        status = "PENDING"
+    status = _normalize_moa_status(form.get("status"))
 
     signed_at = _parse_date(form.get("signed_at"))
-    validity_months = _parse_number(form.get("validity"))
+    validity_months = _parse_validity_months(form.get("validity"))
 
     expires_at = None
     validity_years = None
 
-    if signed_at and validity_months is not None:
-        try:
-            validity_months_int = int(float(validity_months))
-            expires_at = _compute_expiry_date_from_months(signed_at, validity_months_int)
-            validity_years = _compute_validity_years_from_months(validity_months_int)
-        except Exception:
-            return jsonify({
-                "error": "validation_error",
-                "message": "Invalid validity value"
-            }), 400
+    signed_at, expires_at, validity_years = _resolve_moa_dates_and_validity(
+        signed_at=signed_at,
+        expires_at=expires_at,
+        validity_months=validity_months,
+        validity_years=validity_years
+    )
 
     logo = request.files.get("logo")
     thumbnail = request.files.get("thumbnail")
@@ -665,13 +675,24 @@ def create_hte_manual():
             allowed_ext={".png", ".jpg", ".jpeg", ".webp"}
         ) if thumbnail else None
 
-        moa_path = _save_upload(
-            moa_file, upload_root, "moa",
-            allowed_ext={".pdf"}
-        ) if moa_file else None
-
     except ValueError as e:
         return jsonify({"error": "validation_error", "message": str(e)}), 400
+
+    moa_file_data = None
+    if moa_file:
+        filename = secure_filename(moa_file.filename or "") or f"moa_{uuid.uuid4().hex}.pdf"
+        mime_type = moa_file.mimetype or "application/pdf"
+        blob = moa_file.read()
+
+        if not blob:
+            return jsonify({"error": "validation_error", "message": "Uploaded MOA file is empty"}), 400
+
+        moa_file_data = {
+            "filename": filename,
+            "mime_type": mime_type,
+            "blob": blob,
+            "size": len(blob),
+        }
 
     hte = HostTrainingEstablishment(
         company_name=company_name,
@@ -688,7 +709,7 @@ def create_hte_manual():
         moa_signed_at=signed_at,
         moa_validity=validity_years,
         moa_expiry_date=expires_at,
-        moa_file_path=moa_path,
+        moa_file_path=None,
         thumbnail_path=thumbnail_path,
     )
 
@@ -704,7 +725,11 @@ def create_hte_manual():
             signed_at=signed_at,
             expires_at=expires_at,
             status=status,
-            document_path=moa_path
+            document_path=None,
+            document_filename=moa_file_data["filename"] if moa_file_data else None,
+            document_mime_type=moa_file_data["mime_type"] if moa_file_data else None,
+            document_blob=moa_file_data["blob"] if moa_file_data else None,
+            document_size=moa_file_data["size"] if moa_file_data else None,
         )
         db.session.add(moa)
 
