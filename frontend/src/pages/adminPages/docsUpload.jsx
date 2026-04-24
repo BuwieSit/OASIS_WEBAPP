@@ -9,15 +9,14 @@ import { Plus, PlusCircle, Save, Trash, FileText, AlignLeft, X, Check } from 'lu
 import Subtitle from '../../utilities/subtitle.jsx';
 import { TreeRenderer } from '../../utilities/TreeRenderer.jsx';
 import { AdminAPI } from '../../api/admin.api.js';
-import { ConfirmModal, GeneralPopupModal } from '../../components/popupModal.jsx';
+import { ConfirmModal, GeneralPopupModal, ViewModal } from '../../components/popupModal.jsx';
+import api from "../../api/axios.jsx";
+
+const API_BASE = api.defaults.baseURL;
 
 
 const EMPTY_SECTION_STATE = {
-    header: "",
-    description: "",
-    items: [],
-    file: null,
-    originalFilename: null
+    items: []
 };
 
 const SECTION_LABELS = {
@@ -40,7 +39,7 @@ function flattenItems(items, depth = 0, result = []) {
     items.forEach((item) => {
         result.push({
             id: item.id,
-            label: `${"— ".repeat(depth)}${item.title}`
+            label: `${"— ".repeat(depth)}${item.title || (item.type === "description" ? "Description" : item.type)}`
         });
 
         if (item.children?.length) {
@@ -102,68 +101,6 @@ function normalizeTreeForSave(items) {
     }));
 }
 
-function extractSectionMeta(items) {
-    const headerItem = items.find(
-        (item) =>
-            typeof item.id === "string" &&
-            item.id.startsWith("section-header-")
-    );
-
-    const descriptionItem = items.find(
-        (item) =>
-            typeof item.id === "string" &&
-            item.id.startsWith("section-description-")
-    );
-
-    return {
-        header: headerItem?.title || "",
-        description: descriptionItem?.description || descriptionItem?.title || ""
-    };
-}
-
-function buildItemsWithSectionMeta(sectionState) {
-    const metaItems = [];
-
-    if (sectionState.header.trim()) {
-        metaItems.push({
-            id: `section-header-${crypto.randomUUID()}`,
-            type: "header",
-            title: sectionState.header.trim(),
-            description: null,
-            parentId: null,
-            children: [],
-            isSectionMeta: true
-        });
-    }
-
-    if (sectionState.description.trim()) {
-        metaItems.push({
-            id: `section-description-${crypto.randomUUID()}`,
-            type: "description",
-            title: sectionState.description.trim(),
-            description: sectionState.description.trim(),
-            parentId: null,
-            children: [],
-            isSectionMeta: true
-        });
-    }
-
-    return [...metaItems, ...sectionState.items];
-}
-
-function stripMetaItems(items) {
-    return items.filter(
-        (item) =>
-            !(
-                typeof item.id === "string" &&
-                (
-                    item.id.startsWith("section-header-") ||
-                    item.id.startsWith("section-description-")
-                )
-            )
-    );
-}
-
 export default function DocsUpload() {
     const [activeFilter, setFilter] = useQueryParam("tab", "procedures");
     const [showModal, setShowModal] = useState(false);
@@ -171,7 +108,12 @@ export default function DocsUpload() {
     const [saving, setSaving] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [deleteItemConfirm, setDeleteItemConfirm] = useState(null);
+    const [viewDoc, setViewDoc] = useState(null);
     const [popup, setPopup] = useState(null);
+    
+    // DRAFT STATES
+    const [hasDraft, setHasDraft] = useState(false);
+    const [restoringDraft, setRestoringDraft] = useState(false);
 
     const [sections, setSections] = useState({
         procedures: { ...EMPTY_SECTION_STATE },
@@ -181,6 +123,91 @@ export default function DocsUpload() {
     });
 
     const activeSectionState = sections[activeFilter] || EMPTY_SECTION_STATE;
+
+    // AUTO-SAVE TO LOCAL STORAGE
+    useEffect(() => {
+        if (!loading && !restoringDraft && activeSectionState.items.length > 0) {
+            const draftKey = `docs_upload_draft_${activeFilter}`;
+            localStorage.setItem(draftKey, JSON.stringify(activeSectionState.items));
+            
+            // Check if this newly saved draft is actually different from backend
+            // (We usually only want to show the draft banner if they differ)
+        }
+    }, [activeSectionState.items, activeFilter, loading, restoringDraft]);
+
+    // CHECK FOR DRAFTS ON LOAD
+    useEffect(() => {
+        const draftKey = `docs_upload_draft_${activeFilter}`;
+        const savedDraft = localStorage.getItem(draftKey);
+        
+        if (savedDraft) {
+            try {
+                const parsedDraft = JSON.parse(savedDraft);
+                // Only show draft banner if draft items length > 0
+                // and they aren't already exactly what's in state
+                if (parsedDraft.length > 0 && JSON.stringify(parsedDraft) !== JSON.stringify(activeSectionState.items)) {
+                    setHasDraft(true);
+                } else {
+                    setHasDraft(false);
+                }
+            } catch (e) {
+                console.error("Failed to parse draft", e);
+            }
+        } else {
+            setHasDraft(false);
+        }
+    }, [activeFilter, activeSectionState.items]);
+
+    const handleRestoreDraft = () => {
+        const draftKey = `docs_upload_draft_${activeFilter}`;
+        const savedDraft = localStorage.getItem(draftKey);
+        if (savedDraft) {
+            setRestoringDraft(true);
+            const parsed = JSON.parse(savedDraft);
+            setSections(prev => ({
+                ...prev,
+                [activeFilter]: {
+                    ...prev[activeFilter],
+                    items: parsed
+                }
+            }));
+            setHasDraft(false);
+            setTimeout(() => setRestoringDraft(false), 100);
+            
+            setPopup({
+                title: "Restored",
+                text: "Your unsaved changes have been loaded.",
+                icon: <Check size={50} />,
+                type: "success",
+                time: 2000
+            });
+        }
+    };
+
+    const handleDiscardDraft = () => {
+        const draftKey = `docs_upload_draft_${activeFilter}`;
+        localStorage.removeItem(draftKey);
+        setHasDraft(false);
+    };
+
+    const buildFileUrl = (filePath) => {
+        if (!filePath) return null;
+        let path = String(filePath).trim();
+        if (path.startsWith("/")) path = path.slice(1);
+        if (path.startsWith("uploads/")) path = path.replace("uploads/", "");
+        return `${API_BASE}/uploads/${path}`;
+    };
+
+    const handleViewDocument = (item) => {
+        const url = buildFileUrl(item.file);
+        if (url) {
+            setViewDoc({
+                url,
+                title: item.title,
+                originalFilename: item.originalFilename
+            });
+        }
+    };
 
     const parentOptions = useMemo(() => {
         return flattenItems(activeSectionState.items).map((item) => item.label);
@@ -206,28 +233,10 @@ export default function DocsUpload() {
             const response = await AdminAPI.getDocuments(section);
             const backendItems = response?.data?.items || [];
 
-            const meta = extractSectionMeta(backendItems);
-            const items = stripMetaItems(backendItems);
-
-            let file = null;
-            let originalFilename = null;
-
-            if (section === "forms") {
-                const docItem = items.find(i => i.type === "document");
-                if (docItem) {
-                    file = docItem.file;
-                    originalFilename = docItem.originalFilename;
-                }
-            }
-
             setSections((prev) => ({
                 ...prev,
                 [section]: {
-                    header: meta.header,
-                    description: meta.description,
-                    items: items,
-                    file: file,
-                    originalFilename: originalFilename
+                    items: backendItems
                 }
             }));
         } catch (error) {
@@ -235,16 +244,6 @@ export default function DocsUpload() {
         } finally {
             setLoading(false);
         }
-    }
-
-    function updateSectionField(section, key, value) {
-        setSections((prev) => ({
-            ...prev,
-            [section]: {
-                ...prev[section],
-                [key]: value
-            }
-        }));
     }
 
     function handleCreateItem(payload) {
@@ -281,21 +280,18 @@ export default function DocsUpload() {
         try {
             setSaving(true);
             
-            // 1. Calculate the new state with the item removed
             const updatedItems = removeItemFromTree(activeSectionState.items, item.id);
             const tempState = {
-                ...activeSectionState,
                 items: updatedItems
             };
 
-            // 2. Persist the new structure to the backend
-            // Note: We use the same logic as handleSaveSection but with the updated items
-            let itemsToSave = buildItemsWithSectionMeta(tempState);
-            const normalizedItems = normalizeTreeForSave(itemsToSave);
+            const normalizedItems = normalizeTreeForSave(updatedItems);
             
             await AdminAPI.saveDocuments(activeFilter, normalizedItems);
+            
+            // Clear draft after successful direct delete/save
+            localStorage.removeItem(`docs_upload_draft_${activeFilter}`);
 
-            // 3. Update local state on success
             setSections((prev) => ({
                 ...prev,
                 [activeFilter]: tempState
@@ -303,16 +299,16 @@ export default function DocsUpload() {
             
             setPopup({
                 title: "Deleted",
-                text: `"${item.title}" and its children have been removed from the database.`,
+                text: `"${item.title || item.type}" and its children have been removed.`,
                 icon: <Trash size={50} />,
                 type: "success",
                 time: 2000
             });
         } catch (error) {
-            console.error("Failed to delete item from database:", error);
+            console.error("Failed to delete item:", error);
             setPopup({
                 title: "Error",
-                text: "Failed to delete item from database. Please try again.",
+                text: "Failed to delete item.",
                 icon: <X size={50} />,
                 type: "failed",
                 time: 2000
@@ -326,64 +322,14 @@ export default function DocsUpload() {
     async function handleSaveSection() {
         try {
             setSaving(true);
-
-            let itemsToSave = [];
-
-            if (activeFilter === "forms") {
-                let finalFile = activeSectionState.file;
-                let finalOriginalFilename = activeSectionState.originalFilename;
-
-                if (!activeSectionState.header.trim()) {
-                    setPopup({
-                        title: "Failed",
-                        text: "Header is required for Forms & Templates.",
-                        icon: <X size={50} />,
-                        type: "failed",
-                        time: 2000
-                    });
-                    setSaving(false);
-                    return;
-                }
-
-                if (!finalFile) {
-                    setPopup({
-                        title: "Failed",
-                        text: "A document upload is required for this section.",
-                        icon: <X size={50} />,
-                        type: "failed",
-                        time: 2000
-                    });
-                    setSaving(false);
-                    return;
-                }
-
-                if (activeSectionState.file instanceof File) {
-                    const response = await AdminAPI.uploadDocument(activeFilter, activeSectionState.header, activeSectionState.file);
-                    finalFile = response?.data?.file;
-                    finalOriginalFilename = response?.data?.originalFilename;
-                }
-
-                const docItem = {
-                    id: crypto.randomUUID(),
-                    type: "document",
-                    title: activeSectionState.header.trim(),
-                    description: activeSectionState.description.trim() || null,
-                    parentId: null,
-                    file: finalFile,
-                    originalFilename: finalOriginalFilename,
-                    children: []
-                };
-
-                const metaItems = buildItemsWithSectionMeta(activeSectionState);
-                itemsToSave = [...metaItems, docItem];
-            } else {
-                itemsToSave = buildItemsWithSectionMeta(activeSectionState);
-            }
-
-            const normalizedItems = normalizeTreeForSave(itemsToSave);
+            const normalizedItems = normalizeTreeForSave(activeSectionState.items);
 
             await AdminAPI.saveDocuments(activeFilter, normalizedItems);
             
+            // CLEAR DRAFT ON SUCCESSFUL SAVE
+            localStorage.removeItem(`docs_upload_draft_${activeFilter}`);
+            setHasDraft(false);
+
             setPopup({
                 title: "Success",
                 text: `${SECTION_LABELS[activeFilter]} saved successfully.`,
@@ -411,6 +357,10 @@ export default function DocsUpload() {
         try {
             setSaving(true);
             await AdminAPI.clearDocuments(activeFilter);
+
+            // CLEAR DRAFT TOO
+            localStorage.removeItem(`docs_upload_draft_${activeFilter}`);
+            setHasDraft(false);
 
             setSections((prev) => ({
                 ...prev,
@@ -456,7 +406,7 @@ export default function DocsUpload() {
             )}
             {showConfirmModal && 
                 <ConfirmModal
-                    confText='clear the tree and all fields?'
+                    confText='clear the entire structure?'
                     onConfirm={() => {
                         handleClearSection();
                         setShowConfirmModal(false);
@@ -466,11 +416,19 @@ export default function DocsUpload() {
             }
             {deleteItemConfirm && (
                 <ConfirmModal
-                    confText={`delete "${deleteItemConfirm.title}" and all its children?`}
+                    confText={`delete "${deleteItemConfirm.title || deleteItemConfirm.type}" and all its children?`}
                     onConfirm={() => handleDeleteItem(deleteItemConfirm)}
                     onCancel={() => setDeleteItemConfirm(null)}
                 />
             )}
+
+            <ViewModal
+                visible={!!viewDoc}
+                onClose={() => setViewDoc(null)}
+                isDocument={true}
+                resourceTitle={viewDoc?.title || "Document Viewer"}
+                file={viewDoc?.url}
+            />
             
             <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b border-gray-400 py-5'>
                 <Title text="Documents Upload" size='text-[2.2rem]'/>
@@ -500,75 +458,109 @@ export default function DocsUpload() {
                     ))}
                 </div>
 
-                <div className='w-full flex flex-col lg:flex-row gap-8 items-start mb-20 animate__animated animate__fadeIn'>
-                    {/* LEFT PANEL: PREVIEW & STRUCTURE */}
-                    {activeFilter !== "forms" && (
-                        <div className='w-full lg:w-[45%] flex flex-col gap-6'>
-                            <div className="bg-admin-element border border-gray-200 rounded-4xl shadow-sm overflow-hidden flex flex-col h-[700px]">
-                                <div className="p-6 flex items-center justify-between">
-                                    <div className="flex flex-col">
-                                        <Subtitle text="Visual Structure" weight="font-bold" size="text-lg" />
-                                        <p className="text-xs text-gray-500">Live preview of the document hierarchy</p>
-                                    </div>
-                                    <button 
-                                        onClick={() => setShowModal(true)}
-                                        className="p-3 bg-oasis-header text-white rounded-2xl hover:bg-oasis-button-dark transition-all hover:rotate-90 duration-300 shadow-lg shadow-oasis-header/20"
-                                    >
-                                        <Plus size={24} />
-                                    </button>
+                <div className='w-full max-w-5xl mx-auto mb-20 animate__animated animate__fadeIn'>
+                    {/* DRAFT NOTIFICATION BANNER */}
+                    {hasDraft && (
+                        <div className="mb-6 bg-amber-50 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 animate__animated animate__slideInDown animate__faster shadow-lg shadow-amber-900/5">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 text-amber-600 rounded-2xl">
+                                    <Save size={24} />
                                 </div>
-                                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                                    <div className="bg-gray-50/30 rounded-2xl p-4 border border-dashed border-gray-200">
-                                        <TreeRenderer
-                                            items={[
-                                                ...buildItemsWithSectionMeta(activeSectionState)
-                                            ]}
-                                            onDelete={(item) => setDeleteItemConfirm(item)}
-                                        />
-                                    </div>
+                                <div>
+                                    <p className="font-bold text-amber-900">Unsaved changes detected</p>
+                                    <p className="text-xs text-amber-700">We found a local draft for {SECTION_LABELS[activeFilter]} that wasn't saved to the server.</p>
                                 </div>
+                            </div>
+                            <div className="flex items-center gap-3 w-full md:w-auto">
+                                <button 
+                                    onClick={handleDiscardDraft}
+                                    className="flex-1 md:flex-none px-6 py-2.5 text-xs font-bold text-amber-700 hover:bg-amber-100 rounded-xl transition-all"
+                                >
+                                    Discard
+                                </button>
+                                <button 
+                                    onClick={handleRestoreDraft}
+                                    className="flex-1 md:flex-none px-8 py-2.5 text-xs font-bold bg-amber-600 text-white hover:bg-amber-700 rounded-xl transition-all shadow-md shadow-amber-600/20"
+                                >
+                                    Restore Draft
+                                </button>
                             </div>
                         </div>
                     )}
 
-                    {/* RIGHT PANEL: CONFIGURATION FORM */}
-                    <div className={`${activeFilter === "forms" ? "w-full max-w-3xl mx-auto" : "flex-1"} flex flex-col gap-6`}>
-                        <div className="bg-admin-element rounded-4xl shadow-sm p-8 flex flex-col gap-8">
-                            <div className=" pb-4">
-                                <Subtitle text={`${SECTION_LABELS[activeFilter]} Configuration`} weight="font-bold" size="text-lg" />
-                                <p className="text-sm text-gray-500 italic mt-1">
-                                    {activeFilter === "forms" 
-                                        ? "This section will appear as a dedicated download card in the student hub." 
-                                        : "Configure the landing metadata for this section."
-                                    }
-                                </p>
+                    <div className="bg-admin-element border border-gray-200 rounded-4xl shadow-sm overflow-hidden flex flex-col h-[850px]">
+                        {/* UPPER SECTION: Fixed Header */}
+                        <div className="p-8 border-b border-gray-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white/50 backdrop-blur-sm z-10">
+                            <div className="flex flex-col">
+                                <Subtitle text="Visual Structure and Configuration" weight="font-bold" size="text-2xl" />
+                                <p className="text-sm text-gray-500">Manage the hierarchy for {SECTION_LABELS[activeFilter]}</p>
                             </div>
-
-                            <SectionForm
-                                section={activeFilter}
-                                label={SECTION_LABELS[activeFilter]}
-                                state={activeSectionState}
-                                loading={loading}
-                                saving={saving}
-                                onHeaderChange={(value) => updateSectionField(activeFilter, "header", value)}
-                                onDescriptionChange={(value) => updateSectionField(activeFilter, "description", value)}
-                                onFileChange={(file) => updateSectionField(activeFilter, "file", file)}
-                                onSave={() => handleSaveSection()}
-                                onClear={() => setShowConfirmModal(true)}
-                            />
+                            <button 
+                                onClick={() => setShowModal(true)}
+                                className="px-6 py-3.5 bg-oasis-header text-white rounded-2xl hover:bg-oasis-button-dark transition-all hover:scale-105 duration-300 shadow-lg shadow-oasis-header/20 flex items-center gap-2 font-bold text-sm"
+                            >
+                                <Plus size={20} /> Add Component
+                            </button>
                         </div>
 
-                        {/* HELPER CARD */}
-                        <div className="bg-oasis-blue/5 border border-oasis-blue/10 rounded-[2rem] p-6 flex items-start gap-4">
-                            <div className="bg-white p-3 rounded-2xl shadow-sm">
-                                <Plus size={20} className="text-oasis-header" />
+                        {/* MIDDLE SECTION: Scrollable Content */}
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-admin-element">
+                            
+                            <div className="bg-gray-50/30 rounded-[2.5rem] p-8 border border-dashed border-gray-200 min-h-[500px]">
+                                {activeSectionState.items.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-full py-32 text-gray-400 gap-4">
+                                        <div className="p-6 bg-gray-100 rounded-full">
+                                            <PlusCircle size={48} className="text-gray-300" />
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="font-bold text-gray-500">Structure is empty</p>
+                                            <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">Start building your section by clicking the "Add Component" button above.</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <TreeRenderer
+                                        items={activeSectionState.items}
+                                        onDelete={(item) => setDeleteItemConfirm(item)}
+                                        onView={handleViewDocument}
+                                    />
+                                )}
                             </div>
-                            <div className="flex flex-col gap-1">
-                                <p className="text-sm font-bold text-oasis-header">Admin Tip</p>
-                                <p className="text-xs text-gray-600 leading-relaxed">
-                                    Changes made here will reflect immediately on the student's OJT Hub. Make sure to click <strong>Save</strong> after every major structural change.
-                                </p>
+
+                            {/* ADMIN TIP */}
+                            <div className="mt-8 bg-oasis-blue/5 border border-oasis-blue/10 rounded-3xl p-6 flex items-start gap-4">
+                                <div className="bg-white p-3 rounded-2xl shadow-sm">
+                                    <Check size={20} className="text-oasis-header" />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <p className="text-sm font-bold text-oasis-header">Admin Tip</p>
+                                    <p className="text-xs text-gray-600 leading-relaxed italic">
+                                        Everything in this list, including titles and descriptions, can be added using the "Add Component" modal. Click on document names to preview them.
+                                    </p>
+                                </div>
                             </div>
+                        </div>
+
+                        {/* LOWER SECTION: Fixed Buttons */}
+                        <div className="p-8 border-t border-gray-100 bg-white/50 backdrop-blur-sm flex flex-row items-center justify-end gap-5">
+                            <button 
+                                onClick={() => setShowConfirmModal(true)}
+                                className="px-8 py-3.5 rounded-2xl font-bold text-gray-500 hover:bg-gray-100 hover:text-red-500 transition-all flex items-center gap-2 border border-transparent hover:border-red-100"
+                                disabled={saving}
+                            >
+                                <Trash size={18} /> Clear Structure
+                            </button>
+                            <button 
+                                onClick={handleSaveSection}
+                                disabled={saving || loading}
+                                className={`px-12 py-3.5 rounded-2xl font-bold text-white shadow-xl shadow-oasis-header/20 flex items-center gap-2 transition-all
+                                    ${saving || loading 
+                                        ? "bg-gray-300 cursor-not-allowed shadow-none" 
+                                        : "bg-oasis-header hover:bg-oasis-button-dark hover:scale-105 active:scale-95"
+                                    }
+                                `}
+                            >
+                                {saving ? "Saving Changes..." : <><Save size={18} /> Save {SECTION_LABELS[activeFilter]}</>}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -584,7 +576,8 @@ export function DocsAddModal({
     parents = [],
     parentOptionMap = {}
 }) {
-    const [itemType, setItemType] = useState("");
+    const isForms = section === "forms";
+    const [itemType, setItemType] = useState(isForms ? "Document" : "");
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [parent, setParent] = useState("");
@@ -601,9 +594,9 @@ export function DocsAddModal({
     const itemTypeLabels = ITEM_TYPE_OPTIONS
         .filter((option) => {
             if (section === "forms") {
-                return ["header", "description", "document"].includes(option.value);
+                return ["document"].includes(option.value);
             }
-            return option.value !== "document";
+            return true;
         })
         .map((option) => option.label);
 
@@ -612,7 +605,7 @@ export function DocsAddModal({
         return acc;
     }, {});
 
-    const selectedTypeValue = labelToValueMap[itemType] || "";
+    const selectedTypeValue = isForms ? "document" : (labelToValueMap[itemType] || "");
     const isListType = LIST_TYPES.includes(selectedTypeValue);
     const [listItems, setListItems] = useState([""]);
 
@@ -652,7 +645,7 @@ export function DocsAddModal({
                             : null),
 
                 description:
-                    (selectedTypeValue === "description" || selectedTypeValue === "document")
+                    (selectedTypeValue === "description" || (selectedTypeValue === "document" && !isForms))
                         ? description.trim()
                         : isListType
                             ? listItems.filter(i => i.trim() !== "").join("\n")
@@ -664,7 +657,7 @@ export function DocsAddModal({
                 originalFilename: uploadedFile?.originalFilename || null
             });
 
-            setItemType(""); setTitle(""); setDescription(""); setParent(""); setIsChecked(false); setFile(null);
+            setItemType(isForms ? "Document" : ""); setTitle(""); setDescription(""); setParent(""); setIsChecked(false); setFile(null);
         } catch (error) {
             console.error("Failed to create item:", error);
         } finally {
@@ -682,11 +675,11 @@ export function DocsAddModal({
                 {/* MODAL HEADER */}
                 <div className="p-8 flex items-center justify-between bg-admin-element">
                     <div className="flex flex-col">
-                        <h2 className="text-2xl font-bold text-gray-800">Add Content Item</h2>
-                        <p className="text-sm text-gray-500">Define a new element for your document structure</p>
+                        <h2 className="text-2xl font-bold text-gray-800">{isForms ? "Add Form / Template" : "Add Content Item"}</h2>
+                        <p className="text-sm text-gray-500">{isForms ? "Upload a new document for students to download" : "Define a new element for your document structure"}</p>
                     </div>
                     <div className="p-3 rounded-2xl">
-                        <PlusCircle size={28} className="text-oasis-header" />
+                        {isForms ? <FileText size={28} className="text-oasis-header" /> : <PlusCircle size={28} className="text-oasis-header" />}
                     </div>
                 </div>
 
@@ -694,31 +687,33 @@ export function DocsAddModal({
                 <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-admin-element">
                     <form className="flex flex-col gap-8" onSubmit={handleCreate}>
                         {/* TYPE SELECTOR */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Component Type</label>
-                            <Dropdown
-                                placeholder="What kind of item is this?"
-                                categories={itemTypeLabels}
-                                value={itemType}
-                                onChange={setItemType}
-                                hasBorder
-                            />
-                        </div>
+                        {!isForms && (
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Component Type</label>
+                                <Dropdown
+                                    placeholder="What kind of item is this?"
+                                    categories={itemTypeLabels}
+                                    value={itemType}
+                                    onChange={setItemType}
+                                    hasBorder
+                                />
+                            </div>
+                        )}
 
                         {/* DYNAMIC FIELDS BASED ON TYPE */}
                         {selectedTypeValue && (
-                            <div className="p-6 bg-gray-50/50 rounded-3xl border border-gray-100 space-y-6">
+                            <div className={`p-6 bg-gray-50/50 rounded-3xl border border-gray-100 space-y-6 ${isForms ? "mt-0" : ""}`}>
                                 {(selectedTypeValue === "header" || selectedTypeValue === "document") && (
                                     <SingleField
-                                        labelText="Title / Label *"
-                                        fieldHolder="e.g., Section 1: Introduction"
+                                        labelText={isForms ? "Document Name *" : "Title / Label *"}
+                                        fieldHolder={isForms ? "e.g., Internship Application Form" : "e.g., Section 1: Introduction"}
                                         fieldId="itemTitle"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
                                     />
                                 )}
 
-                                {(selectedTypeValue === "description" || selectedTypeValue === "document") && (
+                                {(selectedTypeValue === "description" || (selectedTypeValue === "document" && !isForms)) && (
                                     <MultiField
                                         labelText={selectedTypeValue === "document" ? "Notes (Optional)" : "Content Description *"}
                                         fieldHolder="Provide the detailed text for this section..."
@@ -776,35 +771,37 @@ export function DocsAddModal({
                         )}
 
                         {/* NESTING CONFIGURATION */}
-                        <div className="p-6 bg-admin-element rounded-3xl space-y-4">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <input
-                                        type="checkbox"
-                                        id="nestToggle"
-                                        checked={isChecked}
-                                        onChange={handleCheckbox}
-                                        className="w-5 h-5 rounded-lg border-gray-300 text-oasis-header focus:ring-oasis-header cursor-pointer"
-                                    />
-                                    <label htmlFor="nestToggle" className="text-sm font-bold text-gray-700 cursor-pointer">
-                                        Nest under an existing parent?
-                                    </label>
+                        {!isForms && (
+                            <div className="p-6 bg-admin-element rounded-3xl space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="checkbox"
+                                            id="nestToggle"
+                                            checked={isChecked}
+                                            onChange={handleCheckbox}
+                                            className="w-5 h-5 rounded-lg border-gray-300 text-oasis-header focus:ring-oasis-header cursor-pointer"
+                                        />
+                                        <label htmlFor="nestToggle" className="text-sm font-bold text-gray-700 cursor-pointer">
+                                            Nest under an existing parent?
+                                        </label>
+                                    </div>
+                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-tighter ${isChecked ? "bg-oasis-header text-white" : "bg-gray-200 text-gray-400"}`}>
+                                        {isChecked ? "Active" : "Disabled"}
+                                    </span>
                                 </div>
-                                <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-tighter ${isChecked ? "bg-oasis-header text-white" : "bg-gray-200 text-gray-400"}`}>
-                                    {isChecked ? "Active" : "Disabled"}
-                                </span>
+                                
+                                <div className={`transition-all duration-300 ${isChecked ? "opacity-100 max-h-40" : "opacity-40 max-h-0 pointer-events-none overflow-hidden"}`}>
+                                    <Dropdown
+                                        placeholder="Choose parent item..."
+                                        categories={parents}
+                                        value={parent}
+                                        onChange={setParent}
+                                        hasBorder
+                                    />
+                                </div>
                             </div>
-                            
-                            <div className={`transition-all duration-300 ${isChecked ? "opacity-100 max-h-40" : "opacity-40 max-h-0 pointer-events-none overflow-hidden"}`}>
-                                <Dropdown
-                                    placeholder="Choose parent item..."
-                                    categories={parents}
-                                    value={parent}
-                                    onChange={setParent}
-                                    hasBorder
-                                />
-                            </div>
-                        </div>
+                        )}
                     </form>
                 </div>
 
@@ -826,97 +823,10 @@ export function DocsAddModal({
                             }
                         `}
                     >
-                        {uploading ? "Uploading..." : <><Check size={18} /> Add Component</>}
+                        {uploading ? "Uploading..." : <>{isForms ? <FileText size={18} /> : <Check size={18} />} {isForms ? "Add Document" : "Add Component"}</>}
                     </button>
                 </div>
             </div>
         </div>
     );
 }
-
-export function FormLayout({
-    children,
-    onSave,
-    onClear,
-    saving = false
-}) {
-    return (
-        <form
-            className='w-full flex flex-col items-start justify-evenly gap-5'
-            onSubmit={(e) => {
-                e.preventDefault();
-                onSave?.();
-            }}
-        >
-            {children}
-            <div className='flex flex-row gap-5'>
-                <AnnounceButton
-                    icon={<Save/>}
-                    btnText={saving ? 'Saving...' : 'Save'}
-                    type="submit"
-                    disabled={saving}
-                />
-                <AnnounceButton
-                    btnText='Clear all'
-                    type="button"
-                    onClick={onClear}
-                    disabled={saving}
-                />
-            </div>
-        </form>
-    );
-}
-
-export function SectionForm({
-    section,
-    label,
-    state,
-    loading,
-    saving,
-    onHeaderChange,
-    onDescriptionChange,
-    onFileChange,
-    onSave,
-    onClear
-}) {
-    return (
-        <FormLayout onSave={onSave} onClear={onClear} saving={saving}>
-            <section className='w-full flex flex-col items-start justify-start gap-6'>
-                <SingleField
-                    labelText={`${label} Header *`}
-                    fieldHolder={`Enter ${label} header...`}
-                    fieldId={`${section}-uploadHead`}
-                    value={state.header}
-                    onChange={(e) => onHeaderChange(e.target.value)}
-                    disabled={loading}
-                />
-
-                <MultiField
-                    labelText={"Description (Optional)"}
-                    fieldHolder={`Enter ${label} description...`}
-                    fieldId={`${section}-uploadDesc`}
-                    value={state.description}
-                    onChange={(e) => onDescriptionChange(e.target.value)}
-                    disabled={loading}
-                />
-
-                {section === "forms" && (
-                    <div className="w-full flex flex-col gap-2">
-                        <FileUploadField
-                            labelText="Upload Document (Required) *"
-                            fieldId="forms-uploadFile"
-                            onChange={(e) => onFileChange(e.target.files?.[0] || null)}
-                            disabled={loading}
-                        />
-                        {state.originalFilename && (
-                            <p className="text-xs text-oasis-button-dark font-medium italic pl-1">
-                                Currently active: {state.originalFilename}
-                            </p>
-                        )}
-                    </div>
-                )}
-            </section>
-        </FormLayout>
-    );
-}
-

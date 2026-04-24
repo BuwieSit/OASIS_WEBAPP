@@ -210,7 +210,10 @@ export function DynamicSection({ sectionKey, title, items = [] }) {
                             text={"No content available yet for this section."}
                         />
                     ) : (
-                        <StudentTreeRenderer items={items} level={0} />
+                        <>
+                            <StudentTreeRenderer items={items} level={0} />
+                        </>
+                        
                     )}
                 </Accordion>
 
@@ -224,6 +227,7 @@ export function StudentTreeRenderer({ items = [], level = 0 }) {
 
     return (
         <div className={`w-full flex flex-col gap-6 ${level > 0 ? "ml-4 md:ml-8 border-l-2 border-gray-100 pl-4 md:pl-6 mt-4" : ""}`}>
+            
             {items.map((item) => (
                 <StudentItemRenderer
                     key={item.id}

@@ -23,6 +23,9 @@ export default function useRegisterFlow({
   const [otp, setOtp] = useState("");
   const [validOtp, setValidOtp] = useState(false);
   const [otpFocus, setOtpFocus] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const [resendSeconds, setResendSeconds] = useState(0);
+
 
   // ---- MATCH PASSWORD ----
   const [matchPwd, setMatchPwd] = useState("");
@@ -33,16 +36,40 @@ export default function useRegisterFlow({
   const [success, setSuccess] = useState();
   const [refresh, setRefresh] = useState(false);
 
+  // ---- FORMAT TIME ----
+  const minutes = Math.floor(secondsLeft / 60);
+  const seconds = secondsLeft % 60;
+  const formattedTime = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
   // ---- STEP AUTO FOCUS ----
   useEffect(() => {
     if (step === STEPS.OTP) otpRef.current?.focus();
     if (step === STEPS.PASSWORD) pwdRef.current?.focus();
   }, [step]);
 
+  // ---- OTP TIMER ----
+  useEffect(() => {
+    if (secondsLeft <= 0) return;
+    const interval = setInterval(() => {
+      setSecondsLeft((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [secondsLeft]);
+
+  // ---- RESEND TIMER ----
+  useEffect(() => {
+    if (resendSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setResendSeconds((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [resendSeconds]);
+
   // ---- OTP VALIDATION ----
   useEffect(() => {
     setValidOtp(OTP_REGEX.test(otp));
   }, [otp]);
+
 
   // ---- MATCH VALIDATION ----
   useEffect(() => {
@@ -74,6 +101,12 @@ export default function useRegisterFlow({
     validOtp,
     otpFocus,
     setOtpFocus,
+    secondsLeft,
+    setSecondsLeft,
+    resendSeconds,
+    setResendSeconds,
+    formattedTime,
+
 
     matchPwd,
     setMatchPwd,

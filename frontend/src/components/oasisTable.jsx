@@ -171,7 +171,7 @@ export function StudentTable({ columns = [], data = [], children, onRowClick }) 
                                     onClick={() => onRowClick?.(row.id)}
                                 >
                                     {columns.map((col, colIndex) => (
-                                        <td key={colIndex} className="py-2 px-2 whitespace-nowrap">
+                                        <td key={colIndex} className="py-2 px-2 whitespace-nowrap max-w-30">
                                             {col.render(row)}
                                         </td>
                                     ))}

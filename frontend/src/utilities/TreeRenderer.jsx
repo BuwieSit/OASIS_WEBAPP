@@ -35,7 +35,7 @@ const LIST_TYPES = [
     "alphabetical_list"
 ];
 
-export function TreeRenderer({ items = [], isRoot = true, onDelete }) {
+export function TreeRenderer({ items = [], isRoot = true, onDelete, onView }) {
     if (!items || items.length === 0) return null;
 
     return (
@@ -66,7 +66,7 @@ export function TreeRenderer({ items = [], isRoot = true, onDelete }) {
                                     {!item.isSectionMeta && (
                                         <button 
                                             onClick={() => onDelete?.(item)}
-                                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                                             title="Delete item"
                                         >
                                             <Trash size={14} />
@@ -110,9 +110,12 @@ export function TreeRenderer({ items = [], isRoot = true, onDelete }) {
                             {item.type === "document" && item.file && (
                                 <div className="mt-2 flex items-center gap-2 text-xs text-blue-600 hover:text-blue-800 font-medium">
                                     <FileText size={12} />
-                                    <a href={item.file} target="_blank" rel="noreferrer" className="underline">
+                                    <button 
+                                        onClick={() => onView?.(item)}
+                                        className="underline hover:no-underline text-left"
+                                    >
                                         {item.originalFilename || "View Attachment"}
-                                    </a>
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -120,7 +123,12 @@ export function TreeRenderer({ items = [], isRoot = true, onDelete }) {
 
                     {item.children && item.children.length > 0 && (
                         <div className="animate__animated animate__fadeIn">
-                            <TreeRenderer items={item.children} isRoot={false} onDelete={onDelete} />
+                            <TreeRenderer 
+                                items={item.children} 
+                                isRoot={false} 
+                                onDelete={onDelete} 
+                                onView={onView}
+                            />
                         </div>
                     )}
                 </div>
@@ -128,4 +136,3 @@ export function TreeRenderer({ items = [], isRoot = true, onDelete }) {
         </div>
     );
 }
-

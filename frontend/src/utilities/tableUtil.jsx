@@ -165,7 +165,8 @@ export function ViewMoaButton({ url, onClick, label = "View MOA", disabled = fal
         <>
             <AnnounceButton
                 btnText={label}
-                onClick={() => {
+                onClick={(e) => {
+                    e.stopPropagation();
                     if (onClick) {
                         onClick();
                     } else if (url) {

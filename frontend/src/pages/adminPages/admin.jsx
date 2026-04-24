@@ -318,6 +318,8 @@ export default function Admin() {
                 
                 <Link to={"/admStudents"}>
                     <AdmCard
+                        hasRibbon={true}
+                        ribbonColor={"bg-oasis-aqua"}
                         cardTitle="Total Students"
                         cardIcon={<UsersRound color="#377268" />}
                         cardNumber={
@@ -335,6 +337,8 @@ export default function Admin() {
 
                 <Link to={"/admMoaOverview"}>
                     <AdmCard
+                        hasRibbon={true}
+                        ribbonColor={"bg-purple-700"}
                         cardTitle="MOA Prospect Submissions"
                         cardIcon={<BookPlus color="#377268" />}
                         cardNumber={
@@ -352,6 +356,8 @@ export default function Admin() {
 
                 <Link to={"/admOperations"}>
                     <AdmCard
+                        hasRibbon={true}
+                        ribbonColor={"bg-black"}
                         cardTitle="Host Training Establishments"
                         cardIcon={<Building2 color="#377268" />}
                         cardNumber={
@@ -392,7 +398,7 @@ export default function Admin() {
                         <div className="w-full flex justify-center overflow-hidden">
                             <OasisBarChart
                                 data={[
-                                    { name: 'Students', value: dashboard?.metrics?.total_students ?? 0 },
+                                    { name: 'Students', value: dashboard?.metrics?.total_students ?? 0, color: '#00D0FF'},
                                     { name: 'HTEs', value: dashboard?.metrics?.total_htes ?? 0 },
                                     { name: 'Prospects', value: dashboard?.metrics?.total_moa_prospects ?? 0 },
                                 ]}

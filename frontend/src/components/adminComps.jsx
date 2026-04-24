@@ -55,6 +55,7 @@ export function Dropdown({
                     id={fieldId}
                     value={value}
                     onChange={handleChange}
+                    onClick={(e) => e.stopPropagation()}
                     className={`w-full px-2 py-1 bg-white rounded text-[0.8rem] font-oasis-text disabled:cursor-not-allowed ${textColor} ${hasBorder && "border border-oasis-gray"}`}
                     disabled={disabled}
                 >

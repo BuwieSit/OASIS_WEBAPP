@@ -745,7 +745,7 @@ export default function AdmOperations() {
                                         </div>
                                     </div>
 
-                                    <div>
+                                    {/* <div>
                                         <Subtitle text={"Evaluation Criteria"} size={'text-[0.8rem]'} weight='font-bold' />
                                         <div className='flex flex-wrap gap-1 mt-2'>
                                             <div onClick={() => setReviewCriteria("")} className="cursor-pointer">
@@ -757,7 +757,7 @@ export default function AdmOperations() {
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
+                                    </div> */}
 
                                     <div>
                                         <Subtitle text={"Star Ratings"} size={'text-[0.8rem]'} weight='font-bold' />

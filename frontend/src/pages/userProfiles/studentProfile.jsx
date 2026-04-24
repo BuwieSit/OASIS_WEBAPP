@@ -1,10 +1,11 @@
 import MainScreen from "../../layouts/mainScreen";
 import Subtitle from "../../utilities/subtitle";
-import { SquarePen, Activity, Eye, EyeClosed, User, Mail, ShieldCheck, GraduationCap, Calendar } from "lucide-react";
+import { SquarePen, Activity, Eye, EyeClosed, User, Mail, ShieldCheck, GraduationCap, Calendar, X } from "lucide-react";
 import testPfp from "../../assets/testprofile.png";
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
 import { SingleField } from "../../components/fieldComp";
+import { GeneralPopupModal, ConfirmModal } from "../../components/popupModal";
 
 const API_BASE = api.defaults.baseURL;
 
@@ -20,28 +21,33 @@ export default function StudentProfile() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [showPhotoConfirm, setShowPhotoConfirm] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [errMsg, setErrMsg] = useState("");
+
+  const fetchProfile = async () => {
+    try {
+      const res = await api.get("/api/student/me");
+      const fetchedProfile = res.data.profile;
+
+      fetchedProfile.photo_url = fetchedProfile.photo_path
+        ? `${API_BASE}${fetchedProfile.photo_path}`
+        : null;
+
+      setUser(res.data.user);
+      setProfile(fetchedProfile);
+      setFirstName(fetchedProfile.first_name || "");
+      setLastName(fetchedProfile.last_name || "");
+      setMiddleInitial(fetchedProfile.middle_initial || "");
+      setOjtAdviser(fetchedProfile.ojt_adviser || "");
+      setProgram(fetchedProfile._program || "");
+    } catch (err) {
+      console.error("Failed to fetch profile", err);
+    }
+  };
 
   useEffect(() => {
-    async function fetchProfile() {
-      try {
-        const res = await api.get("/api/student/me");
-        const fetchedProfile = res.data.profile;
-
-        fetchedProfile.photo_url = fetchedProfile.photo_path
-          ? `${API_BASE}${fetchedProfile.photo_path}`
-          : null;
-
-        setUser(res.data.user);
-        setProfile(fetchedProfile);
-        setFirstName(fetchedProfile.first_name || "");
-        setLastName(fetchedProfile.last_name || "");
-        setMiddleInitial(fetchedProfile.middle_initial || "");
-        setOjtAdviser(fetchedProfile.ojt_adviser || "");
-        setProgram(fetchedProfile._program || "");
-      } catch (err) {
-        console.error("Failed to fetch profile", err);
-      }
-    }
     fetchProfile();
   }, []);
 
@@ -70,14 +76,69 @@ export default function StudentProfile() {
       }));
       setPassword("");
       setIsEditing(false);
-      alert("Profile updated successfully!");
+      setSuccessMsg("Profile updated successfully!");
     } catch (err) {
-      alert(err?.response?.data?.error || "Failed to update profile");
+      setErrMsg(err?.response?.data?.error || "Failed to update profile");
+    }
+  };
+
+  const handlePhotoChange = async () => {
+    if (!selectedFile) return;
+    
+    const formData = new FormData();
+    formData.append("photo", selectedFile);
+    
+    try {
+      const res = await api.patch("/api/student/me/photo", formData);
+      setProfile((prev) => ({
+        ...prev,
+        photo_path: res.data.photo_path,
+        photo_url: `${API_BASE}${res.data.photo_path}`,
+      }));
+      setSuccessMsg("Profile picture updated!");
+      setPhotoPreview(null);
+      setSelectedFile(null);
+      setShowPhotoConfirm(false);
+    } catch (err) {
+      setErrMsg("Photo upload failed");
+      setPhotoPreview(null);
+      setSelectedFile(null);
+      setShowPhotoConfirm(false);
     }
   };
 
   return (
     <MainScreen>
+      {successMsg && (
+        <GeneralPopupModal
+          title="Success"
+          text={successMsg}
+          isSuccess={true}
+          onClose={() => setSuccessMsg("")}
+        />
+      )}
+      {errMsg && (
+        <GeneralPopupModal
+          title="Error"
+          text={errMsg}
+          isFailed={true}
+          icon={<X color="#800020" size={35}/>}
+          onClose={() => setErrMsg("")}
+        />
+      )}
+
+      {showPhotoConfirm && (
+        <ConfirmModal 
+          confText="change your profile picture?"
+          onConfirm={handlePhotoChange}
+          onCancel={() => {
+            setShowPhotoConfirm(false);
+            setSelectedFile(null);
+            setPhotoPreview(null);
+          }}
+        />
+      )}
+
       <div className="w-full max-w-6xl mx-auto p-4 md:p-6 animate__animated animate__fadeIn">
         
         {/* HERO SECTION / HEADER CARD */}
@@ -94,32 +155,25 @@ export default function StudentProfile() {
                   alt="Profile"
                 />
               </div>
-              <label className="absolute bottom-2 right-2 bg-white text-oasis-header p-2.5 rounded-full cursor-pointer hover:bg-oasis-blue transition-all shadow-lg border border-gray-100">
-                <SquarePen size={18} />
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    const previewUrl = URL.createObjectURL(file);
-                    setPhotoPreview(previewUrl);
-                    const formData = new FormData();
-                    formData.append("photo", file);
-                    try {
-                      const res = await api.patch("/api/student/me/photo", formData);
-                      setProfile((prev) => ({
-                        ...prev,
-                        photo_path: res.data.photo_path,
-                        photo_url: `${API_BASE}${res.data.photo_path}`,
-                      }));
-                    } catch (err) {
-                      alert("Photo upload failed");
-                    }
-                  }}
-                />
-              </label>
+              
+              <div className="absolute bottom-2 right-2 flex gap-2">
+                <label className="bg-white text-oasis-header p-2.5 rounded-full cursor-pointer hover:bg-oasis-blue hover:text-white transition-all shadow-lg border border-gray-100" title="Upload Photo">
+                  <SquarePen size={18} />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      const previewUrl = URL.createObjectURL(file);
+                      setPhotoPreview(previewUrl);
+                      setSelectedFile(file);
+                      setShowPhotoConfirm(true);
+                    }}
+                  />
+                </label>
+              </div>
             </div>
 
             {/* Name & Badge */}

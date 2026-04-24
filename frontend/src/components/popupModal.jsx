@@ -224,12 +224,9 @@ export function ViewModal({
 
                     {/* DOCUMENT */}
                     {isDocument && (
-                        <div className="w-full max-w-5xl rounded-2xl overflow-hidden">
-
+                        <div className="w-full max-w-5xl mx-auto rounded-2xl">
                             {visible && isDocument && (
-                                <div className="flex justify-center items-center w-full aspect-auto overflow-y-auto ">
-                                    <PdfViewer file={file}/>
-                                </div>
+                                <PdfViewer file={file}/>
                             )}
                         </div>
                     )}

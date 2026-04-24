@@ -73,7 +73,7 @@ export function UploadField({ id, accept, onChange, disabled = false }) {
   return (
     <label
       htmlFor={inputId}
-      className={`w-full flex items-center gap-4 p-3 rounded border transition 
+      className={`flex items-center gap-4 p-3 rounded border transition 
         ${fileName !== "Select a file to upload" ? 
           "border-oasis-button-light bg-oasis-button-light text-white" 
           : "bg-white border-gray-300"} 

@@ -3,6 +3,7 @@ import Title from "../utilities/title";
 import { useNavigate } from "react-router-dom";
 import { clearToken } from "../api/token";
 import { useAuth } from "../context/authContext";
+import { useEffect } from "react";
 import {
   sendOtp,
   verifyOtp,
@@ -50,6 +51,11 @@ export function UpdatedReg() {
     validOtp,
     otpFocus,
     setOtpFocus,
+    secondsLeft,
+    setSecondsLeft,
+    resendSeconds,
+    setResendSeconds,
+    formattedTime,
     matchPwd,
     setMatchPwd,
     validMatch,
@@ -84,6 +90,8 @@ export function UpdatedReg() {
       );
     }
   };
+
+  
   return (
     <>
         <>
@@ -125,7 +133,8 @@ export function UpdatedReg() {
                                 try {
                                     await sendOtp(user);
                                     setStep(STEPS.OTP);
-
+                                    setSecondsLeft(10 * 60);
+                                    setResendSeconds(0);
                                 } catch {
                                     setErrMsg("Failed to send OTP");
                                 }
@@ -144,25 +153,27 @@ export function UpdatedReg() {
                                 type="text"
                                 id="otp"
                                 required
+                                value={otp}
                                 placeholder="6-digit OTP"
                                 onChange={(e) => setOtp(e.target.value)}
                                 ariaDescribedBy="otpnote"
                                 onFocus={() => setOtpFocus(true)}
                                 onBlur={() => setOtpFocus(false)}
                             />
-
+                        <div className="w-full mt-2">
+                          <Subtitle isItalic color={"text-oasis-gray"} text={secondsLeft > 0 ? `OTP expires in ${formattedTime}` : "OTP expired"}/>
                         </div>
-                        <div className="w-full h-20 flex align-center justify-center">
+                        </div>
+                        <div className="w-full h-10 mb-1 flex align-center justify-center">
                           <p id="otpnote" className={otpFocus && otp && !validOtp ? "opacity-100 font-oasis-text text-red-600 text-xs ": "opacity-0 "}> OTP must be a 6-digit number.</p>
                         </div>
-                          
+                        
                         <Button
                             text="Verify OTP"
                             type="button"
-                            disabled={!validOtp}
+                            disabled={!validOtp || secondsLeft <= 0}
                             onClick={async (e) => {
                                 e.preventDefault();
-
                                 try {
                                     await verifyOtp(user, otp); //backend call
                                     setStep(STEPS.PASSWORD);
@@ -172,6 +183,32 @@ export function UpdatedReg() {
                             }}
                         />
 
+                        <div className="mt-2 text-center h-5">
+                          {resendSeconds > 0 ? (
+                            <p className="text-oasis-gray text-xs italic">
+                              Resend OTP in {resendSeconds}s
+                            </p>
+                          ) : (
+                            <button
+                              type="button"
+                              className="text-oasis-button-dark hover:text-oasis-button-light font-bold text-xs underline cursor-pointer"
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                try {
+                                  await sendOtp(user);
+                                  setOtp("");
+                                  setSecondsLeft(10 * 60);
+                                  setResendSeconds(60);
+                                  setErrMsg("");
+                                } catch {
+                                  setErrMsg("Failed to send OTP");
+                                }
+                              }}
+                            >
+                              Resend OTP
+                            </button>
+                          )}
+                        </div>
                     </>
                 )}
 
@@ -209,6 +246,7 @@ export function UpdatedReg() {
                               onFocus={() => setMatchFocus(true)}
                               onBlur={() => setMatchFocus(false)}
                           />
+                          
                       </div>
 
                       <div className="w-full h-20 flex align-center justify-center">
@@ -387,6 +425,11 @@ export function ForgotPassword() {
     validOtp,
     otpFocus,
     setOtpFocus,
+    secondsLeft,
+    setSecondsLeft,
+    resendSeconds,
+    setResendSeconds,
+    formattedTime,
     matchPwd,
     setMatchPwd,
     validMatch,
@@ -406,6 +449,8 @@ export function ForgotPassword() {
         if (!validName) return;
         await sendResetOtp(user);
         setStep(STEPS.OTP);
+        setSecondsLeft(10 * 60);
+        setResendSeconds(60);
       } else if (step === STEPS.OTP) {
         if (!validOtp) return;
         await verifyResetOtp(user, otp);
@@ -473,6 +518,8 @@ export function ForgotPassword() {
                 try {
                   await sendResetOtp(user);
                   setStep(STEPS.OTP);
+                  setSecondsLeft(10 * 60);
+                  setResendSeconds(0);
                 } catch (err) {
                   setErrMsg(err?.response?.data?.error || "Failed to send reset OTP");
                 }
@@ -499,25 +546,55 @@ export function ForgotPassword() {
                 onFocus={() => setOtpFocus(true)}
                 onBlur={() => setOtpFocus(false)}
               />
+              <div className="w-full mt-2">
+                <Subtitle isItalic color={"text-oasis-gray"} text={secondsLeft > 0 ? `OTP expires in ${formattedTime}` : "OTP expired"}/>
+              </div>
             </div>
 
-            <div className="w-full h-20 flex align-center justify-center">
+            <div className="w-full h-10 mb-1 flex align-center justify-center">
               <p id="otpnote" className={otpFocus && otp && !validOtp ? "opacity-100 font-oasis-text text-red-600 text-xs ": "opacity-0 "}> OTP must be a 6-digit number.</p>
             </div>
 
             <Button 
-              text="Verify OTP" 
-              type="button" 
-              disabled={!validOtp} 
-              onClick={async () => {
-                try {
-                  await verifyResetOtp(user, otp);
-                  setStep(STEPS.PASSWORD);
-                } catch (err) {
-                  setErrMsg(err?.response?.data?.error || "Invalid OTP");
-                }
-              }}
-            />
+                text="Verify OTP"
+                type="button" 
+                disabled={!validOtp || secondsLeft <= 0} 
+                onClick={async () => {
+                    try {
+                      await verifyResetOtp(user, otp);
+                      setStep(STEPS.PASSWORD);
+                    } catch (err) {
+                      setErrMsg(err?.response?.data?.error || "Invalid OTP");
+                    }
+                }}
+              />
+
+              <div className="mt-2 text-center h-5">
+                {resendSeconds > 0 ? (
+                  <p className="text-oasis-gray text-xs italic">
+                    Resend OTP in {resendSeconds}s
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    className="text-oasis-button-dark hover:text-oasis-button-light font-bold text-xs underline cursor-pointer"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      try {
+                        await sendResetOtp(user);
+                        setOtp("");
+                        setSecondsLeft(10 * 60);
+                        setResendSeconds(60);
+                        setErrMsg("");
+                      } catch (err) {
+                        setErrMsg(err?.response?.data?.error || "Failed to send reset OTP");
+                      }
+                    }}
+                  >
+                    Resend OTP
+                  </button>
+                )}
+              </div>
           </>
         )}
 

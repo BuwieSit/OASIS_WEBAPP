@@ -110,7 +110,6 @@ export function Header({ admin, notifications = [], setNotifications = () => {} 
                 <img src={oasisLogo} className="absolute left-1/2 -translate-x-1/2 w-25 aspect-auto"/>
                 
                 <div className="flex gap-3 items-center">
-
                     <HoverLift>
                         {!admin && (
                             <Subtitle 
@@ -304,14 +303,7 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
                         iconLeft={<BellIcon 
                         color="#2B6259"/>}
                     />
-                    {/* PROFILE */}
-                    <NavItem 
-                        to={"/admin-profile"}
-                        isTrigger={true} 
-                        isOpen={isOpen} 
-                        label={"Buwie Santos"} 
-                        iconLeft={<UserRound color="#2B6259"/>}
-                    />
+                    
                     <NavItem 
                         isNotLink={true}
                         isOpen={isOpen} 

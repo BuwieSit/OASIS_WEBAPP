@@ -14,7 +14,7 @@ import { ViewModal } from '../../components/popupModal';
 import filePdf from "../../assets/resume.pdf";
 import api from "../../api/axios";
 
-const API_BASE = api.defaults.baseURL;
+const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function Student() {
     const [tableData, setTableData] = useState([]);
@@ -22,6 +22,12 @@ export default function Student() {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
+    
+    const [openView, setOpenView] = useState(false);
+    const [modalType, setModalType] = useState("video"); // "video" or "document"
+    const [activeFile, setActiveFile] = useState(null);
+    const [activeFileName, setActiveFileName] = useState("HTE_MOA.pdf");
+
     const filteredHtes = tableData.filter((hte) =>
         hte.hteName.toLowerCase().includes(search.toLowerCase()) ||
         hte.industry.toLowerCase().includes(search.toLowerCase())
@@ -44,14 +50,12 @@ export default function Student() {
             .then((htes) => {
                 const mappedData = htes.map(hte => ({
                     id: hte.id,
-                    hteName: hte.name,
+                    hteName: hte.company_name || hte.name,
                     industry: hte.industry,
                     signedDate: hte.moa_signed_at || "—",
                     expiryDate: hte.moa_expiry_date || "—",
-                    moaStatus: hte.moa_status,
-                    moaUrl: hte.moa_file
-                        ? `${import.meta.env.VITE_API_URL}/api/student/htes/${hte.id}/moa`
-                        : null
+                    moaStatus: !hte.moa_expiry_date ? "Not Available" : hte.moa_status,
+                    document_path: hte.moa_file_path
                 }));
 
                 setTableData(mappedData);
@@ -74,6 +78,42 @@ export default function Student() {
         return `${API_BASE}/uploads/${path}`;
     };
 
+    const openPdf = (filePath, fileName = "HTE_MOA.pdf") => {
+        const url = buildFileUrl(filePath);
+        if (!url) return;
+
+        setActiveFile(url);
+        setActiveFileName(fileName);
+        setModalType("document");
+        setOpenView(true);
+    };
+
+    const downloadMoa = async (filePath, companyName) => {
+        const url = buildFileUrl(filePath);
+        if (!url) return;
+
+        try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+
+            const safeName = (companyName || "HTE")
+                .replace(/\s+/g, "_")
+                .replace(/[^\w\-]/g, "");
+
+            const filename = `${safeName}_MOA.pdf`;
+
+            const link = document.createElement("a");
+            link.href = window.URL.createObjectURL(blob);
+            link.download = filename;
+
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (err) {
+            console.error("Download MOA failed:", err);
+        }
+    };
+
     const columns = [
         {header: "HTE Name", render: row => <Text text={row.hteName}/>},
         {header: "Nature of Business", render: row => <Text text={row.industry}/>},
@@ -88,9 +128,9 @@ export default function Student() {
                 return url ? (
                     <ViewMoaButton
                         url={url}
-                        onClick={() => openPdf(row.document_path)}
+                        onClick={() => openPdf(row.document_path, `${row.hteName.replace(/\s+/g, "_")}_MOA.pdf`)}
                         onDownload={() =>
-                            downloadMoa(row.document_path, row.hte?.company_name)
+                            downloadMoa(row.document_path, row.hteName)
                         }
                     />
                 ) : (
@@ -101,8 +141,9 @@ export default function Student() {
     ]
     
     const handleDownloadMOA = async (hteId) => {
+        // This function is kept but use the new downloadMoa for table actions
         try {
-            const res = await downloadMOA(hteId);
+            const res = await api.get(`/api/student/htes/${hteId}/moa`, { responseType: 'blob' });
 
             const url = window.URL.createObjectURL(new Blob([res.data]));
             const link = document.createElement("a");
@@ -130,7 +171,6 @@ export default function Student() {
         setSearchParams({ hteId });
     };
 
-    const [openView, setOpenView] = useState(false);
     const userName = profile?.first_name || user?.email?.split('@')[0] || "Student";
     
     return(
@@ -140,9 +180,11 @@ export default function Student() {
                 <ViewModal 
                     visible={openView}
                     onClose={() => setOpenView(false)}
-                    isVideo={true}
-                    file={filePdf}
-                    resourceTitle="What is OASIS?"
+                    isVideo={modalType === "video"}
+                    isDocument={modalType === "document"}
+                    file={modalType === "video" ? filePdf : activeFile}
+                    filename={activeFileName}
+                    resourceTitle={modalType === "video" ? "What is OASIS?" : "MOA File"}
                 />
 
                 <div className="w-full py-10 md:py-30 lg:py-30 overflow-hidden relative flex flex-col items-center justify-center bg-black/40">
@@ -215,12 +257,12 @@ export default function Student() {
 
                     <div className="w-[80%] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 pt-10 pb-10 justify-center place-items-center">
             
-                        <TutorialCard onClick={() => setOpenView(true)}/>
-                        <TutorialCard onClick={() => setOpenView(true)}/>
-                        <TutorialCard onClick={() => setOpenView(true)}/>
-                        <TutorialCard onClick={() => setOpenView(true)}/>
-                        <TutorialCard onClick={() => setOpenView(true)}/>
-                        <TutorialCard onClick={() => setOpenView(true)}/>
+                        <TutorialCard onClick={() => { setModalType("video"); setOpenView(true); }}/>
+                        <TutorialCard onClick={() => { setModalType("video"); setOpenView(true); }}/>
+                        <TutorialCard onClick={() => { setModalType("video"); setOpenView(true); }}/>
+                        <TutorialCard onClick={() => { setModalType("video"); setOpenView(true); }}/>
+                        <TutorialCard onClick={() => { setModalType("video"); setOpenView(true); }}/>
+                        <TutorialCard onClick={() => { setModalType("video"); setOpenView(true); }}/>
                     </div>
 
                 </div>

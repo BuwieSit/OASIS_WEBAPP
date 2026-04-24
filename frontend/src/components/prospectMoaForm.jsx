@@ -70,6 +70,7 @@ export default function ProspectMoaForm() {
     const [errMsg, setErrMsg] = useState("");
     const [successMsg, setSuccessMsg] = useState("");
     const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+    const [fileKey, setFileKey] = useState(Date.now());
 
     const initialFormData = {
         company_name: "",
@@ -85,16 +86,32 @@ export default function ProspectMoaForm() {
     const [formData, setFormData] = useState(initialFormData);
 
     const handleChange = (field) => (e) => {
+        let value = e.target.value;
+        if (field === "contact_number") {
+            // Only allow numbers
+            value = value.replace(/\D/g, "");
+        }
         setFormData((prev) => ({
             ...prev,
-            [field]: e.target.value,
+            [field]: value,
         }));
     };
 
     const handleFileChange = (e) => {
+        const file = e.target.files?.[0] || null;
+        if (file && file.type !== "application/pdf") {
+            setErrMsg("Only PDF files are allowed.");
+            setFormData((prev) => ({
+                ...prev,
+                moa_file: null,
+            }));
+            setFileKey(Date.now()); // Force reset of internal UploadField state
+            return;
+        }
+        setErrMsg("");
         setFormData((prev) => ({
             ...prev,
-            moa_file: e.target.files?.[0] || null,
+            moa_file: file,
         }));
     };
 
@@ -202,6 +219,7 @@ export default function ProspectMoaForm() {
                     title={"Successful"} 
                     time={3000} 
                     isSuccess={true}
+                    onClose={() => setSuccessMsg("")}
                 />
             }
 
@@ -212,6 +230,7 @@ export default function ProspectMoaForm() {
                     time={3000} 
                     icon={<X color="#800020" size={35}/>}
                     isFailed={true}
+                    onClose={() => setErrMsg("")}
                 />
             }
             
@@ -276,6 +295,7 @@ export default function ProspectMoaForm() {
                             />
 
                             <FileUploadField
+                                key={fileKey}
                                 labelText={"MOA Document (Optional)"}
                                 fieldId={"moa_file"}
                                 onChange={handleFileChange}

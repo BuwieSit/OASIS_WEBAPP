@@ -103,7 +103,7 @@ export function OasisBarChart({ data = [] }) {
                     />
                     <Bar 
                         dataKey="value" 
-                        fill="#2B6259" 
+                        fill={data.color || '#2B6259'} 
                         radius={[6, 6, 0, 0]} 
                         barSize={40}
                         animationDuration={1500}

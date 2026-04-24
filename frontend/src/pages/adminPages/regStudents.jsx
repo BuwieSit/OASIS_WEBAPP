@@ -24,7 +24,7 @@ export default function RegStudents() {
   const [action, setAction] = useState("");
   const sectionCodes = [
     "DIT",
-    "DLMOT",
+    "DOMT",
     "DEET",
     "DMET",
     "DCVET",

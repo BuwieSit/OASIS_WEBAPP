@@ -54,10 +54,11 @@ export default function PdfViewer({ file }) {
         p-3 gap-2
         bg-oasis-header
         rounded-3xl
-        sticky top-0
+        sticky top-5
         self-start
-        max-h-screen
+        max-h-[70vh]
         overflow-y-auto
+        z-20
       ">
 
         {Array.from({ length: numPages }, (_, i) => (
@@ -78,7 +79,7 @@ export default function PdfViewer({ file }) {
       </div>
 
       {/* PDF DOCUMENT AREA */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto px-4">
+      <div ref={containerRef} className="flex-1 px-4">
 
         {err ? (
           <div className="p-5 text-center text-red-500">

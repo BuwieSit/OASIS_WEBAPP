@@ -8,8 +8,12 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { MobileStudentTable, StudentTable } from '../../components/oasisTable';
 import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
 import { useEffect, useState } from "react";
-import { fetchHTEs, downloadMOA } from "../../api/student.service";
+import { fetchHTEs } from "../../api/student.service";
 import SearchBar from '../../components/searchBar';
+import { ViewModal } from '../../components/popupModal';
+import api from "../../api/axios";
+
+const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function HteDirectory() {
     const [htes, setHtes] = useState([]);
@@ -17,6 +21,10 @@ export default function HteDirectory() {
     const [course] = useState("");
     const [location] = useState("");
     const [search, setSearch] = useState("");
+
+    const [openView, setOpenView] = useState(false);
+    const [activeFile, setActiveFile] = useState(null);
+    const [activeFileName, setActiveFileName] = useState("HTE_MOA.pdf");
 
     const filteredHtes = htes.filter((hte) =>
         hte.hteName.toLowerCase().includes(search.toLowerCase()) ||
@@ -38,14 +46,12 @@ export default function HteDirectory() {
                     location: hte.address,
                     description: hte.description,
                     website: hte.website,
-                    moaStatus: hte.moa_status,
-                    validity: hte.moa_expiry_date,
+                    moaStatus: !hte.moa_expiry_date ? "Not Available" : hte.moa_status,
+                    validity: hte.moa_expiry_date || "—",
                     thumbnail: hte.thumbnail_path
-                        ? `${import.meta.env.VITE_API_URL}/${hte.thumbnail_path}`
+                        ? `${API_BASE}/${hte.thumbnail_path}`
                         : fallbackImg,
-                    moaUrl: hte.moa_file_path
-                        ? `${import.meta.env.VITE_API_URL}/api/student/htes/${hte.id}/moa`
-                        : null
+                    document_path: hte.moa_file_path
                 }));
                 setHtes(mapped);
             })
@@ -54,36 +60,67 @@ export default function HteDirectory() {
             });
     }, [search, industry, course, location]);
 
-    const columns = [
-        { header: "HTE Name", render: row => <Text text={row.hteName}/> },
-        { header: "Nature of Business", render: row => <Text text={row.industry}/> },
-        { header: "MOA Expiration", render: row => <Text text={row.validity || "—"}/> },
-        { header: "MOA Status", render: row => <StatusView value={row.moaStatus}/> },
-        {
-            header: "MOA File",
-            render: row => (
-                <ViewMoaButton
-                    onClick={() => handleDownloadMOA(row.id)}
-                />
-            )
-        }
-    ];
+    const buildFileUrl = (filePath) => {
+        if (!filePath) return null;
+        let path = String(filePath).trim();
+        if (path.startsWith("/")) path = path.slice(1);
+        if (path.startsWith("uploads/")) path = path.replace("uploads/", "");
+        return `${API_BASE}/uploads/${path}`;
+    };
 
-    const handleDownloadMOA = async (hteId) => {
+    const openPdf = (filePath, fileName = "HTE_MOA.pdf") => {
+        const url = buildFileUrl(filePath);
+        if (!url) return;
+
+        setActiveFile(url);
+        setActiveFileName(fileName);
+        setOpenView(true);
+    };
+
+    const downloadMoa = async (filePath, companyName) => {
+        const url = buildFileUrl(filePath);
+        if (!url) return;
+
         try {
-            const res = await downloadMOA(hteId);
+            const res = await fetch(url);
+            const blob = await res.blob();
+            const safeName = (companyName || "HTE")
+                .replace(/\s+/g, "_")
+                .replace(/[^\w\-]/g, "");
+            const filename = `${safeName}_MOA.pdf`;
 
-            const url = window.URL.createObjectURL(new Blob([res.data]));
             const link = document.createElement("a");
-            link.href = url;
-            link.setAttribute("download", `HTE_${hteId}_MOA.pdf`);
+            link.href = window.URL.createObjectURL(blob);
+            link.download = filename;
             document.body.appendChild(link);
             link.click();
             link.remove();
         } catch (err) {
-            console.error("Failed to download MOA", err);
+            console.error("Download MOA failed:", err);
         }
     };
+
+    const columns = [
+        { header: "HTE Name", render: row => <Text text={row.hteName}/> },
+        { header: "Nature of Business", render: row => <Text text={row.industry}/> },
+        { header: "MOA Expiration", render: row => <Text text={row.validity}/> },
+        { header: "MOA Status", render: row => <StatusView value={row.moaStatus}/> },
+        {
+            header: "MOA File",
+            render: row => {
+                const url = buildFileUrl(row.document_path);
+                return url ? (
+                    <ViewMoaButton
+                        url={url}
+                        onClick={() => openPdf(row.document_path, `${row.hteName.replace(/\s+/g, "_")}_MOA.pdf`)}
+                        onDownload={() => downloadMoa(row.document_path, row.hteName)}
+                    />
+                ) : (
+                    <Text text="—" />
+                );
+            }
+        }
+    ];
 
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -110,6 +147,14 @@ export default function HteDirectory() {
     return (
         <>
             <MainScreen>
+                <ViewModal 
+                    visible={openView}
+                    onClose={() => setOpenView(false)}
+                    isDocument={true}
+                    file={activeFile}
+                    filename={activeFileName}
+                    resourceTitle="MOA File"
+                />
                 <div className="flex flex-col justify-center items-center gap-10 w-full">
                     
                     <div className="w-full flex flex-col items-center mb-10 px-4 text-center">
@@ -142,9 +187,14 @@ export default function HteDirectory() {
                     </section>
 
                 
-                    <section className="w-full flex flex-col gap-5 justify-center items-center">
+                    <section className="w-[90%] flex flex-col gap-5 justify-center items-center">
                         <Title text={"List of available HTE with MOA"}/>
-                        
+                        <div className='w-full flex flex-row justify-end items-center z-70'>
+                            <SearchBar
+                                value={search}
+                                onChange={setSearch}
+                            />
+                        </div>
                         {filteredHtes.length > 0 ? (
                             <>
                                 {/* DESKTOP TABLE */}
