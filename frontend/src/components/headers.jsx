@@ -401,10 +401,10 @@ export function StudentHeader({ showNavigation = true, notifications = [], setNo
             `}
         >
             <ul className="w-full p-3 hidden md:flex flex-row justify-center items-center gap-15">
-                <NavItem to="/home" label="Home" isOpen={true}/>
-                <NavItem to="/htedirectory" label="HTE Directory" isOpen={true}/>
-                <NavItem to="/ojthub" label="OJT Hub" isOpen={true}/>
-                <NavItem to="/announcements" label="Announcement" isOpen={true}/>
+                <NavItem to="/home" label="Home" isOpen={true} variant="header"/>
+                <NavItem to="/htedirectory" label="HTE Directory" isOpen={true} variant="header"/>
+                <NavItem to="/ojthub" label="OJT Hub" isOpen={true} variant="header"/>
+                <NavItem to="/announcements" label="Announcement" isOpen={true} variant="header"/>
 
                 {/* NOTIFICATIONS & PROFILE (SCROLLED) */}
                 <div className={`flex gap-3 items-center absolute right-0 p-5 transition-all duration-300 ${scrolled ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10 pointer-events-none"}`}>
