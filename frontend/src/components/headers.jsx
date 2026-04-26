@@ -249,66 +249,67 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
             {confirmation && 
                 <ConfirmModal confText="logout?" onLogOut={handleLogout} onCancel={() => setConfirmation(false)}/>
             }
-            <div className={`fixed left-0 top-0 z-100 h-screen p-3 bg-white grid grid-cols-1 place-items-start shadow-[0px_0px_10px_rgba(0,0,0,0.5)] transition-all duration-150 ease-in-out overflow-hidden ${isOpen ? "sm:w-[180px] md:w-[200px] lg:w-[260px]":"sm:w-[60px] md:w-[60px] lg:w-[70px]"} w-[260px]`}>
+            <div className={`fixed left-0 top-0 z-100 h-screen p-4 bg-white flex flex-col items-start shadow-[0px_0px_20px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out ${isOpen ? "sm:w-[200px] md:w-[220px] lg:w-[280px]":"sm:w-[70px] md:w-[75px] lg:w-[85px]"} w-[280px]`}>
 
-                <img src={oasisLogo} className="sm:w-20 md:w-30 lg:w-50 object-cover aspect-video place-self-start"/>
-                <div className="cursor-pointer rounded-full p-2 transition-all duration-100 ease-in-out flex justify-center items-center hover:bg-oasis-button-light" onClick={() => setIsOpen(!isOpen)}>
-
-                    <ChevronLeft size={30} className={`transition-transform duration-300 ease-in-out ${isOpen ? "rotate-180" : "rotate-0"}`}
-                    />  
+                {/* LOGO & TOGGLE */}
+                <div className={`w-full flex items-center mb-10 ${isOpen ? "justify-between" : "justify-center"}`}>
+                    {isOpen && <img src={oasisLogo} className="w-32 object-contain aspect-video animate__animated animate__fadeIn"/>}
+                    <div 
+                        className="cursor-pointer rounded-xl p-2 transition-all duration-200 ease-in-out flex justify-center items-center hover:bg-oasis-aqua/10 text-oasis-header" 
+                        onClick={() => setIsOpen(!isOpen)}
+                    >
+                        <ChevronLeft size={24} className={`transition-transform duration-500 ease-in-out ${isOpen ? "rotate-180" : "rotate-0"}`} />  
+                    </div>
                 </div>
-                <ul className="text-black w-full p-3 flex flex-col justify-center items-start gap-5 col-span-2 list-none">
 
+                {/* MAIN NAV */}
+                <ul className="w-full flex flex-col justify-start items-start gap-2 list-none p-0 flex-1">
                     <NavItem 
                         to="/admin" 
                         label="Dashboard" 
-                        iconLeft={<LayoutDashboard color={"#2B6259"}/>} 
+                        iconLeft={<LayoutDashboard />} 
                         isOpen={isOpen} 
                     />
                     <NavItem 
                         to="/admoperations" 
                         label="Operations" 
-                        iconLeft={<Cog color={"#2B6259"}/>} 
+                        iconLeft={<Cog />} 
                         isOpen={isOpen} 
                     />
                     <NavItem 
                         to="/admMoaOverview" 
                         label="MOA Overview" 
-                        iconLeft={<FileText color={"#2B6259"}/>} 
+                        iconLeft={<FileText />} 
                         isOpen={isOpen} 
                     />
                     <NavItem 
                         to="/admUploads" 
                         label="Document Upload" 
-                        iconLeft={<Upload color={"#2B6259"}/>} 
+                        iconLeft={<Upload />} 
                         isOpen={isOpen} 
                     />
-
                     <NavItem 
                         to="/admStudents" 
                         label="Students" 
-                        iconLeft={<Users color={"#2B6259"}/>} 
+                        iconLeft={<Users />} 
                         isOpen={isOpen} 
                     />
-
                 </ul>
 
-                {/* Icons */}
-                <div className="p-3 rounded-4xl w-fit flex flex-col justify-between items-start gap-5 list-none">
-
+                {/* BOTTOM ACTIONS */}
+                <div className="w-full flex flex-col justify-end items-start gap-2 list-none p-0 pt-6 border-t border-gray-100">
                     <NavItem 
-                        isTrigger={true} 
+                        to="/admNotifications"
                         isOpen={isOpen} 
                         label={"Notifications"} 
-                        iconLeft={<BellIcon 
-                        color="#2B6259"/>}
+                        iconLeft={<BellIcon />}
                     />
                     
                     <NavItem 
                         isNotLink={true}
                         isOpen={isOpen} 
                         label={"Logout"} 
-                        iconLeft={<LogOut color="#2B6259"/>}
+                        iconLeft={<LogOut />}
                         onClick={() => setConfirmation(true)}
                     />
                 </div>

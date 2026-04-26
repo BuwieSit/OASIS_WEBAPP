@@ -32,6 +32,7 @@ const AdmOperations = lazy(() => import('./pages/adminPages/admOperations'));
 const DocsUpload = lazy(() => import('./pages/adminPages/docsUpload'));
 const MoaOverview = lazy(() => import('./pages/adminPages/moaOverview'));
 const RegStudents = lazy(() => import('./pages/adminPages/regStudents'));
+const AdmNotifications = lazy(() => import('./pages/adminPages/admNotifications'));
 const AdminProfile = lazy(() => import('./pages/userProfiles/adminProfile'));
 
 function RootLayout() {
@@ -77,6 +78,7 @@ const router = createBrowserRouter([
           { path: 'admUploads', element: <DocsUpload /> },
           { path: 'admMoaOverview', element: <MoaOverview /> },
           { path: 'admStudents', element: <RegStudents /> },
+          { path: 'admNotifications', element: <AdmNotifications /> },
           { path: 'admin-profile', element: <AdminProfile /> },
         ]
       },
