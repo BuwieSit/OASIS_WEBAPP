@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowUpRight, Check, Download, X, Star } from "lucide-react";
+import { ArrowUpRight, Check, Download, X, Star, User, ShieldCheck } from "lucide-react";
 import { AnnounceButton } from "./button";
 import Subtitle from "../utilities/subtitle";
 import { Link } from "react-router-dom";
@@ -307,6 +307,49 @@ export function ReviewDetailModal({ review, visible, onClose, hteName }) {
                     >
                         Close
                     </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/**
+ * SetupProfileModal
+ * Reusable modal to prompt students to complete their profile setup.
+ */
+export function SetupProfileModal({ visible, onGoToProfile }) {
+    if (!visible) return null;
+
+    return (
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate__animated animate__fadeIn">
+            <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col p-8 items-center text-center relative animate__animated animate__zoomIn animate__faster">
+                
+                {/* ICON / VISUAL */}
+                <div className="w-20 h-20 bg-oasis-blue/20 rounded-full flex items-center justify-center mb-6 text-oasis-header">
+                    <User size={40} />
+                </div>
+
+                <h2 className="text-2xl font-black text-gray-800 font-oasis-text mb-2 leading-tight">
+                    Complete Your Profile!
+                </h2>
+                
+                <p className="text-gray-500 text-sm md:text-base leading-relaxed mb-8">
+                    Welcome to OASIS! To get started, please set your <span className="font-bold text-oasis-header">First Name, Middle Initial, and Last Name</span> in your profile settings. This is required for official document generation.
+                </p>
+
+                <div className="w-full flex flex-col gap-3">
+                    <button 
+                        onClick={onGoToProfile}
+                        className="w-full py-4 bg-oasis-header text-white rounded-2xl font-bold text-lg hover:bg-oasis-button-dark transition-all shadow-xl shadow-oasis-header/20 active:scale-95 flex items-center justify-center gap-2 group"
+                    >
+                        Go to Profile Settings
+                        <ArrowUpRight size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"/>
+                    </button>
+                </div>
+
+                <div className="mt-6 flex items-center gap-2 text-gray-400">
+                    <ShieldCheck size={16} />
+                    <span className="text-[0.65rem] font-black uppercase tracking-widest">Secured Student Portal</span>
                 </div>
             </div>
         </div>

@@ -3,17 +3,25 @@ import Footer from '../components/footer'
 import OrbiChatbot from '../components/OrbiChatbot';
 import ProspectMoaForm from '../components/prospectMoaForm';
 import { AnnouncementModal } from '../components/userModal';
+import { SetupProfileModal } from '../components/popupModal';
 import { useState, useEffect } from 'react';
 import { NotificationAPI } from '../api/notification.api';
 import { getRole } from '../api/token';
+import api from '../api/axios';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/authContext';
 
 export default function MainScreen({ children, showHeader = true, hasTopMargin = true }) {
-    const userRole = getRole();
+    const { role: authRole } = useAuth();
+    const userRole = authRole || getRole();
     const isAdmin = userRole === "admin" || userRole === "ADMIN";
     const isStudent = userRole === "student" || userRole === "STUDENT";
+    const navigate = useNavigate();
+    const location = useLocation();
 
     const [activeModal, setActiveModal] = useState(null);
     const [notifications, setNotifications] = useState([]);
+    const [showSetupModal, setShowSetupModal] = useState(false);
 
     const loadNotifications = async () => {
         if (!isStudent) return;
@@ -25,13 +33,46 @@ export default function MainScreen({ children, showHeader = true, hasTopMargin =
         }
     };
 
+    const checkStudentProfile = async () => {
+        if (!isStudent) return;
+        
+        // Don't show modal if we're already on the profile page
+        if (location.pathname === "/student-profile") {
+            setShowSetupModal(false);
+            return;
+        }
+
+        try {
+            const res = await api.get("/api/student/me");
+            const profileData = res.data.profile;
+
+            const hasFirstName = profileData.first_name && profileData.first_name.trim() !== "";
+            const hasLastName = profileData.last_name && profileData.last_name.trim() !== "";
+
+            if (!hasFirstName || !hasLastName) {
+                setShowSetupModal(true);
+            } else {
+                setShowSetupModal(false);
+            }
+        } catch (err) {
+            console.error("Failed to check profile in MainScreen:", err);
+        }
+    };
+
     useEffect(() => {
         if (isStudent) {
             loadNotifications();
             const interval = setInterval(loadNotifications, 5000);
+            
+            // Check profile status
+            checkStudentProfile();
+
             return () => clearInterval(interval);
+        } else {
+            // If not a student (admin or logged out), don't show the setup modal
+            setShowSetupModal(false);
         }
-    }, [isStudent]);
+    }, [isStudent, location.pathname]); // Re-check on navigation or role change
 
     const getModalContent = () => {
         switch (activeModal) {
@@ -158,6 +199,11 @@ export default function MainScreen({ children, showHeader = true, hasTopMargin =
             {children}
 
             <OrbiChatbot />
+
+            <SetupProfileModal 
+                visible={showSetupModal}
+                onGoToProfile={() => navigate("/student-profile")}
+            />
 
             <AnnouncementModal
                 visible={!!activeModal}

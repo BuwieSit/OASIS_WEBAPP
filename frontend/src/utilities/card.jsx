@@ -160,8 +160,8 @@ export function AddReviewCard({ hteName, onSubmit, hasHte }) {
 
   const handleSubmit = async () => {
     if (!reviewMessage) {
-      alert("Review message required.")
       setErrMsg("Review message required.");
+      return;
     };
 
     setSubmitting(true);

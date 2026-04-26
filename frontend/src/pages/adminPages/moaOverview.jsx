@@ -26,9 +26,7 @@ export default function MoaOverview() {
     const [loadingProspects, setLoadingProspects] = useState(false);
     const [processingId, setProcessingId] = useState(null);
 
-    const [successModal, setSuccessModal] = useState(false);
-    const [action, setAction] = useState("");
-    const [lastStatus, setLastStatus] = useState("");
+    const [popup, setPopup] = useState(null);
 
     const [selectedHte, setSelectedHte] = useState(null);
 
@@ -160,18 +158,23 @@ export default function MoaOverview() {
         }
     };
 
-    const handleStatusChange = async (id, status) => {
+    const handleStatusChange = async (id, status, oldStatus) => {
         try {
             setProcessingId(id);
             await AdminAPI.updateMoaProspectStatus(id, status);
             await Promise.all([loadProspects(), loadCurrentMoas()]);
+            setPopup({
+                title: "Status Changed",
+                text: `Status set from ${oldStatus} to ${status}`,
+                type: "success"
+            });
         } catch (err) {
             console.error("Update MOA prospect status failed:", err);
-            alert(
-                err?.response?.data?.message ||
-                err?.response?.data?.error ||
-                "Failed to update MOA prospect status."
-            );
+            setPopup({
+                title: "Error",
+                text: err?.response?.data?.message || err?.response?.data?.error || "Failed to update MOA prospect status.",
+                type: "failed"
+            });
         } finally {
             setProcessingId(null);
         }
@@ -232,10 +235,7 @@ export default function MoaOverview() {
                         placeholder="Set status"
                         currentValueColor={prospectStatusColors}
                         onChange={(value) => {
-                            handleStatusChange(r.id, value);
-                            setAction(value);
-                            setLastStatus(r.status);
-                            setSuccessModal(true);
+                            handleStatusChange(r.id, value, r.status);
                         }}
                         disabled={
                             processingId === r.id ||
@@ -293,12 +293,13 @@ export default function MoaOverview() {
 
     return (
         <AdminScreen>
-            {successModal && (
+            {popup && (
                 <GeneralPopupModal
-                    title={`Status changed`}
-                    text={`Status set from ${lastStatus} to ${action}`}
-                    onClose={() => setSuccessModal(false)}
-                    isSuccess
+                    title={popup.title}
+                    text={popup.text}
+                    onClose={() => setPopup(null)}
+                    isSuccess={popup.type === "success"}
+                    isFailed={popup.type === "failed"}
                 />
             )}
 

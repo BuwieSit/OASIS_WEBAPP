@@ -13,7 +13,8 @@ import { AddReviewCard } from "../../utilities/card";
 import SearchBar from "../../components/searchBar";
 import { Dropdown } from "../../components/adminComps";
 import ReviewRatings from "../../components/reviewRatings";
-import { ReviewDetailModal } from "../../components/popupModal";
+import { ReviewDetailModal, GeneralPopupModal } from "../../components/popupModal";
+import { Check, X } from "lucide-react";
 
 export default function HteProfile() {
   const [searchParams] = useSearchParams();
@@ -21,6 +22,7 @@ export default function HteProfile() {
   const [hte, setHte] = useState(null);
   const [hteName, setHteName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [popup, setPopup] = useState(null);
   const hteId = searchParams.get("hteId");
 
   // Redirect if no hteId is provided
@@ -480,7 +482,12 @@ export default function HteProfile() {
                   hteName={`${hteName}`}
                   onSubmit={async ({ message, rating, isAnonymous }) => {
                     if (!message.trim()) {
-                      alert("Please enter a review.");
+                      setPopup({
+                        title: "Validation Error",
+                        text: "Please enter a review.",
+                        icon: <X color="#800020" size={35}/>,
+                        type: "failed"
+                      });
                       return;
                     }
                     try {
@@ -490,11 +497,21 @@ export default function HteProfile() {
                         criteria: isAnonymous ? "Anonymous" : "IT Intern",
                       });
 
-                      alert("Review submitted. Waiting for admin approval.");
+                      setPopup({
+                        title: "Success",
+                        text: "Review submitted. Waiting for admin approval.",
+                        icon: <Check size={35}/>,
+                        type: "success"
+                      });
 
                     } catch (err) {
                       console.error(err);
-                      alert("Failed to submit review.");
+                      setPopup({
+                        title: "Error",
+                        text: "Failed to submit review.",
+                        icon: <X color="#800020" size={35}/>,
+                        type: "failed"
+                      });
                     }
                   }}
                 />
@@ -591,6 +608,19 @@ export default function HteProfile() {
         onClose={() => setSelectedReviewForModal(null)}
         hteName={hteName}
       />
+
+      {popup && (
+        <GeneralPopupModal
+          icon={popup.icon}
+          time={popup.time || 3000}
+          title={popup.title}
+          text={popup.text}
+          onClose={() => setPopup(null)}
+          isSuccess={popup.type === "success"}
+          isFailed={popup.type === "failed"}
+          isNeutral={popup.type === "neutral"}
+        />
+      )}
     </MainScreen>
   );
 }

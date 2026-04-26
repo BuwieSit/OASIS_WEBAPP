@@ -10,7 +10,7 @@ import { MobileStudentTable, StudentTable } from '../../components/oasisTable';
 import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
 import SearchBar from '../../components/searchBar';
 import { ArrowRight, Hand } from 'lucide-react';
-import { ViewModal } from '../../components/popupModal';
+import { ViewModal, SetupProfileModal } from '../../components/popupModal';
 import filePdf from "../../assets/resume.pdf";
 import api from "../../api/axios";
 
@@ -27,6 +27,7 @@ export default function Student() {
     const [modalType, setModalType] = useState("video"); // "video" or "document"
     const [activeFile, setActiveFile] = useState(null);
     const [activeFileName, setActiveFileName] = useState("HTE_MOA.pdf");
+    const [showSetupModal, setShowSetupModal] = useState(false);
 
     const filteredHtes = tableData.filter((hte) =>
         hte.hteName.toLowerCase().includes(search.toLowerCase()) ||
@@ -36,8 +37,15 @@ export default function Student() {
         async function fetchUser() {
             try {
                 const res = await api.get("/api/student/me");
-                setUser(res.data.user);
-                setProfile(res.data.profile); 
+                const userData = res.data.user;
+                const profileData = res.data.profile;
+
+                setUser(userData);
+                setProfile(profileData); 
+                
+                if (!profileData || !profileData.first_name) {
+                    setShowSetupModal(true);
+                }
             } catch (err) {
                 console.error("Failed to fetch user data", err);
             }
@@ -177,6 +185,11 @@ export default function Student() {
                     file={modalType === "video" ? filePdf : activeFile}
                     filename={activeFileName}
                     resourceTitle={modalType === "video" ? "What is OASIS?" : "MOA File"}
+                />
+
+                <SetupProfileModal 
+                    visible={showSetupModal}
+                    onGoToProfile={() => navigate("/student-profile")}
                 />
 
                 <div className="w-full py-10 md:py-30 lg:py-30 overflow-hidden relative flex flex-col items-center justify-center bg-black/40">

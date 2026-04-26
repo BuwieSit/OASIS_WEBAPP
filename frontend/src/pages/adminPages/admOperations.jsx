@@ -53,7 +53,7 @@ export default function AdmOperations() {
     const [moaFile, setMoaFile] = useState(null);
 
     const [confirmClear, setConfirmClear] = useState(false);
-    const [actionCompleted, setActionCompleted] = useState(false);
+    const [popup, setPopup] = useState(null);
 
     // =============================
     // REVIEWS MODERATION STATE
@@ -115,7 +115,12 @@ export default function AdmOperations() {
             fetchReviews();
         } catch (err) {
             console.error(err);
-            alert("Failed to approve review");
+            setPopup({
+                title: "Error",
+                text: "Failed to approve review.",
+                icon: <X color="#800020" size={35}/>,
+                type: "failed"
+            });
         }
     };
 
@@ -125,7 +130,12 @@ export default function AdmOperations() {
             fetchReviews();
         } catch (err) {
             console.error(err);
-            alert("Failed to reject review");
+            setPopup({
+                title: "Error",
+                text: "Failed to reject review.",
+                icon: <X color="#800020" size={35}/>,
+                type: "failed"
+            });
         }
     };
 
@@ -141,9 +151,20 @@ export default function AdmOperations() {
 
             await AdminAPI.approveAllReviews(params);
             fetchReviews();
+            setPopup({
+                title: "Success",
+                text: "All reviews approved.",
+                icon: <Check size={35}/>,
+                type: "success"
+            });
         } catch (err) {
             console.error(err);
-            alert("Approve all failed");
+            setPopup({
+                title: "Error",
+                text: "Approve all failed.",
+                icon: <X color="#800020" size={35}/>,
+                type: "failed"
+            });
         }
     };
 
@@ -159,9 +180,20 @@ export default function AdmOperations() {
 
             await AdminAPI.clearAllPendingReviews(params);
             fetchReviews();
+            setPopup({
+                title: "Success",
+                text: "All pending reviews cleared.",
+                icon: <Check size={35}/>,
+                type: "success"
+            });
         } catch (err) {
             console.error(err);
-            alert("Clear all failed");
+            setPopup({
+                title: "Error",
+                text: "Clear all failed.",
+                icon: <X color="#800020" size={35}/>,
+                type: "failed"
+            });
         }
     };
 
@@ -279,7 +311,12 @@ export default function AdmOperations() {
         e.preventDefault();
 
         if (!companyName || !industry || !companyLoc || !contactPerson || !contactPosition || !contactNumber || !contactEmail) {
-            alert("Please fill required fields: Company Name, Industry, Location, Contact Person, Position, Contact Number, Email Address.");
+            setPopup({
+                title: "Validation Error",
+                text: "Please fill required fields: Company Name, Industry, Location, Contact Person, Position, Contact Number, Email Address.",
+                icon: <X color="#800020" size={35}/>,
+                type: "failed"
+            });
             return;
         }
 
@@ -309,7 +346,12 @@ export default function AdmOperations() {
         try {
             await AdminAPI.createHTE(formData);
 
-            alert("HTE saved successfully");
+            setPopup({
+                title: "Success",
+                text: "HTE saved successfully",
+                icon: <Check size={35}/>,
+                type: "success"
+            });
 
             const res = await AdminAPI.getHTEs(status);
             setData(res.data);
@@ -317,7 +359,12 @@ export default function AdmOperations() {
             resetForm();
         } catch (err) {
             console.error(err);
-            alert("Failed to save HTE");
+            setPopup({
+                title: "Error",
+                text: "Failed to save HTE",
+                icon: <X color="#800020" size={35}/>,
+                type: "failed"
+            });
         }
     };
 
@@ -338,7 +385,12 @@ export default function AdmOperations() {
             window.URL.revokeObjectURL(url);
         } catch (err) {
             console.error(err);
-            alert("Download failed");
+            setPopup({
+                title: "Error",
+                text: "Download failed",
+                icon: <X color="#800020" size={35}/>,
+                type: "failed"
+            });
         }
     };
 
@@ -352,15 +404,24 @@ export default function AdmOperations() {
 
         try {
             const res = await AdminAPI.uploadHTEsExcel(file);
-            alert(
-                `Upload done!\nCreated HTEs: ${res.data.created_htes}\nUpdated HTEs: ${res.data.updated_htes}\nFailed rows: ${res.data.failed_rows.length}`
-            );
+            setPopup({
+                title: "Upload Completed",
+                text: `Created: ${res.data.created_htes} | Updated: ${res.data.updated_htes} | Failed: ${res.data.failed_rows.length}`,
+                icon: <FileCheck size={35}/>,
+                type: "success",
+                time: 5000
+            });
 
             const refreshed = await AdminAPI.getHTEs(status);
             setData(refreshed.data);
         } catch (err) {
             console.error(err);
-            alert("Upload failed. Check console.");
+            setPopup({
+                title: "Upload Failed",
+                text: "Upload failed. Check console for details.",
+                icon: <X color="#800020" size={35}/>,
+                type: "failed"
+            });
         } finally {
             e.target.value = "";
         }
@@ -375,22 +436,30 @@ export default function AdmOperations() {
                     confText='clear all?'
                     onCancel={() => setConfirmClear(false)}
                     onConfirm={() => {
-                        setActionCompleted(true);
+                        setPopup({
+                            title: "Action Completed.",
+                            text: "HTE Information Cleared.",
+                            icon: <FileCheck />,
+                            type: "neutral",
+                            time: 3000
+                        });
                         resetForm();
                     }}
                 />
             }
 
-            {actionCompleted &&
+            {popup && (
                 <GeneralPopupModal
-                    time={3000}
-                    isNeutral={true}
-                    icon={<FileCheck />}
-                    title={"Action Completed."}
-                    text={"HTE Information Cleared."}
-                    onClose={() => setActionCompleted(false)}
+                    icon={popup.icon}
+                    time={popup.time || 3000}
+                    title={popup.title}
+                    text={popup.text}
+                    onClose={() => setPopup(null)}
+                    isSuccess={popup.type === "success"}
+                    isFailed={popup.type === "failed"}
+                    isNeutral={popup.type === "neutral"}
                 />
-            }
+            )}
 
             <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b border-gray-400 py-5'>
                 <Title text="Admin Operations" size='text-[2rem]'/>
