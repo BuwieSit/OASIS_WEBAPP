@@ -296,7 +296,7 @@ export function ReviewDetailModal({ review, visible, onClose, hteName }) {
                 {/* FOOTER */}
                 <div className="p-6 bg-white border-t border-gray-100 flex justify-between items-center">
                     <div className="flex flex-col">
-                        <Subtitle text={review.reviewer || "Anonymous"} weight="font-bold" size="text-sm" />
+                        <Subtitle text={review.criteria === "Anonymous" ? "Anonymous" : (review.reviewer || "Anonymous")} weight="font-bold" size="text-sm" />
                         <p className="text-xs text-gray-400 font-medium">
                             {review.criteria || "IT Intern"} • {new Date(review.created_at).toLocaleDateString()}
                         </p>

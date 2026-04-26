@@ -677,7 +677,7 @@ export default function AdmOperations() {
                                     <section className='w-full flex flex-row justify-between items-start'>
                                         <div>
                                             <Subtitle
-                                                text={r.reviewer || "Anonymous Student"}
+                                                text={r.criteria === "Anonymous" ? "Anonymous" : (r.reviewer || "Anonymous Student")}
                                                 color={"text-oasis-header"}
                                                 size='text-[1.1rem]'
                                                 weight='font-bold'

@@ -256,7 +256,7 @@ export function MobileStudentTable({
             {/* Cards */}
             {displayData.length === 0 && (
                 <div className="text-center text-gray-500 py-5">
-                    No students found
+                    No HTE Data found.
                 </div>
             )}
 
@@ -280,11 +280,6 @@ export function MobileStudentTable({
                                 detail={col.render?.(row) ?? "—"}
                             />
                         ))}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="mt-3 flex justify-center">
-                        {columns.find(col => col.header?.toLowerCase().includes("file"))?.render?.(row)}
                     </div>
                 </div>
             ))}

@@ -158,17 +158,9 @@ export default function Student() {
     };
 
     const navigate = useNavigate();
-    const [searchParams, setSearchParams] = useSearchParams();
-    const activeHteId = searchParams.get("hteId");
-
-    useEffect(() => {
-        if (activeHteId) {
-            navigate(`/hte-profile?hteId=${activeHteId}`);
-        }
-    }, [activeHteId, navigate]);
 
     const setHte = (hteId) => {
-        setSearchParams({ hteId });
+        navigate(`/hte-profile?hteId=${hteId}`);
     };
 
     const userName = profile?.first_name || user?.email?.split('@')[0] || "Student";

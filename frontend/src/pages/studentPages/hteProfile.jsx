@@ -1,5 +1,5 @@
 import MainScreen from "../../layouts/mainScreen";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import Title from "../../utilities/title";
 import Subtitle from "../../utilities/subtitle";
 import { AnnounceButton } from "../../components/button";
@@ -17,11 +17,19 @@ import { ReviewDetailModal } from "../../components/popupModal";
 
 export default function HteProfile() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [hte, setHte] = useState(null);
   const [hteName, setHteName] = useState("");
   const [loading, setLoading] = useState(true);
   const hteId = searchParams.get("hteId");
-  
+
+  // Redirect if no hteId is provided
+  useEffect(() => {
+    if (!hteId && !loading) {
+      navigate("/htedirectory");
+    }
+  }, [hteId, loading, navigate]);
+
   // REVIEWS STATE
   const [allReviews, setAllReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
@@ -127,7 +135,7 @@ export default function HteProfile() {
       .then((data) => {
         setHte(data);
         setHteName(data.company_name);
-        
+
       })
       .catch((err) => {
         console.error("Failed to load HTE profile", err);
@@ -176,10 +184,7 @@ export default function HteProfile() {
 
   return (
     <MainScreen>
-      <Link to={"/htedirectory"} className="w-[80%] p-4 flex items-center justify-center gap-5 group transition ease-in-out duration-100 rounded-full hover:bg-oasis-header hover:text-white mb-5">
-        <ChevronUp size={30} className="transition ease-in-out duration-200 rotate-180  group-hover:rotate-0"/>
-        <Subtitle text={"Go back"} size={"1rem"}/>
-      </Link>
+
 
       {/* REDESIGNED HTE INFORMATION SECTION */}
       <div className="w-[90%] flex flex-col gap-10">
@@ -472,8 +477,8 @@ export default function HteProfile() {
                 </div>
                 
                 <AddReviewCard
-                  hteName={`${hteName}`} 
-                  onSubmit={async ({ message, rating }) => {
+                  hteName={`${hteName}`}
+                  onSubmit={async ({ message, rating, isAnonymous }) => {
                     if (!message.trim()) {
                       alert("Please enter a review.");
                       return;
@@ -482,6 +487,7 @@ export default function HteProfile() {
                       await submitHteReview(hteId, {
                         rating: rating,
                         message: message,
+                        criteria: isAnonymous ? "Anonymous" : "IT Intern",
                       });
 
                       alert("Review submitted. Waiting for admin approval.");
@@ -493,12 +499,12 @@ export default function HteProfile() {
                   }}
                 />
 
-            </div>
-            
-            <div className="flex flex-col gap-2">
-              
-              {/* REVIEW GRID */}
-              <div className="w-full row-span-2 p-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 justify-items-center">
+                </div>
+
+                <div className="flex flex-col gap-2">
+
+                {/* REVIEW GRID */}
+                <div className="w-full row-span-2 p-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 justify-items-center">
                 {reviewsLoading ? 
                   <Subtitle text={"Loading Reviews..."}/> 
                   : 
@@ -514,9 +520,9 @@ export default function HteProfile() {
                         onClick={() => setSelectedReviewForModal(r)}
                         className="border border-oasis-gray p-5 w-full max-w-sm aspect-3/1 rounded-lg flex flex-col gap-2 hover:shadow-md transition-shadow cursor-pointer"
                       >
-                      
+
                         <Subtitle text={hteName} weight={"font-bold"} size={"text-[1rem]"}/>
-                        
+
                         <div className="flex gap-1 w-full">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star
@@ -534,7 +540,7 @@ export default function HteProfile() {
                           isJustify={true}
                         />
 
-                        <Subtitle text={r.reviewer || "Anonymous"} weight={"font-bold"}/>
+                        <Subtitle text={r.criteria === "Anonymous" ? "Anonymous" : (r.reviewer || "Anonymous")} weight={"font-bold"}/>
 
                         <section className="w-full flex justify-between items-center mt-auto pt-2 border-t border-gray-100">
                           <Subtitle text={r.criteria || "IT Intern"} color={"text-oasis-gray"} size="text-xs"/>

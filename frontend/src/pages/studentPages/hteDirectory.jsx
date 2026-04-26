@@ -123,17 +123,9 @@ export default function HteDirectory() {
     ];
 
     const navigate = useNavigate();
-    const [searchParams, setSearchParams] = useSearchParams();
-    const activeHteId = searchParams.get("hteId");
-
-    useEffect(() => {
-        if (activeHteId) {
-            navigate(`/hte-profile?hteId=${activeHteId}`);
-        }
-    }, [activeHteId, navigate]);
 
     const setHte = (hteId) => {
-        setSearchParams({ hteId });
+        navigate(`/hte-profile?hteId=${hteId}`);
     };
 
     const OPTIONS = { loop: true }

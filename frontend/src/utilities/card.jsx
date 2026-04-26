@@ -154,6 +154,7 @@ export function AddReviewCard({ hteName, onSubmit, hasHte }) {
   const [reviewerName, setReviewerName] = useState("");
   const [reviewMessage, setReviewMessage] = useState("");
   const [reviewRating, setReviewRating] = useState(0);
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errMsg, setErrMsg] = useState("");
 
@@ -168,10 +169,12 @@ export function AddReviewCard({ hteName, onSubmit, hasHte }) {
       await onSubmit({
         message: reviewMessage,
         rating: reviewRating,
+        isAnonymous: isAnonymous,
       });
 
       setReviewMessage("");
       setReviewRating(5);
+      setIsAnonymous(false);
     } catch (err) {
       console.error(err);
     } finally {
@@ -230,7 +233,12 @@ export function AddReviewCard({ hteName, onSubmit, hasHte }) {
               hasBorder={true}
             />
             <label className="flex items-center justify-start gap-2 cursor-pointer">
-              <input type="checkbox" className="appearance-none w-2 p-2 aspect-square border border-gray-300 rounded checked:bg-oasis-header checked:border-transparent cursor-pointer relative"/>
+              <input 
+                type="checkbox" 
+                checked={isAnonymous}
+                onChange={(e) => setIsAnonymous(e.target.checked)}
+                className="appearance-none w-2 p-2 aspect-square border border-gray-300 rounded checked:bg-oasis-header checked:border-transparent cursor-pointer relative"
+              />
               <Subtitle text={"Submit review anonymously"} color={"text-oasis-header"}/>
             </label>
             

@@ -3,7 +3,7 @@ import Title from "../../utilities/title.jsx";
 import { Container, Dropdown } from '../../components/adminComps.jsx';
 import { FileUploadField, MultiField, SingleField } from '../../components/fieldComp.jsx';
 import { AnnounceButton } from '../../components/button.jsx';
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import useQueryParam from '../../hooks/useQueryParams.jsx';
 import { Plus, PlusCircle, Save, Trash, FileText, AlignLeft, X, Check } from 'lucide-react';
 import Subtitle from '../../utilities/subtitle.jsx';
@@ -16,7 +16,8 @@ const API_BASE = api.defaults.baseURL;
 
 
 const EMPTY_SECTION_STATE = {
-    items: []
+    items: [],
+    isLoaded: false
 };
 
 const SECTION_LABELS = {
@@ -114,6 +115,7 @@ export default function DocsUpload() {
     // DRAFT STATES
     const [hasDraft, setHasDraft] = useState(false);
     const [restoringDraft, setRestoringDraft] = useState(false);
+    const backendDataRef = useRef({});
 
     const [sections, setSections] = useState({
         procedures: { ...EMPTY_SECTION_STATE },
@@ -126,17 +128,22 @@ export default function DocsUpload() {
 
     // AUTO-SAVE TO LOCAL STORAGE
     useEffect(() => {
-        if (!loading && !restoringDraft && activeSectionState.items.length > 0) {
-            const draftKey = `docs_upload_draft_${activeFilter}`;
-            localStorage.setItem(draftKey, JSON.stringify(activeSectionState.items));
+        if (!loading && !restoringDraft && activeSectionState.isLoaded) {
+            const currentItemsJson = JSON.stringify(activeSectionState.items);
+            const backendItemsJson = backendDataRef.current[activeFilter];
             
-            // Check if this newly saved draft is actually different from backend
-            // (We usually only want to show the draft banner if they differ)
+            // Only save if current state is different from backend
+            if (currentItemsJson !== backendItemsJson) {
+                const draftKey = `docs_upload_draft_${activeFilter}`;
+                localStorage.setItem(draftKey, currentItemsJson);
+            }
         }
-    }, [activeSectionState.items, activeFilter, loading, restoringDraft]);
+    }, [activeSectionState.items, activeSectionState.isLoaded, activeFilter, loading, restoringDraft]);
 
     // CHECK FOR DRAFTS ON LOAD
     useEffect(() => {
+        if (loading || !activeSectionState.isLoaded) return; // Don't check while fetching or before loaded
+
         const draftKey = `docs_upload_draft_${activeFilter}`;
         const savedDraft = localStorage.getItem(draftKey);
         
@@ -156,7 +163,7 @@ export default function DocsUpload() {
         } else {
             setHasDraft(false);
         }
-    }, [activeFilter, activeSectionState.items]);
+    }, [activeFilter, activeSectionState.items, activeSectionState.isLoaded, loading]);
 
     const handleRestoreDraft = () => {
         const draftKey = `docs_upload_draft_${activeFilter}`;
@@ -233,10 +240,14 @@ export default function DocsUpload() {
             const response = await AdminAPI.getDocuments(section);
             const backendItems = response?.data?.items || [];
 
+            // Store the backend state for comparison in auto-save
+            backendDataRef.current[section] = JSON.stringify(backendItems);
+
             setSections((prev) => ({
                 ...prev,
                 [section]: {
-                    items: backendItems
+                    items: backendItems,
+                    isLoaded: true
                 }
             }));
         } catch (error) {
@@ -259,6 +270,7 @@ export default function DocsUpload() {
                 payload.description || (
                     payload.listItems?.length ? payload.listItems.join("\n") : null
                 ),
+            listItems: payload.listItems || null,
             parentId: payload.parentId || null,
             file: payload.file || null,
             originalFilename: payload.originalFilename || null,

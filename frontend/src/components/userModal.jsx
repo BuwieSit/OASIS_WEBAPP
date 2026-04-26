@@ -20,34 +20,59 @@ export function AnnouncementModal({ visible, onClose, title, content, date, time
         <div className="
             fixed inset-0
             z-150
-            bg-black/40
+            bg-black/60
+            backdrop-blur-sm
             flex items-center justify-center
             p-4
+            animate-fadeIn
         ">
-
             {/* Modal Container */}
             <div className="
                 relative
-                w-2xl
-                h-[90vh]
+                w-full
+                max-w-2xl
+                max-h-[85vh]
                 bg-white
-                rounded-3xl
+                rounded-[2rem]
                 shadow-2xl
                 overflow-hidden
                 flex flex-col
-                animate-fadeIn
-                border border-oasis-gray
+                border border-white
+                animate__animated animate__zoomIn animate__faster
             ">
+                {/* CLOSE BUTTON */}
+                <button 
+                    onClick={onClose}
+                    className="
+                        absolute
+                        top-4
+                        right-4
+                        z-50
+                        w-10 h-10
+                        bg-white/20
+                        hover:bg-white/40
+                        backdrop-blur-md
+                        text-white
+                        rounded-full
+                        flex items-center justify-center
+                        transition-all
+                        hover:rotate-90
+                        active:scale-90
+                        cursor-pointer
+                        border border-white/30
+                    "
+                >
+                    <X size={24} />
+                </button>
 
                 {/* HEADER */}
                 <section className="
                     relative
                     w-full
-                    p-5
-                    bg-linear-to-b
-                    from-oasis-button-light
-                    via-oasis-blue
-                    to-oasis-blue
+                    pt-10 pb-6 px-8
+                    bg-gradient-to-br
+                    from-oasis-header
+                    to-[#1e453f]
                     flex flex-col
                     items-center
                     text-center
@@ -55,52 +80,56 @@ export function AnnouncementModal({ visible, onClose, title, content, date, time
                 ">
                     <img 
                         src={pupImage} 
-                        className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full opacity-10 pointer-events-none object-contain transition-transform ' 
+                        className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full opacity-10 pointer-events-none object-cover transition-transform group-hover:scale-110' 
                         alt=""
                     />
-                    <h2 className="font-oasis-text font-bold text-lg sm:text-xl lg:text-2xl capitalize">
-                        {title}
-                    </h2>
+                    
+                    <div className="relative z-10 flex flex-col gap-2 p-3 w-full">
+                        <h2 className="font-oasis-text font-bold text-lg sm:text-xl lg:text-2xl text-white leading-tight break-words w-full">
+                            {title}
+                        </h2>
 
-                    {date && (
-                        <p className="font-oasis-text text-oasis-gray italic text-xs sm:text-sm mt-1 opacity-80">
-                            {date} {time ? `• ${time}` : ""}
-                        </p>
-                    )}
+                        {date && (
+                            <div className="flex items-center justify-center gap-2 text-white/70">
+                                <span className="h-px w-8 bg-white/30"></span>
+                                <p className="font-oasis-text italic text-xs sm:text-sm">
+                                    {date} {time ? `• ${time}` : ""}
+                                </p>
+                                <span className="h-px w-8 bg-white/30"></span>
+                            </div>
+                        )}
+                    </div>
                 </section>
 
                 {/* CONTENT */}
                 <section className="
                     w-full
-                    p-5
+                    p-8 sm:p-10
                     flex-1
                     overflow-y-auto
+                    custom-scrollbar
+                    bg-white
                 ">
-                    <p className="
-                        text-sm sm:text-base
-                        text-justify
-                        font-oasis-text
-                        leading-relaxed
-                    ">
-                        {content}
-                    </p>
+                    <div className="max-w-prose mx-auto w-full">
+                        <p className="
+                            text-sm sm:text-base
+                            text-justify
+                            font-oasis-text
+                            text-gray-700
+                            leading-relaxed
+                            whitespace-pre-wrap
+                            break-words
+                            w-full
+                        ">
+                            {content}
+                        </p>
+                    </div>
                 </section>
 
-                {/* CLOSE BUTTON */}
-                <X  onClick={onClose} 
-                    className="
-                        absolute
-                        top-4
-                        right-4
-                        w-8 h-8
-                        text-oasis-header
-                        rounded-full
-                        flex items-center justify-center
-                        hover:scale-105
-                        transition
-                        cursor-pointer
-                    "/>
-
+                {/* FOOTER - Subtle indicator */}
+                <div className="p-4 bg-gray-50/50 border-t border-gray-100 flex justify-center items-center">
+                    <div className="w-12 h-1 bg-gray-200 rounded-full"></div>
+                </div>
             </div>
         </div>
     );

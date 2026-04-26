@@ -196,13 +196,30 @@ export function DynamicSection({ sectionKey, title, items = [] }) {
     };
 
     const headerTitle = findFirstHeader(items) || title || "Section Content";
+    const isForms = sectionKey === "forms";
+
     return (
         <section className='w-full flex flex-col items-start justify-center gap-5'>
             
             <Title text={title} isAnimated={false} id={sectionKey} />
-            <div className='w-full border'></div>
+            <div className='w-full border-b border-gray-100'></div>
 
-                
+            {isForms ? (
+                <div className="w-full bg-white/50 backdrop-blur-sm rounded-3xl p-6 md:p-8 border border-gray-100 shadow-sm animate__animated animate__fadeIn">
+                    {items.length === 0 ? (
+                        <div className="py-10 text-center">
+                            <Subtitle
+                                size={"text-[0.9rem]"}
+                                text={"No forms or templates available yet."}
+                                color="text-gray-400"
+                                isItalic
+                            />
+                        </div>
+                    ) : (
+                        <StudentTreeRenderer items={items} level={0} />
+                    )}
+                </div>
+            ) : (
                 <Accordion headerText={headerTitle}>
                     {items.length === 0 ? (
                         <Subtitle
@@ -210,14 +227,10 @@ export function DynamicSection({ sectionKey, title, items = [] }) {
                             text={"No content available yet for this section."}
                         />
                     ) : (
-                        <>
-                            <StudentTreeRenderer items={items} level={0} />
-                        </>
-                        
+                        <StudentTreeRenderer items={items} level={0} />
                     )}
                 </Accordion>
-
-            
+            )}
         </section>
     );
 }
@@ -329,23 +342,24 @@ export function ListBlock({ item, level }) {
         alphabetical_list: "list-[lower-alpha]"
     };
 
+    // The admin side joins list items with \n and puts them in description.
+    // If description exists, it contains all items (including the first one which is also in title).
+    const items = item.description ? item.description.split("\n") : [item.title];
+
     return (
         <div className="w-full">
             <ul className={`${listStyles[item.type] || "list-disc"} px-6 md:px-10 py-1 text-justify flex flex-col gap-3 text-[0.95rem] font-oasis-text text-gray-700`}>
-                <li className="leading-relaxed">
-                    <span className="whitespace-pre-wrap">{item.title}</span>
-
-                    {item.description && (
-                        <div className="text-[0.85rem] text-gray-500 italic mt-1 whitespace-pre-wrap">
-                            {item.description}
-                        </div>
-                    )}
-
-                    {hasChildren && (
-                        <StudentTreeRenderer items={item.children} level={level + 1} />
-                    )}
-                </li>
+                {items.map((li, index) => (
+                    <li key={index} className="leading-relaxed">
+                        <span className="whitespace-pre-wrap">{li}</span>
+                    </li>
+                ))}
             </ul>
+            {hasChildren && (
+                <div className="mt-2">
+                    <StudentTreeRenderer items={item.children} level={level + 1} />
+                </div>
+            )}
         </div>
     );
 }

@@ -19,12 +19,36 @@ function extractMoaLink(replyText) {
     return match ? match[0] : null;
 }
 
+const INITIAL_MESSAGES = [
+    {
+        id: 1,
+        sender: "orbi",
+        text: "Hi! I’m ORBI. Ask me about your OJT portfolio, internship steps, MOA process, or HTE records.",
+        followUps: [
+            "What are the OJT portfolio requirements?",
+            "What should I do before internship?",
+            "How does the MOA process work?"
+        ],
+        isLoading: false,
+        moaLink: null
+    }
+];
+
 export default function OrbiChatbot() {
     const { open, animate, onBubble, closeChat, handleClick } = useChatbotToggle();
     const [userData, setUserData] = useState({
         userId: null,
         role: getRole() || "student"
     });
+
+    const [messages, setMessages] = useState(() => {
+        const saved = localStorage.getItem("orbi_chat_history");
+        return saved ? JSON.parse(saved) : INITIAL_MESSAGES;
+    });
+
+    useEffect(() => {
+        localStorage.setItem("orbi_chat_history", JSON.stringify(messages));
+    }, [messages]);
 
     useEffect(() => {
         async function fetchCurrentUser() {
@@ -85,6 +109,8 @@ export default function OrbiChatbot() {
                     onClose={closeChat}
                     userId={userData.userId}
                     role={userData.role}
+                    messages={messages}
+                    setMessages={setMessages}
                 />
             )}
             {onBubble && <BubbleAnim start={onBubble} />}
@@ -92,26 +118,12 @@ export default function OrbiChatbot() {
     );
 }
 
-export function FloatingChat({ open, onClose, userId, role }) {
+export function FloatingChat({ open, onClose, userId, role, messages, setMessages }) {
     const [show, setShow] = useState(false);
     const [animationClass, setAnimationClass] = useState("");
     const [isMaximized, setIsMaximized] = useState(false);
     const [message, setMessage] = useState("");
     const [isSending, setIsSending] = useState(false);
-    const [messages, setMessages] = useState([
-        {
-            id: 1,
-            sender: "orbi",
-            text: "Hi! I’m ORBI. Ask me about your OJT portfolio, internship steps, MOA process, or HTE records.",
-            followUps: [
-                "What are the OJT portfolio requirements?",
-                "What should I do before internship?",
-                "How does the MOA process work?"
-            ],
-            isLoading: false,
-            moaLink: null
-        }
-    ]);
 
     const dropdownRef = useRef(null);
     const messagesEndRef = useRef(null);
@@ -138,7 +150,7 @@ export function FloatingChat({ open, onClose, userId, role }) {
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+    }, [messages, show]);
 
     const recentContext = useMemo(() => {
         return messages

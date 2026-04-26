@@ -29,7 +29,6 @@ export default function Announcements() {
         const load = async () => {
             try {
                 const res = await api.get("/api/student/announcements");
-                console.log("Announcements: ", resizeBy)
                 setAnnouncements(res.data || []);
             } catch (err) {
                 console.error("Student announcements error:", err);
@@ -152,7 +151,7 @@ export default function Announcements() {
                             return (
                                 <div 
                                     key={a.id} 
-                                    className="relative w-full p-3 bg-oasis-gradient border border-oasis-gray rounded flex justify-between items-center cursor-pointer hover:border-oasis-header hover:shadow-md transition-all bg-white group animate__animate animate__fadeInDown overflow-hidden"
+                                    className="relative w-full p-3 bg-oasis-gradient border border-oasis-gray rounded flex justify-between items-center cursor-pointer hover:border-oasis-header hover:shadow-md transition-all group animate__animated animate__fadeInDown overflow-hidden"
                                     onClick={() => setSelectedAnnouncement(a)}
                                 >
                                     <img 
@@ -161,8 +160,8 @@ export default function Announcements() {
                                         alt=""
                                     />
 
-                                    {/* LEFT: Date and Title */}
-                                    <div className="flex flex-col gap-4 h-full items-center justify-center flex-[20%] ">
+                                    {/* LEFT: Date */}
+                                    <div className="flex flex-col sm:w-36 shrink-0 h-full items-center justify-center">
                                         <Subtitle 
                                             text={
                                                 a.created_at 
@@ -179,24 +178,29 @@ export default function Announcements() {
                                         />
                                     </div>
 
-                                    <div className='w-full flex flex-col '>
-                                        
-                                        <Subtitle 
-                                            text={a.title} 
-                                            size={"text-[1rem]"}
-                                            weight={"font-bold"}
-                                            color={"text-oasis-button-dark"}
-                                        />
+                                    {/* MIDDLE: Title and Content */}
+                                    <div className='flex-1 flex flex-col min-w-0 px-4'>
+                                        <div className="flex items-center gap-2">
+                                            <Subtitle 
+                                                text={a.title} 
+                                                size={"text-[1rem]"}
+                                                weight={"font-bold"}
+                                                color={"text-oasis-button-dark"}
+                                                className="truncate"
+                                            />
+                                            {isNew && (
+                                                <span className="bg-oasis-header text-white text-[8px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0">New</span>
+                                            )}
+                                        </div>
                                         <Subtitle
                                             text={a.content}
-                                            
                                             className="line-clamp-2 text-sm text-black mt-1"
                                         />
                                     </div>
                                     
-                                    <div className='px-5'>
+                                    {/* RIGHT: Icon */}
+                                    <div className='px-5 shrink-0'>
                                         <ArrowRight color='#2B6259' className='group-hover:scale-125 transition'/>
-                                        
                                     </div>
                                 </div>
                             );

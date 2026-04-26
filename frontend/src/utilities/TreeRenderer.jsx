@@ -75,35 +75,42 @@ export function TreeRenderer({ items = [], isRoot = true, onDelete, onView }) {
                                 </div>
                             </div>
 
-                            {item.title && (
+                            {item.title && !LIST_TYPES.includes(item.type) && (
                                 <div className="font-semibold text-black text-[0.95rem] leading-tight">
                                     {item.title}
                                 </div>
                             )}
 
-                            {item.description && (
+                            {item.description && !LIST_TYPES.includes(item.type) && (
                                 <div className="text-xs text-gray-600 whitespace-pre-wrap mt-1 italic">
                                     {item.description}
                                 </div>
                             )}
 
-                            {LIST_TYPES.includes(item.type) && item.listItems && (
+                            {LIST_TYPES.includes(item.type) && (
                                 <div className="mt-2 bg-gray-50 p-2 rounded-lg border border-gray-100">
-                                    {item.type === "bulleted_list" && (
-                                        <ul className="list-disc ml-4 text-gray-600 text-xs gap-1 flex flex-col">
-                                            {item.listItems.map((listItem, i) => (
-                                                <li key={i}>{listItem}</li>
-                                            ))}
-                                        </ul>
-                                    )}
+                                    {(() => {
+                                        const items = item.listItems || (item.description ? item.description.split("\n") : []);
+                                        if (items.length === 0) return null;
 
-                                    {(item.type === "numerical_list" || item.type === "alphabetical_list") && (
-                                        <ol className={`ml-4 text-gray-600 text-xs gap-1 flex flex-col ${item.type === "numerical_list" ? "list-decimal" : "list-[lower-alpha]"}`}>
-                                            {item.listItems.map((listItem, i) => (
-                                                <li key={i}>{listItem}</li>
-                                            ))}
-                                        </ol>
-                                    )}
+                                        if (item.type === "bulleted_list") {
+                                            return (
+                                                <ul className="list-disc ml-4 text-gray-600 text-xs gap-1 flex flex-col">
+                                                    {items.map((listItem, i) => (
+                                                        <li key={i}>{listItem}</li>
+                                                    ))}
+                                                </ul>
+                                            );
+                                        }
+
+                                        return (
+                                            <ol className={`ml-4 text-gray-600 text-xs gap-1 flex flex-col ${item.type === "numerical_list" ? "list-decimal" : "list-[lower-alpha]"}`}>
+                                                {items.map((listItem, i) => (
+                                                    <li key={i}>{listItem}</li>
+                                                ))}
+                                            </ol>
+                                        );
+                                    })()}
                                 </div>
                             )}
 

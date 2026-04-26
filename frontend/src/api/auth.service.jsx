@@ -59,6 +59,7 @@ export async function me() {
 
 export function logout() {
   clearToken();
+  localStorage.removeItem("orbi_chat_history");
 }
 
 export async function sendResetOtp(email) {
