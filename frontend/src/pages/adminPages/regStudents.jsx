@@ -6,10 +6,11 @@ import {
   Text,
 } from "../../utilities/tableUtil.jsx";
 import Subtitle from '../../utilities/subtitle.jsx';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { AdminAPI } from "../../api/admin.api";
 import { AnnounceButton } from '../../components/button.jsx';
 import { ConfirmModal, GeneralPopupModal } from '../../components/popupModal.jsx';
+import SearchBar from '../../components/searchBar.jsx';
 
 export default function RegStudents() {
   const [registeredStudents, setRegisteredStudents] = useState([]);
@@ -21,6 +22,7 @@ export default function RegStudents() {
   const [confirmUnarchive, setConfirmUnarchive] = useState(false);
   const [studentToArchive, setStudentToArchive] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [search, setSearch] = useState("");
   const [action, setAction] = useState("");
   const sectionCodes = [
     "DIT",
@@ -35,6 +37,34 @@ export default function RegStudents() {
   useEffect(() => {
     loadStudents();
   }, [activeFilter]);
+
+  const filteredRegistered = useMemo(() => {
+    if (!search) return registeredStudents;
+    const s = search.toLowerCase();
+    return registeredStudents.filter(st => 
+      st.name?.toLowerCase().includes(s) ||
+      st.email?.toLowerCase().includes(s) ||
+      st.student_webmail?.toLowerCase().includes(s) ||
+      st.section?.toLowerCase().includes(s) ||
+      st.studentSection?.toLowerCase().includes(s) ||
+      st.program?.toLowerCase().includes(s) ||
+      st.ojt_adviser?.toLowerCase().includes(s)
+    );
+  }, [registeredStudents, search]);
+
+  const filteredArchived = useMemo(() => {
+    if (!search) return archivedStudents;
+    const s = search.toLowerCase();
+    return archivedStudents.filter(st => 
+      st.name?.toLowerCase().includes(s) ||
+      st.email?.toLowerCase().includes(s) ||
+      st.student_webmail?.toLowerCase().includes(s) ||
+      st.section?.toLowerCase().includes(s) ||
+      st.studentSection?.toLowerCase().includes(s) ||
+      st.program?.toLowerCase().includes(s) ||
+      st.ojt_adviser?.toLowerCase().includes(s)
+    );
+  }, [archivedStudents, search]);
 
   async function loadStudents() {
     try {
@@ -160,7 +190,12 @@ export default function RegStudents() {
         <Title text="Students Overview" size='text-[2rem]'/>
         <Subtitle text={"Oversee and Archive Registered Students."}/>
       </div>
- 
+      <div className='w-[90%] flex flex-row justify-end items-center z-70'>
+          <SearchBar
+              value={search}
+              onChange={setSearch}
+          />
+      </div>
 
       <div className="w-full flex flex-col gap-10 justify-center items-center">
         <div className='flex justify-start items-center w-[90%] gap-5 border-b border-gray-400 pb-5'>
@@ -221,7 +256,7 @@ export default function RegStudents() {
               </div>
               <OasisTable 
                 columns={registeredColumns}
-                data={registeredStudents}
+                data={filteredRegistered}
               >
                 {loading && <Subtitle text="Loading registered students..." />}
               </OasisTable>
@@ -259,7 +294,7 @@ export default function RegStudents() {
               </div>
               <OasisTable
                 columns={archivedColumns}
-                data={archivedStudents}
+                data={filteredArchived}
               >
                 {loading && <Subtitle text="Loading archived students..." />}
               </OasisTable>

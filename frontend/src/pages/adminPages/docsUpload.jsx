@@ -5,7 +5,7 @@ import { FileUploadField, MultiField, SingleField } from '../../components/field
 import { AnnounceButton } from '../../components/button.jsx';
 import { useEffect, useMemo, useState, useRef } from "react";
 import useQueryParam from '../../hooks/useQueryParams.jsx';
-import { Plus, PlusCircle, Save, Trash, FileText, AlignLeft, X, Check } from 'lucide-react';
+import { Plus, PlusCircle, Pencil, Save, Trash, FileText, AlignLeft, X, Check } from 'lucide-react';
 import Subtitle from '../../utilities/subtitle.jsx';
 import { TreeRenderer } from '../../utilities/TreeRenderer.jsx';
 import { AdminAPI } from '../../api/admin.api.js';
@@ -89,6 +89,27 @@ function removeItemFromTree(items, targetId) {
         });
 }
 
+function updateItemInTree(items, updatedItem) {
+    return items.map((item) => {
+        if (item.id === updatedItem.id) {
+            return {
+                ...item,
+                ...updatedItem,
+                children: item.children // Preserve children
+            };
+        }
+
+        if (item.children?.length) {
+            return {
+                ...item,
+                children: updateItemInTree(item.children, updatedItem)
+            };
+        }
+
+        return item;
+    });
+}
+
 function normalizeTreeForSave(items) {
     return items.map((item) => ({
         id: item.id,
@@ -111,6 +132,7 @@ export default function DocsUpload() {
     const [deleteItemConfirm, setDeleteItemConfirm] = useState(null);
     const [viewDoc, setViewDoc] = useState(null);
     const [popup, setPopup] = useState(null);
+    const [editItem, setEditItem] = useState(null);
     
     // DRAFT STATES
     const [hasDraft, setHasDraft] = useState(false);
@@ -288,6 +310,34 @@ export default function DocsUpload() {
         setShowModal(false);
     }
 
+    function handleEditItem(item) {
+        setEditItem(item);
+        setShowModal(true);
+    }
+
+    function handleUpdateItem(payload) {
+        const updatedItem = {
+            ...editItem,
+            type: payload.type,
+            title: payload.title,
+            description: payload.description,
+            listItems: payload.listItems,
+            file: payload.file || editItem.file,
+            originalFilename: payload.originalFilename || editItem.originalFilename
+        };
+
+        setSections((prev) => ({
+            ...prev,
+            [activeFilter]: {
+                ...prev[activeFilter],
+                items: updateItemInTree(prev[activeFilter].items, updatedItem)
+            }
+        }));
+
+        setShowModal(false);
+        setEditItem(null);
+    }
+
     async function handleDeleteItem(item) {
         try {
             setSaving(true);
@@ -412,8 +462,12 @@ export default function DocsUpload() {
                     section={activeFilter}
                     parents={parentOptions}
                     parentOptionMap={parentOptionMap}
-                    onClick={() => setShowModal(false)}
-                    onCreate={handleCreateItem}
+                    onClick={() => {
+                        setShowModal(false);
+                        setEditItem(null);
+                    }}
+                    onCreate={editItem ? handleUpdateItem : handleCreateItem}
+                    editItem={editItem}
                 />
             )}
             {showConfirmModal && 
@@ -534,6 +588,7 @@ export default function DocsUpload() {
                                         items={activeSectionState.items}
                                         onDelete={(item) => setDeleteItemConfirm(item)}
                                         onView={handleViewDocument}
+                                        onEdit={handleEditItem}
                                     />
                                 )}
                             </div>
@@ -586,14 +641,27 @@ export function DocsAddModal({
     onClick,
     onCreate,
     parents = [],
-    parentOptionMap = {}
+    parentOptionMap = {},
+    editItem = null
 }) {
     const isForms = section === "forms";
-    const [itemType, setItemType] = useState(isForms ? "Document" : "");
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [parent, setParent] = useState("");
-    const [isChecked, setIsChecked] = useState(false);
+    const [itemType, setItemType] = useState(() => {
+        if (editItem) {
+            const option = ITEM_TYPE_OPTIONS.find(o => o.value === editItem.type);
+            return option ? option.label : "";
+        }
+        return isForms ? "Document" : "";
+    });
+    const [title, setTitle] = useState(editItem?.title || "");
+    const [description, setDescription] = useState(editItem?.description || "");
+    const [parent, setParent] = useState(() => {
+        if (editItem?.parentId) {
+            const entry = Object.entries(parentOptionMap).find(([_, id]) => id === editItem.parentId);
+            return entry ? entry[0] : "";
+        }
+        return "";
+    });
+    const [isChecked, setIsChecked] = useState(!!editItem?.parentId);
     const [file, setFile] = useState(null);
     const [uploading, setUploading] = useState(false);
 
@@ -606,7 +674,7 @@ export function DocsAddModal({
     const itemTypeLabels = ITEM_TYPE_OPTIONS
         .filter((option) => {
             if (section === "forms") {
-                return ["document"].includes(option.value);
+                return ["header", "document"].includes(option.value);
             }
             return true;
         })
@@ -617,9 +685,9 @@ export function DocsAddModal({
         return acc;
     }, {});
 
-    const selectedTypeValue = isForms ? "document" : (labelToValueMap[itemType] || "");
+    const selectedTypeValue = labelToValueMap[itemType] || "";
     const isListType = LIST_TYPES.includes(selectedTypeValue);
-    const [listItems, setListItems] = useState([""]);
+    const [listItems, setListItems] = useState(editItem?.listItems || [""]);
 
     const handleCheckbox = (e) => {
         const checked = e.target.checked;
@@ -631,7 +699,7 @@ export function DocsAddModal({
         selectedTypeValue !== "" &&
         ((selectedTypeValue === "description" && description.trim() !== "") ||
          (selectedTypeValue === "header" && title.trim() !== "") ||
-         (selectedTypeValue === "document" && title.trim() !== "" && file !== null) ||
+         (selectedTypeValue === "document" && title.trim() !== "" && (file !== null || (editItem && editItem.file))) ||
          (isListType && listItems.some(i => i.trim() !== "")));
 
     const handleCreate = async (e) => {
@@ -640,7 +708,7 @@ export function DocsAddModal({
 
         try {
             let uploadedFile = null;
-            if (selectedTypeValue === "document") {
+            if (selectedTypeValue === "document" && file) {
                 setUploading(true);
                 const response = await AdminAPI.uploadDocument(section, title.trim(), file);
                 uploadedFile = response?.data || null;
@@ -665,13 +733,15 @@ export function DocsAddModal({
 
                 listItems: isListType ? listItems.filter(i => i.trim() !== "") : null,
                 parentId: isChecked ? parentOptionMap[parent] || null : null,
-                file: uploadedFile?.file || null,
-                originalFilename: uploadedFile?.originalFilename || null
+                file: uploadedFile?.file || (editItem?.file || null),
+                originalFilename: uploadedFile?.originalFilename || (editItem?.originalFilename || null)
             });
 
-            setItemType(isForms ? "Document" : ""); setTitle(""); setDescription(""); setParent(""); setIsChecked(false); setFile(null);
+            if (!editItem) {
+                setItemType(isForms ? "Document" : ""); setTitle(""); setDescription(""); setParent(""); setIsChecked(false); setFile(null);
+            }
         } catch (error) {
-            console.error("Failed to create item:", error);
+            console.error("Failed to process item:", error);
         } finally {
             setUploading(false);
         }
@@ -687,11 +757,11 @@ export function DocsAddModal({
                 {/* MODAL HEADER */}
                 <div className="p-8 flex items-center justify-between bg-admin-element">
                     <div className="flex flex-col">
-                        <h2 className="text-2xl font-bold text-gray-800">{isForms ? "Add Form / Template" : "Add Content Item"}</h2>
-                        <p className="text-sm text-gray-500">{isForms ? "Upload a new document for students to download" : "Define a new element for your document structure"}</p>
+                        <h2 className="text-2xl font-bold text-gray-800">{editItem ? "Edit Content Item" : (isForms ? "Add Form / Template" : "Add Content Item")}</h2>
+                        <p className="text-sm text-gray-500">{editItem ? "Update the details of this item" : (isForms ? "Upload a new document or add a header for organization" : "Define a new element for your document structure")}</p>
                     </div>
                     <div className="p-3 rounded-2xl">
-                        {isForms ? <FileText size={28} className="text-oasis-header" /> : <PlusCircle size={28} className="text-oasis-header" />}
+                        {editItem ? <Pencil size={28} className="text-oasis-header" /> : (isForms ? <FileText size={28} className="text-oasis-header" /> : <PlusCircle size={28} className="text-oasis-header" />)}
                     </div>
                 </div>
 
@@ -699,26 +769,24 @@ export function DocsAddModal({
                 <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-admin-element">
                     <form className="flex flex-col gap-8" onSubmit={handleCreate}>
                         {/* TYPE SELECTOR */}
-                        {!isForms && (
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Component Type</label>
-                                <Dropdown
-                                    placeholder="What kind of item is this?"
-                                    categories={itemTypeLabels}
-                                    value={itemType}
-                                    onChange={setItemType}
-                                    hasBorder
-                                />
-                            </div>
-                        )}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Component Type</label>
+                            <Dropdown
+                                placeholder="What kind of item is this?"
+                                categories={itemTypeLabels}
+                                value={itemType}
+                                onChange={setItemType}
+                                hasBorder
+                            />
+                        </div>
 
                         {/* DYNAMIC FIELDS BASED ON TYPE */}
                         {selectedTypeValue && (
                             <div className={`p-6 bg-gray-50/50 rounded-3xl border border-gray-100 space-y-6 ${isForms ? "mt-0" : ""}`}>
                                 {(selectedTypeValue === "header" || selectedTypeValue === "document") && (
                                     <SingleField
-                                        labelText={isForms ? "Document Name *" : "Title / Label *"}
-                                        fieldHolder={isForms ? "e.g., Internship Application Form" : "e.g., Section 1: Introduction"}
+                                        labelText={selectedTypeValue === "header" ? "Header Name *" : (isForms ? "Document Name *" : "Title / Label *")}
+                                        fieldHolder={selectedTypeValue === "header" ? "e.g., Required Documents" : (isForms ? "e.g., Internship Application Form" : "e.g., Section 1: Introduction")}
                                         fieldId="itemTitle"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
@@ -773,47 +841,46 @@ export function DocsAddModal({
                                 {selectedTypeValue === "document" && (
                                     <div className="pt-2">
                                         <FileUploadField
-                                            labelText="Source Document (PDF/Docx) *"
+                                            labelText={editItem?.file ? `Source Document (Currently: ${editItem.originalFilename})` : "Source Document (PDF/Docx) *"}
                                             fieldId="documentFile"
                                             onChange={(e) => setFile(e.target.files?.[0] || null)}
                                         />
+                                        {editItem?.file && <p className="text-[10px] text-gray-400 mt-2 ml-1 italic">Leave empty to keep the current file.</p>}
                                     </div>
                                 )}
                             </div>
                         )}
 
                         {/* NESTING CONFIGURATION */}
-                        {!isForms && (
-                            <div className="p-6 bg-admin-element rounded-3xl space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <input
-                                            type="checkbox"
-                                            id="nestToggle"
-                                            checked={isChecked}
-                                            onChange={handleCheckbox}
-                                            className="w-5 h-5 rounded-lg border-gray-300 text-oasis-header focus:ring-oasis-header cursor-pointer"
-                                        />
-                                        <label htmlFor="nestToggle" className="text-sm font-bold text-gray-700 cursor-pointer">
-                                            Nest under an existing parent?
-                                        </label>
-                                    </div>
-                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-tighter ${isChecked ? "bg-oasis-header text-white" : "bg-gray-200 text-gray-400"}`}>
-                                        {isChecked ? "Active" : "Disabled"}
-                                    </span>
-                                </div>
-                                
-                                <div className={`transition-all duration-300 ${isChecked ? "opacity-100 max-h-40" : "opacity-40 max-h-0 pointer-events-none overflow-hidden"}`}>
-                                    <Dropdown
-                                        placeholder="Choose parent item..."
-                                        categories={parents}
-                                        value={parent}
-                                        onChange={setParent}
-                                        hasBorder
+                        <div className="p-6 bg-admin-element rounded-3xl space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="checkbox"
+                                        id="nestToggle"
+                                        checked={isChecked}
+                                        onChange={handleCheckbox}
+                                        className="w-5 h-5 rounded-lg border-gray-300 text-oasis-header focus:ring-oasis-header cursor-pointer"
                                     />
+                                    <label htmlFor="nestToggle" className="text-sm font-bold text-gray-700 cursor-pointer">
+                                        Nest under an existing parent?
+                                    </label>
                                 </div>
+                                <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-tighter ${isChecked ? "bg-oasis-header text-white" : "bg-gray-200 text-gray-400"}`}>
+                                    {isChecked ? "Active" : "Disabled"}
+                                </span>
                             </div>
-                        )}
+                            
+                            <div className={`transition-all duration-300 ${isChecked ? "opacity-100 max-h-40" : "opacity-40 max-h-0 pointer-events-none overflow-hidden"}`}>
+                                <Dropdown
+                                    placeholder="Choose parent item..."
+                                    categories={parents.filter(p => !editItem || (p !== editItem.title && p !== editItem.type))}
+                                    value={parent}
+                                    onChange={setParent}
+                                    hasBorder
+                                />
+                            </div>
+                        </div>
                     </form>
                 </div>
 
@@ -835,7 +902,7 @@ export function DocsAddModal({
                             }
                         `}
                     >
-                        {uploading ? "Uploading..." : <>{isForms ? <FileText size={18} /> : <Check size={18} />} {isForms ? "Add Document" : "Add Component"}</>}
+                        {uploading ? "Uploading..." : <>{editItem ? <Check size={18} /> : (isForms ? <FileText size={18} /> : <Check size={18} />)} {editItem ? "Save Changes" : (isForms ? "Add Document" : "Add Component")}</>}
                     </button>
                 </div>
             </div>

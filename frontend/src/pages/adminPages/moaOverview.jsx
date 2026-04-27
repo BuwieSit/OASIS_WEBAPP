@@ -9,17 +9,18 @@ import {
 import { GeneralPopupModal, ViewModal } from '../../components/popupModal';
 import HteDetailModal from '../../components/HteDetailModal.jsx';
 import useQueryParam from '../../hooks/useQueryParams.jsx';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Subtitle from '../../utilities/subtitle.jsx';
 import { AdminAPI } from "../../api/admin.api";
 import { Dropdown } from '../../components/adminComps.jsx';
+import SearchBar from '../../components/searchBar.jsx';
 
 export default function MoaOverview() {
     const [activeFilter, setFilter] = useQueryParam("tab", "overview");
 
     const [currentMoas, setCurrentMoas] = useState([]);
     const [prospectMoas, setProspectMoas] = useState([]);
-
+    const [search, setSearch] = useState("");
     const [openView, setOpenView] = useState(false);
     const [filePdf, setFilePdf] = useState(null);
     const [currentFileName, setCurrentFileName] = useState("HTE_MOA.pdf");
@@ -29,6 +30,31 @@ export default function MoaOverview() {
     const [popup, setPopup] = useState(null);
 
     const [selectedHte, setSelectedHte] = useState(null);
+
+    const filteredCurrentMoas = useMemo(() => {
+        if (!search) return currentMoas;
+        const s = search.toLowerCase();
+        return currentMoas.filter(m => 
+            m.hte?.company_name?.toLowerCase().includes(s) ||
+            m.hte?.industry?.toLowerCase().includes(s) ||
+            m.hte?.address?.toLowerCase().includes(s) ||
+            m.hte?.contact_person?.toLowerCase().includes(s) ||
+            m.status?.toLowerCase().includes(s)
+        );
+    }, [currentMoas, search]);
+
+    const filteredProspectMoas = useMemo(() => {
+        if (!search) return prospectMoas;
+        const s = search.toLowerCase();
+        return prospectMoas.filter(m => 
+            m.company_name?.toLowerCase().includes(s) ||
+            m.industry?.toLowerCase().includes(s) ||
+            m.address?.toLowerCase().includes(s) ||
+            m.contact_person?.toLowerCase().includes(s) ||
+            m.contact_email?.toLowerCase().includes(s) ||
+            m.status?.toLowerCase().includes(s)
+        );
+    }, [prospectMoas, search]);
 
     const prospectStatusOptions = [
         "EMAILED_TO_HTE",
@@ -322,7 +348,12 @@ export default function MoaOverview() {
                 <Title text="MOA Overview and Submissions" size='text-[2rem]'/>
                 <Subtitle text={"Overview MOA Information and set status to MOA Prospect Submissions"}/>
             </div>
-
+            <div className='w-[90%] flex flex-row justify-end items-center z-70'>
+                <SearchBar
+                    value={search}
+                    onChange={setSearch}
+                />
+            </div>
             <div className='flex flex-row gap-3 w-[90%]'>
                 <Subtitle
                     text="MOA Overview"
@@ -348,7 +379,7 @@ export default function MoaOverview() {
             {activeFilter === "overview" && (
                 <OasisTable
                     columns={currentMoaColumns}
-                    data={currentMoas}
+                    data={filteredCurrentMoas}
                     onRowClick={(row) => setSelectedHte(row.hte)}
                 />
             )}
@@ -362,7 +393,7 @@ export default function MoaOverview() {
                     ) : (
                         <OasisTable
                             columns={prospectMoaColumns}
-                            data={prospectMoas}
+                            data={filteredProspectMoas}
                             onRowClick={(row) => setSelectedHte(row)}
                         />
                     )}

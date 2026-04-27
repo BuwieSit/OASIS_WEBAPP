@@ -8,6 +8,7 @@ import {
     FileText, 
     CornerDownRight,
     Trash,
+    Pencil
     
 } from 'lucide-react';
 
@@ -35,7 +36,7 @@ const LIST_TYPES = [
     "alphabetical_list"
 ];
 
-export function TreeRenderer({ items = [], isRoot = true, onDelete, onView }) {
+export function TreeRenderer({ items = [], isRoot = true, onDelete, onView, onEdit }) {
     if (!items || items.length === 0) return null;
 
     return (
@@ -64,13 +65,22 @@ export function TreeRenderer({ items = [], isRoot = true, onDelete, onView }) {
                                         </span>
                                     )}
                                     {!item.isSectionMeta && (
-                                        <button 
-                                            onClick={() => onDelete?.(item)}
-                                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                                            title="Delete item"
-                                        >
-                                            <Trash size={14} />
-                                        </button>
+                                        <>
+                                            <button 
+                                                onClick={() => onEdit?.(item)}
+                                                className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
+                                                title="Edit item"
+                                            >
+                                                <Pencil size={14} />
+                                            </button>
+                                            <button 
+                                                onClick={() => onDelete?.(item)}
+                                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                                title="Delete item"
+                                            >
+                                                <Trash size={14} />
+                                            </button>
+                                        </>
                                     )}
                                 </div>
                             </div>
@@ -135,6 +145,7 @@ export function TreeRenderer({ items = [], isRoot = true, onDelete, onView }) {
                                 isRoot={false} 
                                 onDelete={onDelete} 
                                 onView={onView}
+                                onEdit={onEdit}
                             />
                         </div>
                     )}

@@ -7,12 +7,13 @@ import { Label, RatingLabel } from '../../utilities/label.jsx';
 import { AnnounceButton, CoursesButton } from '../../components/button.jsx';
 import Subtitle from '../../utilities/subtitle.jsx';
 import { Text, HteLocation } from '../../utilities/tableUtil.jsx';
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { AdminAPI } from "../../api/admin.api";
 import { Check, Download, FileCheck, Save, Upload, X, PlusCircle } from 'lucide-react';
 import { ConfirmModal, GeneralPopupModal } from '../../components/popupModal.jsx';
 import HteDetailModal from '../../components/HteDetailModal.jsx';
+import SearchBar from '../../components/searchBar.jsx';
 
 export default function AdmOperations() {
     const [data, setData] = useState([]);
@@ -24,7 +25,19 @@ export default function AdmOperations() {
 
     const status = searchParams.get("status");
     const uploadRef = useRef(null);
+    const [search, setSearch] = useState("");
 
+    const filteredData = useMemo(() => {
+        if (!search) return data;
+        const s = search.toLowerCase();
+        return data.filter(h => 
+            h.company_name?.toLowerCase().includes(s) ||
+            h.industry?.toLowerCase().includes(s) ||
+            h.address?.toLowerCase().includes(s) ||
+            h.contact_person?.toLowerCase().includes(s)
+        );
+    }, [data, search]);
+    
     const [activeFilter, setActiveFilter] = useState("");
     const [selectedHte, setSelectedHte] = useState(null);
     // =============================
@@ -465,7 +478,12 @@ export default function AdmOperations() {
                 <Title text="Admin Operations" size='text-[2rem]'/>
                 <Subtitle text={"Overview and Management of HTEs, upload or export HTE tables, and Moderate Student Reviews."}/>
             </div>
-
+            <div className='w-[90%] flex flex-row justify-end items-center z-70'>
+                <SearchBar
+                    value={search}
+                    onChange={setSearch}
+                />
+            </div>
             <input
                 ref={uploadRef}
                 type="file"
@@ -476,7 +494,7 @@ export default function AdmOperations() {
 
             <OasisTable 
                 columns={columns} 
-                data={data}
+                data={filteredData}
                 onRowClick={(row) => setSelectedHte(row)}
             >
                 <div className="w-full flex flex-row justify-between items-center gap-4 mt-4">
