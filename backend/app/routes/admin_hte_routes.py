@@ -255,12 +255,6 @@ def _is_http_url(value):
 
 
 def download_gdrive_file_to_bytes(url):
-    def _get_confirm_token(response):
-        for key, value in response.cookies.items():
-            if key.startswith("download_warning"):
-                return value
-        return None
-
     try:
         if not url:
             print("GDRIVE: empty URL")
@@ -269,67 +263,62 @@ def download_gdrive_file_to_bytes(url):
         url = str(url).strip()
 
         if not _is_http_url(url):
-            print("GDRIVE: invalid URL format:", url)
+            print("GDRIVE: invalid URL:", url)
             return None
 
         if "drive.google.com" not in url:
-            print("GDRIVE: non-drive URL, skipping:", url)
+            print("GDRIVE: not a Google Drive link:", url)
             return None
 
-        if "id=" in url:
-            file_id = url.split("id=")[-1].split("&")[0]
-        elif "/d/" in url:
+        # Extract file ID
+        file_id = None
+
+        if "/d/" in url:
             file_id = url.split("/d/")[1].split("/")[0]
-        else:
-            print("GDRIVE: could not extract file id from URL:", url)
+
+        elif "id=" in url:
+            file_id = url.split("id=")[1].split("&")[0]
+
+        if not file_id:
+            print("GDRIVE: could not extract file ID")
             return None
 
-        session = requests.Session()
-        base_url = "https://drive.google.com/uc?export=download"
+        # FORCE DIRECT DOWNLOAD LINK
+        direct_url = f"https://drive.google.com/uc?export=download&id={file_id}"
 
-        response = session.get(base_url, params={"id": file_id}, stream=True, timeout=20)
+        print("GDRIVE DIRECT URL:", direct_url)
 
-        token = _get_confirm_token(response)
-        if token:
-            response = session.get(
-                base_url,
-                params={"id": file_id, "confirm": token},
-                stream=True,
-                timeout=20,
-            )
+        response = requests.get(
+            direct_url,
+            stream=True,
+            timeout=10
+        )
 
         if response.status_code != 200:
-            print(f"GDRIVE: bad status {response.status_code} for {url}")
+            print("GDRIVE bad status:", response.status_code)
             return None
 
-        content_type = (response.headers.get("Content-Type") or "").lower()
+        content_type = response.headers.get("Content-Type", "").lower()
 
         if "text/html" in content_type:
-            print(f"GDRIVE: got HTML instead of file for {url}")
+            print("GDRIVE returned HTML instead of file")
             return None
 
-        filename = f"moa_{uuid.uuid4().hex}.pdf"
-        content_disp = response.headers.get("Content-Disposition") or ""
-
-        if "filename=" in content_disp:
-            raw_name = content_disp.split("filename=")[-1].strip().strip('"')
-            if raw_name:
-                filename = secure_filename(raw_name)
-
         file_bytes = response.content
+
         if not file_bytes:
-            print(f"GDRIVE: empty file bytes for {url}")
+            print("GDRIVE empty file")
             return None
 
         return {
-            "filename": filename,
-            "mime_type": response.headers.get("Content-Type", "application/pdf"),
+            "filename": f"moa_{uuid.uuid4().hex}.pdf",
+            "mime_type": content_type or "application/pdf",
             "blob": file_bytes,
-            "size": len(file_bytes),
+            "size": len(file_bytes)
         }
 
     except Exception as e:
-        print("GDRIVE download failed:", e)
+        print("GDRIVE download failed:", str(e))
         return None
 
 
