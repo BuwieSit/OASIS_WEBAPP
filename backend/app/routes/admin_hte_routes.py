@@ -305,7 +305,7 @@ def _download_gdrive_file_to_db_blob(url, fallback_filename="moa.pdf"):
             direct_url,
             params=params,
             stream=True,
-            timeout=30
+            timeout=(5, 10)
         )
 
         token = None
