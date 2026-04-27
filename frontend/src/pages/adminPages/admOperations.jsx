@@ -787,7 +787,7 @@ export default function AdmOperations() {
                                         </div>
 
                                         <div className='bg-gray-50/50 p-4 rounded-2xl min-h-24 max-h-40 overflow-y-auto custom-scrollbar border border-gray-100'>
-                                            <p className='text-[0.85rem] text-gray-700 leading-relaxed italic'>
+                                            <p className='text-table-text-size text-gray-700 leading-relaxed italic'>
                                                 "{r.message}"
                                             </p>
                                         </div>

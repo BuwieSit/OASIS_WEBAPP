@@ -752,7 +752,7 @@ export function DocsAddModal({
     const removeListItem = (index) => setListItems(prev => prev.filter((_, i) => i !== index));
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-[150] p-4">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-150 p-4">
             <div className="w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate__animated animate__zoomIn animate__faster flex flex-col max-h-[90vh]">
                 {/* MODAL HEADER */}
                 <div className="p-8 flex items-center justify-between bg-admin-element">

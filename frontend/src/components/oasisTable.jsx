@@ -37,12 +37,11 @@ export default function OasisTable({ columns = [], data = [], children, onRowCli
                     <th
                     key={colIndex}
                     className="
-                        p-3
+                        p-4
                         text-table-text-size
                         font-bold
                         text-oasis-button-dark
                         text-center
-                        whitespace-nowrap
                     "
                     >
                     {col.header}
@@ -71,9 +70,11 @@ export default function OasisTable({ columns = [], data = [], children, onRowCli
                         >
                             {columns.map((col, colIndex) => (
                                 <td key={colIndex} 
-                                    className="p-3 whitespace-nowrap"
+                                    className="p-3"
                                 >
-                                    {col.render(row)}
+                                    <div className="flex justify-center items-center w-full min-h-10 max-w-[150px] lg:max-w-[200px] mx-auto overflow-hidden">
+                                        {col.render(row)}
+                                    </div>
                                 </td>
                             ))}
                         </tr>
@@ -147,7 +148,7 @@ export function StudentTable({ columns = [], data = [], children, onRowClick }) 
                             {columns.map((col, colIndex) => (
                                 <th
                                     key={colIndex}
-                                    className="p-3 text-[0.9rem] lg:text-[1rem] text-white text-center whitespace-nowrap"
+                                    className="p-3 text-[0.9rem] lg:text-[1rem] text-white text-center"
                                 >
                                     {col.header}
                                 </th>
@@ -171,8 +172,10 @@ export function StudentTable({ columns = [], data = [], children, onRowClick }) 
                                     onClick={() => onRowClick?.(row.id)}
                                 >
                                     {columns.map((col, colIndex) => (
-                                        <td key={colIndex} className="py-2 px-2 whitespace-nowrap max-w-30">
-                                            {col.render(row)}
+                                        <td key={colIndex} className="py-2 px-2">
+                                            <div className="flex justify-center items-center w-full">
+                                                {col.render(row)}
+                                            </div>
                                         </td>
                                     ))}
                                 </tr>

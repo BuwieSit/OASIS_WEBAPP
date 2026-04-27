@@ -2,12 +2,16 @@ import { ArchiveRestore, CircleX, PencilIcon } from "lucide-react";
 import { AnnounceButton } from "../components/button";
 import Subtitle from "./subtitle";
 
-export function Text({ text, isGray }) {
+export function Text({ text, isGray, className = "" }) {
     return(
-        <>
+        <div className="flex justify-center items-center w-full">
             <p 
-            className={`font-oasis-text text-table-text-size truncate ${isGray ? "italic text-gray-500" : ""}`}>{text}</p>
-        </>      
+                title={text}
+                className={`font-oasis-text text-table-text-size line-clamp-1 leading-tight ${isGray ? "italic text-gray-500" : "text-oasis-button-dark"} ${className}`}
+            >
+                {text}
+            </p>
+        </div>
     )
 }
 
@@ -181,16 +185,41 @@ export function ViewMoaButton({ url, onClick, label = "View MOA", disabled = fal
 export function HteLocation({ address, mapUrl}) {
     if (!address) return <span className="text-gray-400">—</span>
 
+    const googleMapsEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
+
     return(
         <>
-            <div className="relative group max-w-[180px] mx-auto">
+            <div className="relative group w-full max-w-[200px] mx-auto">
 
-                <p onClick={() => mapUrl && window.open(mapUrl, "_blank")} className="text-table-text-size truncate cursor-pointer text-oasis-header hover:underline">
+                <p 
+                    title={address}
+                    onClick={() => mapUrl && window.open(mapUrl, "_blank")} 
+                    className="text-table-text-size line-clamp-1 cursor-pointer text-oasis-header hover:underline text-center"
+                >
                     {address}
                 </p>
 
-                <div className="absolute z-50 hidden group-hover:block bottom-full mb-2 left-1/2 -translate-x-1/2 w-max max-w-xs bg-black text-white text-[0.75rem] p-3 rounded shadow-lg">
-                    {address}
+                {/* Black Tooltip with Embedded Map */}
+                <div className="absolute z-50 hidden group-hover:block bottom-full mb-4 left-1/2 -translate-x-1/2 w-[250px] bg-black/90 backdrop-blur-md text-white p-2 rounded-2xl shadow-[0px_10px_30px_rgba(0,0,0,0.5)] border border-gray-800 pointer-events-none animate__animated animate__fadeIn animate__faster">
+                    
+                    {/* Map Container */}
+                    <div className="w-full h-[140px] rounded-xl overflow-hidden bg-gray-900 mb-2">
+                        <iframe
+                            className="w-full h-full border-0 grayscale-20 invert-5 contrast-110"
+                            src={googleMapsEmbedUrl}
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                            title={`Map of ${address}`}
+                        />
+                    </div>
+
+                    {/* Address Text */}
+                    <p className="text-[0.65rem] text-center leading-tight px-2 pb-1 text-gray-300 italic">
+                        {address}
+                    </p>
+
+                    {/* Arrow/Tail */}
+                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-black/90 border-b border-r border-gray-800 rotate-45" />
                 </div>
             </div>
         </>      
