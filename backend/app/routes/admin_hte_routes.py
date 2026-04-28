@@ -6,6 +6,7 @@ import io
 import os
 import uuid
 import re
+import time
 import requests
 from werkzeug.utils import secure_filename
 from openpyxl import Workbook, load_workbook
@@ -22,6 +23,9 @@ EXCEL_HEADERS = [
     "COURSE", "DATE NOTARIZED", "VALIDITY", "EXPIRY DATE",
     "LINKE TO SCANNED MOA",
 ]
+
+IMPORT_TIME_LIMIT_SECONDS = 110
+MAX_MOA_FILE_SIZE = 10 * 1024 * 1024
 
 
 def _admin_only():
@@ -281,31 +285,25 @@ def _download_gdrive_file_to_db_blob(url, fallback_filename="moa.pdf"):
         url = str(url).strip()
 
         if not _is_http_url(url):
-            print("GDRIVE: invalid URL:", url)
             return None
 
         if "drive.google.com" not in url:
-            print("GDRIVE: not a Google Drive link:", url)
             return None
 
         file_id = _extract_gdrive_file_id(url)
         if not file_id:
-            print("GDRIVE: could not extract file ID:", url)
             return None
 
         session = requests.Session()
         direct_url = "https://drive.google.com/uc"
-
-        params = {
-            "export": "download",
-            "id": file_id,
-        }
+        params = {"export": "download", "id": file_id}
 
         response = session.get(
             direct_url,
             params=params,
             stream=True,
-            timeout=(5, 10)
+            timeout=(5, 8),
+            allow_redirects=True
         )
 
         token = None
@@ -320,7 +318,8 @@ def _download_gdrive_file_to_db_blob(url, fallback_filename="moa.pdf"):
                 direct_url,
                 params=params,
                 stream=True,
-                timeout=30
+                timeout=(5, 8),
+                allow_redirects=True
             )
 
         if response.status_code != 200:
@@ -333,10 +332,24 @@ def _download_gdrive_file_to_db_blob(url, fallback_filename="moa.pdf"):
             print("GDRIVE returned HTML instead of file. Check sharing permission.")
             return None
 
-        file_bytes = response.content
+        chunks = []
+        total_size = 0
+
+        for chunk in response.iter_content(chunk_size=1024 * 256):
+            if not chunk:
+                continue
+
+            total_size += len(chunk)
+
+            if total_size > MAX_MOA_FILE_SIZE:
+                print("GDRIVE file too large, skipped:", url)
+                return None
+
+            chunks.append(chunk)
+
+        file_bytes = b"".join(chunks)
 
         if not file_bytes:
-            print("GDRIVE empty file")
             return None
 
         safe_filename = secure_filename(fallback_filename or "")
@@ -470,6 +483,9 @@ def import_htes_excel():
     if not f.filename.lower().endswith(".xlsx"):
         return jsonify({"error": "invalid_file_type", "message": "Only .xlsx allowed"}), 400
 
+    started_at = time.time()
+    stopped_early = False
+
     wb = load_workbook(f, data_only=True)
     ws = wb.active
 
@@ -494,6 +510,14 @@ def import_htes_excel():
     failed_rows = []
 
     for r_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
+        if time.time() - started_at >= IMPORT_TIME_LIMIT_SECONDS:
+            stopped_early = True
+            failed_rows.append({
+                "row": r_idx,
+                "error": "Import stopped safely before server timeout. Successful previous rows were already saved. Re-upload remaining rows."
+            })
+            break
+
         def get(h):
             return row[header_to_idx[h]].value
 
@@ -530,7 +554,7 @@ def import_htes_excel():
                     failed_rows.append({
                         "row": r_idx,
                         "company_name": company_name,
-                        "error": "Skipped row: MOA link could not be downloaded into database. Check Google Drive sharing permission.",
+                        "error": "Skipped row: MOA link could not be downloaded into database. Check Google Drive sharing permission or file size.",
                         "link": moa_link
                     })
                     continue
@@ -550,103 +574,116 @@ def import_htes_excel():
             validity_years=None
         )
 
-        try:
-            with db.session.begin_nested():
-                hte = HostTrainingEstablishment.query.filter_by(company_name=company_name).first()
-
-                if not hte:
-                    hte = HostTrainingEstablishment(
-                        company_name=company_name,
-                        industry=industry,
-                        address=address,
-                        description=None,
-                        website=None,
-                        contact_person=contact_person,
-                        contact_position=contact_position,
-                        contact_number=contact_number,
-                        contact_email=contact_email,
-                        moa_status=moa_status,
-                        course=course,
-                        moa_signed_at=signed_at,
-                        moa_validity=validity_years,
-                        moa_expiry_date=expires_at,
-                        moa_file_path=None,
-                    )
-                    db.session.add(hte)
-                    db.session.flush()
-                    created_htes += 1
-                else:
-                    hte.industry = industry or hte.industry
-                    hte.address = address or hte.address
-                    hte.contact_person = contact_person or hte.contact_person
-                    hte.contact_position = contact_position or hte.contact_position
-                    hte.contact_number = contact_number or hte.contact_number
-                    hte.contact_email = contact_email or hte.contact_email
-                    hte.course = course or hte.course
-                    hte.moa_status = moa_status
-                    hte.moa_signed_at = signed_at
-                    hte.moa_validity = validity_years
-                    hte.moa_expiry_date = expires_at
-                    hte.moa_file_path = None
-                    updated_htes += 1
-
-                if signed_at and expires_at:
-                    existing_moa = (
-                        MemorandumOfAgreement.query
-                        .filter_by(
-                            hte_id=hte.id,
-                            signed_at=signed_at,
-                            expires_at=expires_at
-                        )
-                        .first()
-                    )
-
-                    if not existing_moa:
-                        moa = MemorandumOfAgreement(
-                            hte_id=hte.id,
-                            signed_at=signed_at,
-                            expires_at=expires_at,
-                            status=moa_status,
-                            document_path=moa_link if moa_link else None,
-                            document_filename=moa_file_data["filename"] if moa_file_data else None,
-                            document_mime_type=moa_file_data["mime_type"] if moa_file_data else None,
-                            document_blob=moa_file_data["blob"] if moa_file_data else None,
-                            document_size=moa_file_data["size"] if moa_file_data else None,
-                        )
-                        db.session.add(moa)
-                        created_moas += 1
-                    else:
-                        existing_moa.status = moa_status
-                        existing_moa.document_path = moa_link if moa_link else existing_moa.document_path
-
-                        if moa_file_data:
-                            existing_moa.document_filename = moa_file_data["filename"]
-                            existing_moa.document_mime_type = moa_file_data["mime_type"]
-                            existing_moa.document_blob = moa_file_data["blob"]
-                            existing_moa.document_size = moa_file_data["size"]
-
-                        updated_moas += 1
-                else:
-                    failed_rows.append({
-                        "row": r_idx,
-                        "company_name": company_name,
-                        "error": "Skipped row: DATE NOTARIZED and/or VALIDITY/EXPIRY DATE could not be parsed"
-                    })
-                    continue
-
-        except Exception as e:
+        if not signed_at or not expires_at:
             failed_rows.append({
                 "row": r_idx,
-                "error": f"Row processing failed: {str(e)}"
+                "company_name": company_name,
+                "error": "Skipped row: DATE NOTARIZED and/or VALIDITY/EXPIRY DATE could not be parsed"
             })
+            continue
 
-    db.session.commit()
+        try:
+            hte = HostTrainingEstablishment.query.filter_by(company_name=company_name).first()
+
+            if not hte:
+                hte = HostTrainingEstablishment(
+                    company_name=company_name,
+                    industry=industry,
+                    address=address,
+                    description=None,
+                    website=None,
+                    contact_person=contact_person,
+                    contact_position=contact_position,
+                    contact_number=contact_number,
+                    contact_email=contact_email,
+                    moa_status=moa_status,
+                    course=course,
+                    moa_signed_at=signed_at,
+                    moa_validity=validity_years,
+                    moa_expiry_date=expires_at,
+                    moa_file_path=None,
+                )
+                db.session.add(hte)
+                db.session.flush()
+                created_htes += 1
+            else:
+                hte.industry = industry or hte.industry
+                hte.address = address or hte.address
+                hte.contact_person = contact_person or hte.contact_person
+                hte.contact_position = contact_position or hte.contact_position
+                hte.contact_number = contact_number or hte.contact_number
+                hte.contact_email = contact_email or hte.contact_email
+                hte.course = course or hte.course
+                hte.moa_status = moa_status
+                hte.moa_signed_at = signed_at
+                hte.moa_validity = validity_years
+                hte.moa_expiry_date = expires_at
+                hte.moa_file_path = None
+                updated_htes += 1
+
+            existing_moa = (
+                MemorandumOfAgreement.query
+                .filter_by(
+                    hte_id=hte.id,
+                    signed_at=signed_at,
+                    expires_at=expires_at
+                )
+                .first()
+            )
+
+            if not existing_moa:
+                moa = MemorandumOfAgreement(
+                    hte_id=hte.id,
+                    signed_at=signed_at,
+                    expires_at=expires_at,
+                    status=moa_status,
+                    document_path=moa_link if moa_link else None,
+                    document_filename=moa_file_data["filename"] if moa_file_data else None,
+                    document_mime_type=moa_file_data["mime_type"] if moa_file_data else None,
+                    document_blob=moa_file_data["blob"] if moa_file_data else None,
+                    document_size=moa_file_data["size"] if moa_file_data else None,
+                )
+                db.session.add(moa)
+                created_moas += 1
+            else:
+                existing_moa.status = moa_status
+                existing_moa.document_path = moa_link if moa_link else existing_moa.document_path
+
+                if moa_file_data:
+                    existing_moa.document_filename = moa_file_data["filename"]
+                    existing_moa.document_mime_type = moa_file_data["mime_type"]
+                    existing_moa.document_blob = moa_file_data["blob"]
+                    existing_moa.document_size = moa_file_data["size"]
+
+                updated_moas += 1
+
+            db.session.commit()
+
+        except Exception as e:
+            db.session.rollback()
+            failed_rows.append({
+                "row": r_idx,
+                "company_name": company_name,
+                "error": f"Skipped row: {str(e)}"
+            })
+            continue
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     return jsonify({
         "created_htes": created_htes,
         "updated_htes": updated_htes,
         "created_moas": created_moas,
         "updated_moas": updated_moas,
+        "stopped_early": stopped_early,
+        "message": (
+            "Import stopped safely before timeout. Successful rows were saved. Re-upload remaining rows."
+            if stopped_early
+            else "Import completed."
+        ),
         "failed_rows": failed_rows
     }), 200
 
