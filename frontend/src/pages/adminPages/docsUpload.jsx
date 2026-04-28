@@ -645,6 +645,13 @@ export function DocsAddModal({
     editItem = null
 }) {
     const isForms = section === "forms";
+
+    const LIST_TYPES = [
+        "numerical_list",
+        "bulleted_list",
+        "alphabetical_list"
+    ];
+
     const [itemType, setItemType] = useState(() => {
         if (editItem) {
             const option = ITEM_TYPE_OPTIONS.find(o => o.value === editItem.type);
@@ -665,11 +672,13 @@ export function DocsAddModal({
     const [file, setFile] = useState(null);
     const [uploading, setUploading] = useState(false);
 
-    const LIST_TYPES = [
-        "numerical_list",
-        "bulleted_list",
-        "alphabetical_list"
-    ];
+    const [listItems, setListItems] = useState(() => {
+        if (editItem?.listItems) return editItem.listItems;
+        if (editItem?.description && LIST_TYPES.includes(editItem.type)) {
+            return editItem.description.split("\n");
+        }
+        return [""];
+    });
 
     const itemTypeLabels = ITEM_TYPE_OPTIONS
         .filter((option) => {
@@ -687,7 +696,6 @@ export function DocsAddModal({
 
     const selectedTypeValue = labelToValueMap[itemType] || "";
     const isListType = LIST_TYPES.includes(selectedTypeValue);
-    const [listItems, setListItems] = useState(editItem?.listItems || [""]);
 
     const handleCheckbox = (e) => {
         const checked = e.target.checked;
