@@ -7,7 +7,7 @@ import "../../embla.css";
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { MobileStudentTable, StudentTable } from '../../components/oasisTable';
 import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { fetchHTEs } from "../../api/student.service";
 import SearchBar from '../../components/searchBar';
 import { ViewModal } from '../../components/popupModal';
@@ -23,6 +23,7 @@ export default function HteDirectory() {
     const [course] = useState("");
     const [location] = useState("");
     const [search, setSearch] = useState("");
+    const prevSearchRef = useRef("");
 
     const [openView, setOpenView] = useState(false);
     const [activeFile, setActiveFile] = useState(null);
@@ -34,7 +35,17 @@ export default function HteDirectory() {
     );
     
     useEffect(() => {
-        setLoading(true);
+        // Only show global loading if it's initial load or other filters changed
+        const isSearchOnlyChange = prevSearchRef.current !== search && 
+                                  prevSearchRef.current !== "" && 
+                                  search !== "";
+        
+        if (!isSearchOnlyChange) {
+            setLoading(true);
+        }
+        
+        prevSearchRef.current = search;
+
         fetchHTEs({
             search,
             industry,

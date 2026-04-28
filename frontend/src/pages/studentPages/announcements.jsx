@@ -2,7 +2,7 @@ import MainScreen from '../../layouts/mainScreen';
 import Title from '../../utilities/title';
 import Subtitle from '../../utilities/subtitle';
 import { Filter } from '../../components/adminComps';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { AnnouncementModal } from '../../components/userModal';
 import api from "../../api/axios.jsx";
 import SearchBar from '../../components/searchBar.jsx';

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { getStudentDashboardHTEs } from "../../api/studentDashboard.service";
 import MainScreen from '../../layouts/mainScreen';
@@ -23,6 +23,7 @@ export default function Student() {
     const [user, setUser] = useState(null); 
     const [profile, setProfile] = useState(null);
     const [search, setSearch] = useState("");
+    const prevSearchRef = useRef("");
     
     const [openView, setOpenView] = useState(false);
     const [modalType, setModalType] = useState("video"); // "video" or "document"
@@ -55,7 +56,17 @@ export default function Student() {
     }, []);
 
     useEffect(() => {
-        setLoading(true);
+        // Only show global loading if it's initial load or search changed from empty
+        const isSearchOnlyChange = prevSearchRef.current !== search && 
+                                  prevSearchRef.current !== "" && 
+                                  search !== "";
+        
+        if (!isSearchOnlyChange) {
+            setLoading(true);
+        }
+        
+        prevSearchRef.current = search;
+
         getStudentDashboardHTEs({ search })
             .then((htes) => {
                 const mappedData = htes.map(hte => ({
