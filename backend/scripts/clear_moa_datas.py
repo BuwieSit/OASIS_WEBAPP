@@ -17,12 +17,12 @@ with app.app_context():
     deleted_moa_prospects = MoaProspect.query.delete()
     deleted_moas = MemorandumOfAgreement.query.delete()
     deleted_htes = HostTrainingEstablishment.query.delete()
-    deleted_students = User.query.filter(
-        User.role == UserRole.STUDENT
-    ).delete(synchronize_session=False)
+    # deleted_students = User.query.filter(
+    #     User.role == UserRole.STUDENT
+    # ).delete(synchronize_session=False)
     db.session.commit()
 
-    print(f"✅ Deleted STUDENT Users: {deleted_students}")
+    # print(f"✅ Deleted STUDENT Users: {deleted_students}")
     print(f"✅ Deleted MOA Prospects: {deleted_moa_prospects}")
     print(f"✅ Deleted MOAs: {deleted_moas}")
     print(f"✅ Deleted HTEs: {deleted_htes}")

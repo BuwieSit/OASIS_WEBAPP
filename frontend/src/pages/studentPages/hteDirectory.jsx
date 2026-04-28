@@ -51,7 +51,8 @@ export default function HteDirectory() {
                     thumbnail: hte.thumbnail_path
                         ? `${API_BASE}/${hte.thumbnail_path}`
                         : fallbackImg,
-                    document_path: hte.moa_file_path
+                    hasMoa: Boolean(hte.has_moa_file || hte.moa_file_path),
+                    moaUrl: `/api/student/htes/${hte.id}/moa`
                 }));
                 setHtes(mapped);
             })
@@ -68,35 +69,79 @@ export default function HteDirectory() {
         return `${API_BASE}/uploads/${path}`;
     };
 
-    const openPdf = (filePath, fileName = "HTE_MOA.pdf") => {
-        const url = buildFileUrl(filePath);
-        if (!url) return;
+    const fetchMoaBlobUrl = async (row) => {
+        if (!row?.id) return null;
 
-        setActiveFile(url);
-        setActiveFileName(fileName);
+        try {
+            const res = await api.get(`/api/student/htes/${row.id}/moa`, {
+                responseType: "blob"
+            });
+
+            const blob = res?.data;
+
+            if (!blob || blob.size === 0) {
+                console.error("No blob returned for MOA:", row.id);
+                return null;
+            }
+
+            return window.URL.createObjectURL(blob);
+        } catch (err) {
+            console.error("MOA file fetch failed:", err?.response?.data || err.message || err);
+            return null;
+        }
+    };
+
+    const openPdf = async (row) => {
+        const blobUrl = await fetchMoaBlobUrl(row);
+        if (!blobUrl) return;
+
+        if (activeFile && activeFile.startsWith("blob:")) {
+            window.URL.revokeObjectURL(activeFile);
+        }
+
+        const safeName = (row.hteName || "HTE")
+            .replace(/\s+/g, "_")
+            .replace(/[^\w\-]/g, "");
+
+        setActiveFileName(`${safeName}_MOA.pdf`);
+        setActiveFile(blobUrl);
         setOpenView(true);
     };
 
-    const downloadMoa = async (filePath, companyName) => {
-        const url = buildFileUrl(filePath);
-        if (!url) return;
+    const downloadMoa = async (row) => {
+        if (!row?.id) return;
 
         try {
-            const res = await fetch(url);
-            const blob = await res.blob();
-            const safeName = (companyName || "HTE")
+            const res = await api.get(`/api/student/htes/${row.id}/moa?download=1`, {
+                responseType: "blob"
+            });
+
+            const blob = res?.data;
+
+            if (!blob || blob.size === 0) {
+                console.error("No blob returned for download:", row.id);
+                return;
+            }
+
+            const safeName = (row.hteName || "HTE")
                 .replace(/\s+/g, "_")
                 .replace(/[^\w\-]/g, "");
+
             const filename = `${safeName}_MOA.pdf`;
 
+            const url = window.URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.href = window.URL.createObjectURL(blob);
+
+            link.href = url;
             link.download = filename;
+
             document.body.appendChild(link);
             link.click();
             link.remove();
+
+            window.URL.revokeObjectURL(url);
         } catch (err) {
-            console.error("Download MOA failed:", err);
+            console.error("Download MOA failed:", err?.response?.data || err.message || err);
         }
     };
 
@@ -108,12 +153,17 @@ export default function HteDirectory() {
         {
             header: "MOA File",
             render: row => {
-                const url = buildFileUrl(row.document_path);
-                return url ? (
+                return row.hasMoa ? (
                     <ViewMoaButton
-                        url={url}
-                        onClick={() => openPdf(row.document_path, `${row.hteName.replace(/\s+/g, "_")}_MOA.pdf`)}
-                        onDownload={() => downloadMoa(row.document_path, row.hteName)}
+                        url="#"
+                        onClick={(e) => {
+                            e?.stopPropagation?.();
+                            openPdf(row);
+                        }}
+                        onDownload={(e) => {
+                            e?.stopPropagation?.();
+                            downloadMoa(row);
+                        }}
                     />
                 ) : (
                     <Text text="—" />
@@ -141,7 +191,14 @@ export default function HteDirectory() {
             <MainScreen>
                 <ViewModal 
                     visible={openView}
-                    onClose={() => setOpenView(false)}
+                    onClose={() => {
+                        if (activeFile && activeFile.startsWith("blob:")) {
+                            window.URL.revokeObjectURL(activeFile);
+                        }
+
+                        setOpenView(false);
+                        setActiveFile(null);
+                    }}
                     isDocument={true}
                     file={activeFile}
                     filename={activeFileName}

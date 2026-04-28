@@ -5,6 +5,8 @@ from datetime import date, datetime, timedelta
 import io
 import os
 import uuid
+import re
+import time
 import requests
 from werkzeug.utils import secure_filename
 from openpyxl import Workbook, load_workbook
@@ -21,6 +23,9 @@ EXCEL_HEADERS = [
     "COURSE", "DATE NOTARIZED", "VALIDITY", "EXPIRY DATE",
     "LINKE TO SCANNED MOA",
 ]
+
+IMPORT_TIME_LIMIT_SECONDS = 110
+MAX_MOA_FILE_SIZE = 10 * 1024 * 1024
 
 
 def _admin_only():
@@ -39,11 +44,9 @@ def _parse_date(val):
         return val
 
     if isinstance(val, (int, float)):
-        # Year-only values like 2022
         if 1900 <= int(val) <= 2100:
             return date(int(val), 1, 1)
 
-        # Excel serial date values like 44662
         try:
             return date(1899, 12, 30) + timedelta(days=int(val))
         except Exception:
@@ -63,15 +66,6 @@ def _parse_date(val):
     return None
 
 
-def _parse_number(val):
-    if val is None or val == "":
-        return None
-    try:
-        return float(val)
-    except Exception:
-        return None
-
-
 def _parse_validity_months(val):
     if val is None or val == "":
         return None
@@ -80,7 +74,6 @@ def _parse_validity_months(val):
         return int(float(val))
 
     s = str(val).strip().upper()
-
     if not s:
         return None
 
@@ -110,8 +103,11 @@ def _normalize_moa_status(value):
     if status in {"WITH MOA", "WITHMOA", "ACTIVE", "APPROVED"}:
         return "ACTIVE"
 
-    if status in {"EXPIRED"}:
+    if status == "EXPIRED":
         return "EXPIRED"
+
+    if status == "EXPIRING":
+        return "EXPIRING"
 
     return "PENDING"
 
@@ -163,7 +159,12 @@ def _compute_expiry_date_from_months(signed_at, validity_months):
     return date(year, month, day)
 
 
-def _resolve_moa_dates_and_validity(signed_at=None, expires_at=None, validity_months=None, validity_years=None):
+def _resolve_moa_dates_and_validity(
+    signed_at=None,
+    expires_at=None,
+    validity_months=None,
+    validity_years=None
+):
     if signed_at and validity_months is not None:
         expires_at = _compute_expiry_date_from_months(signed_at, validity_months)
         validity_years = _compute_validity_years_from_months(validity_months)
@@ -229,7 +230,7 @@ def _clean_moa_link(value):
     if not link:
         return ""
 
-    lowered = link.lower()
+    lowered = link.lower().strip()
     invalid_values = {
         "link to scanned moa",
         "linke to scanned moa",
@@ -250,71 +251,119 @@ def _clean_moa_link(value):
 def _is_http_url(value):
     if not value:
         return False
+
     value = str(value).strip().lower()
     return value.startswith("http://") or value.startswith("https://")
 
 
-def download_gdrive_file_to_bytes(url):
+def _extract_gdrive_file_id(url):
+    if not url:
+        return None
+
+    url = str(url).strip()
+
+    patterns = [
+        r"/file/d/([a-zA-Z0-9_-]+)",
+        r"/d/([a-zA-Z0-9_-]+)",
+        r"id=([a-zA-Z0-9_-]+)",
+        r"open\?id=([a-zA-Z0-9_-]+)",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+
+    return None
+
+
+def _download_gdrive_file_to_db_blob(url, fallback_filename="moa.pdf"):
     try:
         if not url:
-            print("GDRIVE: empty URL")
             return None
 
         url = str(url).strip()
 
         if not _is_http_url(url):
-            print("GDRIVE: invalid URL:", url)
             return None
 
         if "drive.google.com" not in url:
-            print("GDRIVE: not a Google Drive link:", url)
             return None
 
-        # Extract file ID
-        file_id = None
-
-        if "/d/" in url:
-            file_id = url.split("/d/")[1].split("/")[0]
-
-        elif "id=" in url:
-            file_id = url.split("id=")[1].split("&")[0]
-
+        file_id = _extract_gdrive_file_id(url)
         if not file_id:
-            print("GDRIVE: could not extract file ID")
             return None
 
-        # FORCE DIRECT DOWNLOAD LINK
-        direct_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+        session = requests.Session()
+        direct_url = "https://drive.google.com/uc"
+        params = {"export": "download", "id": file_id}
 
-        print("GDRIVE DIRECT URL:", direct_url)
-
-        response = requests.get(
+        response = session.get(
             direct_url,
+            params=params,
             stream=True,
-            timeout=10
+            timeout=(5, 8),
+            allow_redirects=True
         )
+
+        token = None
+        for key, value in response.cookies.items():
+            if key.startswith("download_warning"):
+                token = value
+                break
+
+        if token:
+            params["confirm"] = token
+            response = session.get(
+                direct_url,
+                params=params,
+                stream=True,
+                timeout=(5, 8),
+                allow_redirects=True
+            )
 
         if response.status_code != 200:
             print("GDRIVE bad status:", response.status_code)
             return None
 
-        content_type = response.headers.get("Content-Type", "").lower()
+        content_type = response.headers.get("Content-Type", "application/pdf")
 
-        if "text/html" in content_type:
-            print("GDRIVE returned HTML instead of file")
+        if "text/html" in content_type.lower():
+            print("GDRIVE returned HTML instead of file. Check sharing permission.")
             return None
 
-        file_bytes = response.content
+        chunks = []
+        total_size = 0
+
+        for chunk in response.iter_content(chunk_size=1024 * 256):
+            if not chunk:
+                continue
+
+            total_size += len(chunk)
+
+            if total_size > MAX_MOA_FILE_SIZE:
+                print("GDRIVE file too large, skipped:", url)
+                return None
+
+            chunks.append(chunk)
+
+        file_bytes = b"".join(chunks)
 
         if not file_bytes:
-            print("GDRIVE empty file")
             return None
 
+        safe_filename = secure_filename(fallback_filename or "")
+        if not safe_filename:
+            safe_filename = f"moa_{uuid.uuid4().hex}.pdf"
+
+        if not safe_filename.lower().endswith(".pdf"):
+            safe_filename += ".pdf"
+
         return {
-            "filename": f"moa_{uuid.uuid4().hex}.pdf",
+            "filename": safe_filename,
             "mime_type": content_type or "application/pdf",
             "blob": file_bytes,
-            "size": len(file_bytes)
+            "size": len(file_bytes),
         }
 
     except Exception as e:
@@ -362,6 +411,7 @@ def get_htes():
                 "document_path": moa.document_path,
                 "document_filename": getattr(moa, "document_filename", None),
                 "document_size": getattr(moa, "document_size", None),
+                "has_document_blob": bool(getattr(moa, "document_blob", None)),
             },
             "moa_validity_years": validity_years
         })
@@ -433,6 +483,9 @@ def import_htes_excel():
     if not f.filename.lower().endswith(".xlsx"):
         return jsonify({"error": "invalid_file_type", "message": "Only .xlsx allowed"}), 400
 
+    started_at = time.time()
+    stopped_early = False
+
     wb = load_workbook(f, data_only=True)
     ws = wb.active
 
@@ -440,6 +493,7 @@ def import_htes_excel():
         str(c.value).strip() if c.value is not None else ""
         for c in next(ws.iter_rows(min_row=1, max_row=1))
     ]
+
     header_to_idx = {h: i for i, h in enumerate(header_row)}
 
     missing = [h for h in EXCEL_HEADERS if h not in header_to_idx]
@@ -456,6 +510,14 @@ def import_htes_excel():
     failed_rows = []
 
     for r_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
+        if time.time() - started_at >= IMPORT_TIME_LIMIT_SECONDS:
+            stopped_early = True
+            failed_rows.append({
+                "row": r_idx,
+                "error": "Import stopped safely before server timeout. Successful previous rows were already saved. Re-upload remaining rows."
+            })
+            break
+
         def get(h):
             return row[header_to_idx[h]].value
 
@@ -478,24 +540,32 @@ def import_htes_excel():
         expires_at = _parse_date(get("EXPIRY DATE"))
         moa_link = _clean_moa_link(get("LINKE TO SCANNED MOA"))
 
+        safe_company = secure_filename(company_name) or "HTE"
         moa_file_data = None
 
         if moa_link:
             if _is_http_url(moa_link):
-                moa_file_data = download_gdrive_file_to_bytes(moa_link)
+                moa_file_data = _download_gdrive_file_to_db_blob(
+                    moa_link,
+                    fallback_filename=f"{safe_company}_MOA.pdf"
+                )
 
                 if not moa_file_data:
                     failed_rows.append({
                         "row": r_idx,
-                        "error": "MOA link could not be downloaded",
+                        "company_name": company_name,
+                        "error": "Skipped row: MOA link could not be downloaded into database. Check Google Drive sharing permission or file size.",
                         "link": moa_link
                     })
+                    continue
             else:
                 failed_rows.append({
                     "row": r_idx,
-                    "error": "Invalid MOA link format",
+                    "company_name": company_name,
+                    "error": "Skipped row: Invalid MOA link format",
                     "link": moa_link
                 })
+                continue
 
         signed_at, expires_at, validity_years = _resolve_moa_dates_and_validity(
             signed_at=signed_at,
@@ -504,98 +574,116 @@ def import_htes_excel():
             validity_years=None
         )
 
-        try:
-            with db.session.begin_nested():
-                hte = HostTrainingEstablishment.query.filter_by(company_name=company_name).first()
-
-                if not hte:
-                    hte = HostTrainingEstablishment(
-                        company_name=company_name,
-                        industry=industry,
-                        address=address,
-                        description=None,
-                        website=None,
-                        contact_person=contact_person,
-                        contact_position=contact_position,
-                        contact_number=contact_number,
-                        contact_email=contact_email,
-                        moa_status=moa_status,
-                        course=course,
-                        moa_signed_at=signed_at,
-                        moa_validity=validity_years,
-                        moa_expiry_date=expires_at,
-                        moa_file_path=moa_link if moa_link else None,
-                    )
-                    db.session.add(hte)
-                    db.session.flush()
-                    created_htes += 1
-                else:
-                    hte.industry = industry or hte.industry
-                    hte.address = address or hte.address
-                    hte.contact_person = contact_person or hte.contact_person
-                    hte.contact_position = contact_position or hte.contact_position
-                    hte.contact_number = contact_number or hte.contact_number
-                    hte.contact_email = contact_email or hte.contact_email
-                    hte.course = course or hte.course
-                    hte.moa_status = moa_status
-                    hte.moa_signed_at = signed_at
-                    hte.moa_validity = validity_years
-                    hte.moa_expiry_date = expires_at
-                    if moa_link:
-                        hte.moa_file_path = moa_link
-                    updated_htes += 1
-
-                if signed_at and expires_at:
-                    existing_moa = (
-                        MemorandumOfAgreement.query
-                        .filter_by(hte_id=hte.id, signed_at=signed_at, expires_at=expires_at)
-                        .first()
-                    )
-
-                    if not existing_moa:
-                        db.session.add(MemorandumOfAgreement(
-                            hte_id=hte.id,
-                            signed_at=signed_at,
-                            expires_at=expires_at,
-                            status=moa_status,
-                            document_path=moa_link if moa_link else None,
-                            document_filename=moa_file_data["filename"] if moa_file_data else None,
-                            document_mime_type=moa_file_data["mime_type"] if moa_file_data else None,
-                            document_blob=moa_file_data["blob"] if moa_file_data else None,
-                            document_size=moa_file_data["size"] if moa_file_data else None,
-                        ))
-                        created_moas += 1
-                    else:
-                        existing_moa.status = moa_status
-                        if moa_link:
-                            existing_moa.document_path = moa_link
-
-                        if moa_file_data:
-                            existing_moa.document_filename = moa_file_data["filename"]
-                            existing_moa.document_mime_type = moa_file_data["mime_type"]
-                            existing_moa.document_blob = moa_file_data["blob"]
-                            existing_moa.document_size = moa_file_data["size"]
-
-                        updated_moas += 1
-                else:
-                    failed_rows.append({
-                        "row": r_idx,
-                        "error": "MOA not created because DATE NOTARIZED and/or VALIDITY/EXPIRY DATE could not be parsed"
-                    })
-
-        except Exception as e:
+        if not signed_at or not expires_at:
             failed_rows.append({
                 "row": r_idx,
-                "error": f"Row processing failed: {str(e)}"
+                "company_name": company_name,
+                "error": "Skipped row: DATE NOTARIZED and/or VALIDITY/EXPIRY DATE could not be parsed"
             })
+            continue
 
-    db.session.commit()
+        try:
+            hte = HostTrainingEstablishment.query.filter_by(company_name=company_name).first()
+
+            if not hte:
+                hte = HostTrainingEstablishment(
+                    company_name=company_name,
+                    industry=industry,
+                    address=address,
+                    description=None,
+                    website=None,
+                    contact_person=contact_person,
+                    contact_position=contact_position,
+                    contact_number=contact_number,
+                    contact_email=contact_email,
+                    moa_status=moa_status,
+                    course=course,
+                    moa_signed_at=signed_at,
+                    moa_validity=validity_years,
+                    moa_expiry_date=expires_at,
+                    moa_file_path=None,
+                )
+                db.session.add(hte)
+                db.session.flush()
+                created_htes += 1
+            else:
+                hte.industry = industry or hte.industry
+                hte.address = address or hte.address
+                hte.contact_person = contact_person or hte.contact_person
+                hte.contact_position = contact_position or hte.contact_position
+                hte.contact_number = contact_number or hte.contact_number
+                hte.contact_email = contact_email or hte.contact_email
+                hte.course = course or hte.course
+                hte.moa_status = moa_status
+                hte.moa_signed_at = signed_at
+                hte.moa_validity = validity_years
+                hte.moa_expiry_date = expires_at
+                hte.moa_file_path = None
+                updated_htes += 1
+
+            existing_moa = (
+                MemorandumOfAgreement.query
+                .filter_by(
+                    hte_id=hte.id,
+                    signed_at=signed_at,
+                    expires_at=expires_at
+                )
+                .first()
+            )
+
+            if not existing_moa:
+                moa = MemorandumOfAgreement(
+                    hte_id=hte.id,
+                    signed_at=signed_at,
+                    expires_at=expires_at,
+                    status=moa_status,
+                    document_path=moa_link if moa_link else None,
+                    document_filename=moa_file_data["filename"] if moa_file_data else None,
+                    document_mime_type=moa_file_data["mime_type"] if moa_file_data else None,
+                    document_blob=moa_file_data["blob"] if moa_file_data else None,
+                    document_size=moa_file_data["size"] if moa_file_data else None,
+                )
+                db.session.add(moa)
+                created_moas += 1
+            else:
+                existing_moa.status = moa_status
+                existing_moa.document_path = moa_link if moa_link else existing_moa.document_path
+
+                if moa_file_data:
+                    existing_moa.document_filename = moa_file_data["filename"]
+                    existing_moa.document_mime_type = moa_file_data["mime_type"]
+                    existing_moa.document_blob = moa_file_data["blob"]
+                    existing_moa.document_size = moa_file_data["size"]
+
+                updated_moas += 1
+
+            db.session.commit()
+
+        except Exception as e:
+            db.session.rollback()
+            failed_rows.append({
+                "row": r_idx,
+                "company_name": company_name,
+                "error": f"Skipped row: {str(e)}"
+            })
+            continue
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     return jsonify({
         "created_htes": created_htes,
         "updated_htes": updated_htes,
         "created_moas": created_moas,
         "updated_moas": updated_moas,
+        "stopped_early": stopped_early,
+        "message": (
+            "Import stopped safely before timeout. Successful rows were saved. Re-upload remaining rows."
+            if stopped_early
+            else "Import completed."
+        ),
         "failed_rows": failed_rows
     }), 200
 
