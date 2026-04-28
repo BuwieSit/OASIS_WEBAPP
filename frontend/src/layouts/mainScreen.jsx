@@ -10,8 +10,10 @@ import { getRole } from '../api/token';
 import api from '../api/axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
+import { useLoading } from '../context/LoadingContext';
 
 export default function MainScreen({ children, showHeader = true, hasTopMargin = true }) {
+    const { loading } = useLoading();
     const { role: authRole } = useAuth();
     const userRole = authRole || getRole();
     const isAdmin = userRole === "admin" || userRole === "ADMIN";
@@ -183,18 +185,22 @@ export default function MainScreen({ children, showHeader = true, hasTopMargin =
 
     return (
         <div className="w-full h-full bg-page-white flex flex-col justify-center items-center overflow-x-hidden overflow-y-auto">
-            {isAdmin ? (
-                <Header admin notifications={notifications} setNotifications={setNotifications} />
-            ) : (
-                <Header notifications={notifications} setNotifications={setNotifications} />
+            {!loading && (
+                <>
+                    {isAdmin ? (
+                        <Header admin notifications={notifications} setNotifications={setNotifications} />
+                    ) : (
+                        <Header notifications={notifications} setNotifications={setNotifications} />
+                    )}
+                    {showHeader ? (
+                        <StudentHeader 
+                            notifications={notifications} 
+                            setNotifications={setNotifications} 
+                        />
+                    ) : ""}
+                    {hasTopMargin ? <div className='mt-25'></div> : ""}
+                </>
             )}
-            {showHeader ? (
-                <StudentHeader 
-                    notifications={notifications} 
-                    setNotifications={setNotifications} 
-                />
-            ) : ""}
-            {hasTopMargin ? <div className='mt-25'></div> : ""}
             
             {children}
 

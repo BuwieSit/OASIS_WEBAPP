@@ -13,14 +13,15 @@ import { ArrowRight, Hand } from 'lucide-react';
 import { ViewModal, SetupProfileModal } from '../../components/popupModal';
 import filePdf from "../../assets/resume.pdf";
 import api from "../../api/axios";
+import { useLoading } from '../../context/LoadingContext';
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function Student() {
+    const { setLoading } = useLoading();
     const [tableData, setTableData] = useState([]);
     const [user, setUser] = useState(null); 
     const [profile, setProfile] = useState(null);
-    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     
     const [openView, setOpenView] = useState(false);
@@ -54,6 +55,7 @@ export default function Student() {
     }, []);
 
     useEffect(() => {
+        setLoading(true);
         getStudentDashboardHTEs({ search })
             .then((htes) => {
                 const mappedData = htes.map(hte => ({
@@ -74,7 +76,7 @@ export default function Student() {
             .finally(() => {
                 setLoading(false);
             });
-    }, [search]);
+    }, [search, setLoading]);
 
     useEffect(() => {
         return () => {

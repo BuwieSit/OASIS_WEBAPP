@@ -5,16 +5,16 @@ import { Filter } from '../../components/adminComps';
 import { useEffect, useState } from 'react';
 import { AnnouncementModal } from '../../components/userModal';
 import api from "../../api/axios.jsx";
-import SvgLoader from '../../components/SvgLoader.jsx';
 import SearchBar from '../../components/searchBar.jsx';
 import { ArrowRight } from 'lucide-react';
 import pupImage from "../../assets/pupImage.jpg";
+import { useLoading } from '../../context/LoadingContext';
 
 export default function Announcements() {
+    const { setLoading } = useLoading();
     const [announcements, setAnnouncements] = useState([]);
     const [activeFilter, setActiveFilter] = useState("All");
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
-    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
 
     const CATEGORY_TO_ENUM = {
@@ -28,6 +28,7 @@ export default function Announcements() {
     useEffect(() => {
         const load = async () => {
             try {
+                setLoading(true);
                 const res = await api.get("/api/student/announcements");
                 setAnnouncements(res.data || []);
             } catch (err) {
@@ -39,7 +40,7 @@ export default function Announcements() {
         };
 
         load();
-    }, []);
+    }, [setLoading]);
 
     const filteredAnnouncements = announcements.filter((a) => {
 
@@ -115,18 +116,7 @@ export default function Announcements() {
                 {/* ANNOUNCEMENTS */}
                 <section className="flex flex-col gap-3">
 
-                    {loading && (
-                        <>
-                            <div className='w-full flex items-center justify-center'>
-                                <Subtitle text={"Loading announcements..."} color={"text-oasis-gray"}/>
-                                <SvgLoader/>
-                            </div>
-                           
-                        </>
-                        
-                    )}
-
-                    {!loading && filteredAnnouncements.length === 0 && (
+                    {filteredAnnouncements.length === 0 && (
                         <div className='w-full flex flex-col items-center justify-center py-10'>
                             <Subtitle 
                                 text={search ? `No results found for "${search}"` : "No announcements in this category yet."} 

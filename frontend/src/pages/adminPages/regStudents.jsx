@@ -107,7 +107,6 @@ export default function RegStudents() {
 
   const registeredColumns = [
     { header: "Name", render: row => <Text text={row.name || "—"} /> },
-    { header: "Section", render: row => <Text text={row.studentSection || row.section || "—"} /> },
     { header: "Student Webmail", render: row => <Text text={row.email || row.student_webmail || "—"} /> },
     { header: "Program", render: row => <Text text={row.program || "—"} /> },
     { header: "OJT Adviser", render: row => <Text text={row.ojt_adviser || "—"} /> },
@@ -127,7 +126,6 @@ export default function RegStudents() {
 
   const archivedColumns = [
     { header: "Name", render: row => <Text isGray={true} text={row.name || "—"} /> },
-    { header: "Section", render: row => <Text isGray={true} text={row.studentSection || row.section || "—"} /> },
     { header: "Student Webmail", render: row => <Text isGray={true} text={row.email || row.student_webmail || "—"} /> },
     { header: "Program", render: row => <Text isGray={true} text={row.program || "—"} /> },
     { header: "OJT Adviser", render: row => <Text isGray={true} text={row.ojt_adviser || "—"} /> },

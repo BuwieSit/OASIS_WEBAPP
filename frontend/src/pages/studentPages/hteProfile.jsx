@@ -15,22 +15,30 @@ import { Dropdown } from "../../components/adminComps";
 import ReviewRatings from "../../components/reviewRatings";
 import { ReviewDetailModal, GeneralPopupModal } from "../../components/popupModal";
 import { Check, X } from "lucide-react";
+import { useLoading } from "../../context/LoadingContext";
 
 export default function HteProfile() {
+  const { setLoading: setGlobalLoading } = useLoading();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [hte, setHte] = useState(null);
   const [hteName, setHteName] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [localLoading, setLocalLoading] = useState(true);
   const [popup, setPopup] = useState(null);
   const hteId = searchParams.get("hteId");
 
   // Redirect if no hteId is provided
   useEffect(() => {
-    if (!hteId && !loading) {
+    if (!hteId && !localLoading) {
       navigate("/htedirectory");
     }
-  }, [hteId, loading, navigate]);
+  }, [hteId, localLoading, navigate]);
+  
+  // Update global loading when localLoading changes
+  useEffect(() => {
+    setGlobalLoading(localLoading);
+    return () => setGlobalLoading(false); // Reset on unmount
+  }, [localLoading, setGlobalLoading]);
 
   // REVIEWS STATE
   const [allReviews, setAllReviews] = useState([]);
@@ -142,7 +150,7 @@ export default function HteProfile() {
       .catch((err) => {
         console.error("Failed to load HTE profile", err);
       })
-      .finally(() => setLoading(false));
+      .finally(() => setLocalLoading(false));
   }, [hteId]);
 
   const handleDownloadMOA = async () => {
@@ -167,13 +175,8 @@ export default function HteProfile() {
     }
   };
 
-  if (loading) {
-    return (
-      <MainScreen>
-        <SvgLoader/>
-        <p className="p-5">Loading HTE profile...</p>
-      </MainScreen>
-    );
+  if (localLoading) {
+    return null; // Global loader handles this
   }
 
   if (!hte) {
@@ -298,6 +301,42 @@ export default function HteProfile() {
               </div>
             </section>
 
+            {/* LOCATION & MAP SECTION */}
+            <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-xs">
+              <div className="flex items-center gap-2 mb-6 border-b pb-3 border-gray-50">
+                 <Subtitle text="Location & Map" weight="font-bold" size="text-lg" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div className="flex items-start gap-4">
+                  <div className="p-4 bg-red-50 rounded-2xl text-red-500 shrink-0">
+                      <MapPinned size={28} />
+                  </div>
+                  <div>
+                      <p className="text-[0.7rem] font-black uppercase tracking-widest text-gray-400 mb-1">Main Office Address</p>
+                      <p className="text-base font-bold text-gray-700 leading-relaxed">{hte.address || "No address provided."}</p>
+                  </div>
+                </div>
+
+                {/* EMBEDDED GOOGLE MAP */}
+                <div className="w-full aspect-video rounded-3xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50 relative group">
+                  {hte.address ? (
+                    <iframe
+                      className="w-full h-full border-0 grayscale hover:grayscale-0 transition-all duration-700"
+                      src={`https://www.google.com/maps?q=${encodeURIComponent(hte.address)}&output=embed`}
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title={`Map of ${hte.company_name}`}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-gray-400 p-10 text-center">
+                      <MapPin size={48} className="opacity-20" />
+                      <p className="font-oasis-text text-sm italic">Map unavailable: No address provided.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
           </div>
 
           {/* RIGHT: OFFICIAL STATUS CARD */}
@@ -378,18 +417,6 @@ export default function HteProfile() {
                 </div>
               </div>
             </div>
-
-            {/* QUICK LOCATION CARD */}
-            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
-               <div className="p-4 bg-red-50 rounded-2xl text-red-500">
-                  <MapPinned size={24} />
-               </div>
-               <div>
-                  <p className="text-[0.65rem] font-black uppercase tracking-widest text-gray-400">Main Office</p>
-                  <p className="text-sm font-bold text-gray-700 line-clamp-2">{hte.address || "—"}</p>
-               </div>
-            </div>
-
           </div>
 
         </div>

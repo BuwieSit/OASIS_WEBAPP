@@ -6,6 +6,7 @@ import useQueryParam from '../../hooks/useQueryParams';
 import FormDownloadable from '../../components/formDownloadable';
 import api from '../../api/axios.jsx';
 import Accordion from '../../components/accordion.jsx';
+import { useLoading } from '../../context/LoadingContext';
 
 const SECTION_KEYS = {
     procedures: "Procedures",
@@ -29,6 +30,7 @@ function normalizeTabKey(tab) {
 }
 
 export default function OjtHub() {
+    const { setLoading } = useLoading();
     const [activeFilterParam, setActiveFilter] = useQueryParam("tab", "procedures");
     const activeFilter = normalizeTabKey(activeFilterParam);
 
@@ -38,7 +40,6 @@ export default function OjtHub() {
         guidelines: [],
         forms: []
     });
-    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const normalized = normalizeTabKey(activeFilterParam);
@@ -149,17 +150,11 @@ export default function OjtHub() {
                     flex-col
                     gap-16
                 ">
-                    {loading ? (
-                        <div className="w-full py-10">
-                            <Subtitle text="Loading OJT Hub content..." />
-                        </div>
-                    ) : (
-                        <DynamicSection
-                            sectionKey={activeFilter}
-                            title={SECTION_KEYS[activeFilter]}
-                            items={sections[activeFilter] || []}
-                        />
-                    )}
+                    <DynamicSection
+                        sectionKey={activeFilter}
+                        title={SECTION_KEYS[activeFilter]}
+                        items={sections[activeFilter] || []}
+                    />
                 </div>
             </div>
         </MainScreen>

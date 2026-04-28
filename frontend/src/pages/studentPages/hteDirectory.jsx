@@ -12,10 +12,12 @@ import { fetchHTEs } from "../../api/student.service";
 import SearchBar from '../../components/searchBar';
 import { ViewModal } from '../../components/popupModal';
 import api from "../../api/axios";
+import { useLoading } from '../../context/LoadingContext';
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function HteDirectory() {
+    const { setLoading } = useLoading();
     const [htes, setHtes] = useState([]);
     const [industry] = useState("");
     const [course] = useState("");
@@ -32,6 +34,7 @@ export default function HteDirectory() {
     );
     
     useEffect(() => {
+        setLoading(true);
         fetchHTEs({
             search,
             industry,
@@ -58,8 +61,11 @@ export default function HteDirectory() {
             })
             .catch(err => {
                 console.error("Failed to load HTE directory", err);
+            })
+            .finally(() => {
+                setLoading(false);
             });
-    }, [search, industry, course, location]);
+    }, [search, industry, course, location, setLoading]);
 
     const buildFileUrl = (filePath) => {
         if (!filePath) return null;
