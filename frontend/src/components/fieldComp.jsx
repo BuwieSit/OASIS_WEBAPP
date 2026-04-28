@@ -10,7 +10,8 @@ export function SingleField({
   hasBorder,
   onChange,
   icon,
-  disabled = false
+  disabled = false,
+  autoComplete = "off"
 }) {
   return (
     <div className="w-full">
@@ -23,6 +24,7 @@ export function SingleField({
         value={value}
         onChange={onChange}
         disabled={disabled}
+        autoComplete={autoComplete}
       />
     </div>
   );
@@ -36,7 +38,8 @@ export function MultiField({
   onChange,
   max,
   disabled = false,
-  hasBorder
+  hasBorder,
+  autoComplete = "off"
 }) {
   return (
     <div className="w-full">
@@ -49,6 +52,7 @@ export function MultiField({
         onChange={onChange}
         maxNum={max}
         disabled={disabled}
+        autoComplete={autoComplete}
       />
     </div>
   );

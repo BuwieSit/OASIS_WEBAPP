@@ -8,7 +8,8 @@ export function AdminField({
   value,
   onChange,
   hasBorder,
-  disabled = false
+  disabled = false,
+  autoComplete = "off"
 }) {
   return (
     <input
@@ -18,6 +19,7 @@ export function AdminField({
       value={value}
       onChange={onChange}
       disabled={disabled}
+      autoComplete={autoComplete}
       className={`bg-white w-full px-2 py-2 text-[0.9rem] rounded text-black ${
         hasBorder ? "border" : ""
       } ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
@@ -32,7 +34,8 @@ export function ContentField({
   value,
   onChange,
   disabled = false,
-  hasBorder
+  hasBorder,
+  autoComplete = "off"
 }) {
   return (
     <textarea
@@ -41,6 +44,7 @@ export function ContentField({
       value={value}
       onChange={onChange}
       disabled={disabled}
+      autoComplete={autoComplete}
       className={`w-full ${maxNum} min-h-12 bg-white px-2 py-2 text-[0.9rem] rounded 
       ${hasBorder && "border border-oasis-gray"}
       ${

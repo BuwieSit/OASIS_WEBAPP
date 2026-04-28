@@ -55,6 +55,14 @@ export default function StudentProfile() {
 
   const displayFullname = `${profile.first_name || ""} ${profile.middle_initial ? profile.middle_initial + "." : ""} ${profile.last_name || ""}`;
 
+  // Dynamic font size based on name length
+  const getFontSizeClass = (name) => {
+    const len = name.length;
+    if (len > 40) return "text-xl sm:text-2xl md:text-3xl";
+    if (len > 25) return "text-2xl sm:text-3xl md:text-4xl";
+    return "text-3xl sm:text-4xl md:text-5xl";
+  };
+
   const saveProfile = async () => {
     try {
       const profileData = {
@@ -177,8 +185,8 @@ export default function StudentProfile() {
             </div>
 
             {/* Name & Badge */}
-            <div className="flex-1 text-center md:text-left mb-2">
-              <h1 className="text-3xl md:text-4xl font-black text-gray-800 font-oasis-text">
+            <div className="flex-1 text-center md:text-left mb-2 min-w-0">
+              <h1 className={`${getFontSizeClass(displayFullname)} font-black text-gray-800 font-oasis-text break-words leading-tight`}>
                 {displayFullname}
               </h1>
               <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
@@ -195,7 +203,7 @@ export default function StudentProfile() {
             {!isEditing && (
               <button 
                 onClick={() => setIsEditing(true)}
-                className="bg-oasis-header text-white px-8 py-3 rounded-2xl font-bold hover:bg-oasis-button-dark transition-all shadow-lg shadow-oasis-header/20 active:scale-95"
+                className="bg-oasis-header text-white px-8 py-3 rounded-2xl font-bold hover:bg-oasis-button-dark transition-all shadow-lg shadow-oasis-header/20 active:scale-95 whitespace-nowrap shrink-0"
               >
                 Edit Profile
               </button>
@@ -345,6 +353,7 @@ export default function StudentProfile() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="Leave blank to keep current"
+                          autoComplete="new-password"
                         />
                         <button 
                           type="button"
