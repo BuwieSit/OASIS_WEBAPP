@@ -35,3 +35,15 @@ export function getHteReviews(hteId, params = {}) {
 export function submitHteReview(hteId, payload) {
   return api.post(`/api/student/htes/${hteId}/reviews`, payload);
 }
+
+export function getStudentProfile() {
+  return api.get("/api/student/me");
+}
+
+export function updateStudentProfile(formData) {
+  return api.put("/api/student/me", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+}

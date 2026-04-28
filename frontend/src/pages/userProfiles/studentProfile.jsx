@@ -17,7 +17,7 @@ export default function StudentProfile() {
   const [lastName, setLastName] = useState("");
   const [middleInitial, setMiddleInitial] = useState("");
   const [ojtAdviser, setOjtAdviser] = useState("");
-  const [Program, setProgram] = useState("");
+  const [program, setProgram] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -41,7 +41,7 @@ export default function StudentProfile() {
       setLastName(fetchedProfile.last_name || "");
       setMiddleInitial(fetchedProfile.middle_initial || "");
       setOjtAdviser(fetchedProfile.ojt_adviser || "");
-      setProgram(fetchedProfile._program || "");
+      setProgram(fetchedProfile.program || "");
     } catch (err) {
       console.error("Failed to fetch profile", err);
     }
@@ -70,7 +70,7 @@ export default function StudentProfile() {
         middle_initial: middleInitial.trim().charAt(0).toUpperCase(),
         last_name: lastName.trim(),
         ojt_adviser: ojtAdviser,
-        _program: Program,
+        program: program,
       };
 
       if (password && password.trim() !== "") {
@@ -95,6 +95,8 @@ export default function StudentProfile() {
     
     const formData = new FormData();
     formData.append("photo", selectedFile);
+    formData.append("program", profile.program || "");
+    formData.append("ojt_adviser", profile.ojt_adviser || "");
     
     try {
       const res = await api.patch("/api/student/me/photo", formData);
@@ -322,7 +324,7 @@ export default function StudentProfile() {
                       <label className="text-xs font-bold text-gray-400 ml-1">Select Program</label>
                       <select 
                         className="w-full p-3.5 bg-gray-50 text-gray-800 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-oasis-header transition-all cursor-pointer"
-                        value={Program}
+                        value={program}
                         onChange={(e) => setProgram(e.target.value)}
                       >
                         <option value="">Select Program</option>
@@ -333,7 +335,7 @@ export default function StudentProfile() {
                       </select>
                     </div>
                   ) : (
-                    <ReadOnlyField label="Program / Course" value={Program || "Not assigned"} />
+                    <ReadOnlyField label="Program / Course" value={program || "Not assigned"} />
                   )}
                 </div>
 
