@@ -1,6 +1,6 @@
 import MainScreen from '../../layouts/mainScreen'
 import Title from '../../utilities/title'
-import fallbackImg from '../../assets/hte_placeholder.png';
+import fallbackImg from '../../assets/carousel_placeholder2.png';
 import Subtitle from '../../utilities/subtitle';
 import EmblaCarousel from '../../components/EmblaCarousel';
 import "../../embla.css";
