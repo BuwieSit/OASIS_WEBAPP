@@ -110,6 +110,67 @@ function updateItemInTree(items, updatedItem) {
     });
 }
 
+function findAndRemoveFromTree(items, targetId) {
+    let removedItem = null;
+    const filteredItems = items.filter((item) => {
+        if (item.id === targetId) {
+            removedItem = item;
+            return false;
+        }
+        return true;
+    }).map((item) => {
+        if (item.children?.length) {
+            const [newChildren, found] = findAndRemoveFromTree(item.children, targetId);
+            if (found) removedItem = found;
+            return { ...item, children: newChildren };
+        }
+        return item;
+    });
+    return [filteredItems, removedItem];
+}
+
+function isDescendant(item, targetId) {
+    if (!item.children) return false;
+    return item.children.some(child => child.id === targetId || isDescendant(child, targetId));
+}
+
+function moveItemInTree(items, draggedId, targetId) {
+    // 1. Find and remove the dragged item
+    const [treeWithoutDragged, draggedItem] = findAndRemoveFromTree(items, draggedId);
+    if (!draggedItem) return items;
+
+    // 2. If targetId is null, move to root
+    if (!targetId) {
+        return [...treeWithoutDragged, { ...draggedItem, parentId: null }];
+    }
+
+    // Check for circular reference (dragging parent into own child)
+    if (isDescendant(draggedItem, targetId)) {
+        return items;
+    }
+
+    // 3. Insert as child of targetId
+    function insertAsChild(currentItems, tId, itemToMove) {
+        return currentItems.map((item) => {
+            if (item.id === tId) {
+                return {
+                    ...item,
+                    children: [...(item.children || []), { ...itemToMove, parentId: tId }]
+                };
+            }
+            if (item.children?.length) {
+                return {
+                    ...item,
+                    children: insertAsChild(item.children, tId, itemToMove)
+                };
+            }
+            return item;
+        });
+    }
+
+    return insertAsChild(treeWithoutDragged, targetId, draggedItem);
+}
+
 function normalizeTreeForSave(items) {
     return items.map((item) => ({
         id: item.id,
@@ -443,6 +504,31 @@ export default function DocsUpload() {
         }
     }
 
+    const handleMoveItem = (draggedId, targetId) => {
+        setSections((prev) => {
+            const currentItems = prev[activeFilter].items;
+            const updatedItems = moveItemInTree(currentItems, draggedId, targetId);
+            
+            if (updatedItems === currentItems) return prev;
+
+            return {
+                ...prev,
+                [activeFilter]: {
+                    ...prev[activeFilter],
+                    items: updatedItems
+                }
+            };
+        });
+        
+        setPopup({
+            title: "Moved",
+            text: "Structure updated successfully.",
+            icon: <Check size={20} />,
+            type: "success",
+            time: 1500
+        });
+    };
+
     return (
         <AdminScreen>
             {popup && (
@@ -585,7 +671,24 @@ export default function DocsUpload() {
                         {/* MIDDLE SECTION: Scrollable Content */}
                         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-admin-element">
                             
-                            <div className="bg-gray-50/30 rounded-[2.5rem] p-8 border border-dashed border-gray-200 min-h-[500px]">
+                            <div 
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    e.currentTarget.classList.add("border-oasis-header", "bg-oasis-header/5");
+                                }}
+                                onDragLeave={(e) => {
+                                    e.currentTarget.classList.remove("border-oasis-header", "bg-oasis-header/5");
+                                }}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    e.currentTarget.classList.remove("border-oasis-header", "bg-oasis-header/5");
+                                    const draggedId = e.dataTransfer.getData("draggedId");
+                                    if (draggedId) {
+                                        handleMoveItem(draggedId, null);
+                                    }
+                                }}
+                                className="bg-gray-50/30 rounded-[2.5rem] p-8 border border-dashed border-gray-200 min-h-[500px] transition-all"
+                            >
                                 {activeSectionState.items.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center h-full py-32 text-gray-400 gap-4">
                                         <div className="p-6 bg-gray-100 rounded-full">
@@ -602,6 +705,7 @@ export default function DocsUpload() {
                                         onDelete={(item) => setDeleteItemConfirm(item)}
                                         onView={handleViewDocument}
                                         onEdit={handleEditItem}
+                                        onMove={handleMoveItem}
                                     />
                                 )}
                             </div>

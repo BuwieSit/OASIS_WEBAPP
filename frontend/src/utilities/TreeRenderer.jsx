@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
     ChevronRight, 
     Type, 
@@ -8,8 +8,8 @@ import {
     FileText, 
     CornerDownRight,
     Trash,
-    Pencil
-    
+    Pencil,
+    GripVertical
 } from 'lucide-react';
 
 const TYPE_ICONS = {
@@ -36,19 +36,75 @@ const LIST_TYPES = [
     "alphabetical_list"
 ];
 
-export function TreeRenderer({ items = [], isRoot = true, onDelete, onView, onEdit }) {
+export function TreeRenderer({ items = [], isRoot = true, onDelete, onView, onEdit, onMove }) {
+    const [dragOverId, setDragOverId] = useState(null);
+
     if (!items || items.length === 0) return null;
+
+    const handleDragStart = (e, item) => {
+        e.dataTransfer.setData("draggedId", item.id);
+        e.dataTransfer.effectAllowed = "move";
+        // To avoid showing the whole tree while dragging
+        const dragImage = e.currentTarget.cloneNode(true);
+        dragImage.style.position = "absolute";
+        dragImage.style.top = "-1000px";
+        document.body.appendChild(dragImage);
+        e.dataTransfer.setDragImage(dragImage, 0, 0);
+        setTimeout(() => document.body.removeChild(dragImage), 0);
+    };
+
+    const handleDragOver = (e, item) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (dragOverId !== item.id) {
+            setDragOverId(item.id);
+        }
+    };
+
+    const handleDragLeave = (e) => {
+        setDragOverId(null);
+    };
+
+    const handleDrop = (e, targetItem) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragOverId(null);
+        const draggedId = e.dataTransfer.getData("draggedId");
+        if (draggedId && draggedId !== targetItem.id) {
+            onMove?.(draggedId, targetItem.id);
+        }
+    };
 
     return (
         <div className={`${isRoot ? "" : "ml-6 border-l-2 border-gray-100 pl-4 mt-2"}`}>
             {items.map((item, index) => (
-                <div key={item.id} className="relative mb-4 group/node">
+                <div 
+                    key={item.id} 
+                    className="relative mb-4 group/node"
+                    onDragOver={(e) => handleDragOver(e, item)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, item)}
+                >
                     {/* Visual Connector for nested items */}
                     {!isRoot && (
                         <div className="absolute -left-4 top-3 w-4 border-t-2 border-gray-100" />
                     )}
 
-                    <div className="flex items-start gap-3 bg-white p-3 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative">
+                    <div 
+                        className={`flex items-start gap-3 bg-white p-3 rounded-xl border transition-all relative ${
+                            dragOverId === item.id 
+                                ? "border-oasis-header bg-oasis-header/5 scale-[1.02] shadow-lg z-10" 
+                                : "border-gray-100 shadow-sm hover:shadow-md"
+                        }`}
+                    >
+                        <div 
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, item)}
+                            className="mt-1.5 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500"
+                        >
+                            <GripVertical size={16} />
+                        </div>
+
                         <div className="mt-1 bg-gray-50 p-1.5 rounded-lg">
                             {TYPE_ICONS[item.type] || <FileText size={14} />}
                         </div>
@@ -146,6 +202,7 @@ export function TreeRenderer({ items = [], isRoot = true, onDelete, onView, onEd
                                 onDelete={onDelete} 
                                 onView={onView}
                                 onEdit={onEdit}
+                                onMove={onMove}
                             />
                         </div>
                     )}
