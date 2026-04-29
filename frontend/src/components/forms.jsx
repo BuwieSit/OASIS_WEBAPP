@@ -148,8 +148,8 @@ export function UpdatedReg() {
                                     setSecondsLeft(10 * 60);
                                     setResendSeconds(0);
                                     setCanResend(false);
-                                } catch {
-                                    setErrMsg("Failed to send OTP");
+                                } catch (err) {
+                                    setErrMsg(err?.response?.data?.error || err?.response?.data?.message || "Failed to send OTP");
                                 }
                             }}
                         />
@@ -328,7 +328,7 @@ export function UpdatedLogin() {
       const redirectPath = res.role === "ADMIN" ? "/admin" : "/home";
       navigate(redirectPath, { replace: true });
     } catch (err) {
-      setErrMsg(err?.response?.data?.error || "Error. Please try again.");
+      setErrMsg(err?.response?.data?.error || err?.response?.data?.message || "Login failed. Please check your credentials.");
     }
   };
 
