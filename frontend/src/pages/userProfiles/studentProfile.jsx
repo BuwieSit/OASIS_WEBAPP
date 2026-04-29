@@ -153,8 +153,6 @@ export default function StudentProfile() {
         
         {/* HERO SECTION / HEADER CARD */}
         <div className="relative bg-white rounded-[2.5rem] shadow-xl overflow-hidden mb-8 border border-gray-100">
-          <div className="absolute top-0 left-0 w-full h-32 bg-linear-to-r from-oasis-header to-oasis-button-dark opacity-90"></div>
-          
           <div className="relative pt-16 pb-8 px-8 flex flex-col md:flex-row items-center md:items-end gap-6">
             {/* Profile Image with Edit Overlay */}
             <div className="relative group">
