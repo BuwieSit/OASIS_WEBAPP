@@ -251,7 +251,7 @@ export default function Admin() {
 
             {/* TITLE */}
             <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b border-gray-400 py-5'>
-                <Title text="Admin Dashboard" size='text-[1.5rem] md:text-[2rem]'/>
+                <Title text="Dashboard" size='text-[1.5rem] md:text-[2rem]'/>
                 <Subtitle text={"Overview of admin information, and management of announcements."}/>
             </div>
 

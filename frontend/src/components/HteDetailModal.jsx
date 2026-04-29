@@ -113,7 +113,7 @@ export default function HteDetailModal({ hte, visible, onClose }) {
                         <div className="flex flex-col h-full min-h-[300px] lg:min-h-full">
                              <div className="flex items-center gap-2 mb-4 border-b pb-2 border-gray-100">
                                 <MapPin className="text-oasis-header" size={20} />
-                                <p className="font-bold text-gray-800 uppercase tracking-widest text-xs">Embedded Map</p>
+                                <p className="font-bold text-gray-800 uppercase tracking-widest text-xs">Map Location</p>
                             </div>
                             <div className="flex-1 w-full rounded-3xl overflow-hidden border-4 border-gray-100 shadow-inner bg-gray-50 flex items-center justify-center relative min-h-[350px]">
                                 {googleMapsEmbedUrl ? (

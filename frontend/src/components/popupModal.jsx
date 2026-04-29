@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowUpRight, Check, Download, X, Star, User, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, Check, Download, X, Star, User, ShieldCheck, MailQuestionMark } from "lucide-react";
 import { AnnounceButton } from "./button";
 import Subtitle from "../utilities/subtitle";
 import { Link } from "react-router-dom";
@@ -395,6 +395,10 @@ export function SetupProfileModal({ visible, onGoToProfile }) {
                 <div className="mt-6 flex items-center gap-2 text-gray-400">
                     <ShieldCheck size={16} />
                     <span className="text-[0.65rem] font-black uppercase tracking-widest">Secured Student Portal</span>
+                </div>
+                <div className="mt-6 flex items-center gap-2 text-gray-400">
+                    <MailQuestionMark size={16} />
+                    <span className="text-[0.5rem] font-black uppercase tracking-widest">For questions: oasiskomunidevs@gmail.com</span>
                 </div>
             </div>
         </div>

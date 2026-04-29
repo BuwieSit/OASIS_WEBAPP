@@ -53,8 +53,9 @@ export default function AdmNotifications() {
     return (
         <AdminScreen>
             <div className="w-[90%] flex flex-col gap-5">
-                <div className='flex flex-col gap-2 border-b border-gray-400 py-5'>
-                    <Title text="Admin Notifications" size='text-[2rem]'/>
+
+                <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b border-gray-400 py-5'>
+                    <Title text="Notifications" size='text-[2rem]'/>
                     <Subtitle text={"A complete list of all administrative alerts and system notifications."}/>
                 </div>
 

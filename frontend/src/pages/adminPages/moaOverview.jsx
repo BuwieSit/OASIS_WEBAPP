@@ -25,6 +25,7 @@ export default function MoaOverview() {
     const [filePdf, setFilePdf] = useState(null);
     const [currentFileName, setCurrentFileName] = useState("HTE_MOA.pdf");
     const [loadingProspects, setLoadingProspects] = useState(false);
+    const [loadingOverview, setLoadingOverview] = useState(false);
     const [processingId, setProcessingId] = useState(null);
 
     const [popup, setPopup] = useState(null);
@@ -94,11 +95,14 @@ export default function MoaOverview() {
 
     const loadCurrentMoas = async () => {
         try {
+            setLoadingOverview(true);
             const res = await AdminAPI.getMoas();
             setCurrentMoas(Array.isArray(res?.data) ? res.data : []);
         } catch (err) {
             console.error("MOA overview fetch error:", err);
             setCurrentMoas([]);
+        } finally {
+            setLoadingOverview(false);
         }
     };
 
@@ -377,11 +381,19 @@ export default function MoaOverview() {
             </div>
 
             {activeFilter === "overview" && (
-                <OasisTable
-                    columns={currentMoaColumns}
-                    data={filteredCurrentMoas}
-                    onRowClick={(row) => setSelectedHte(row.hte)}
-                />
+                <>
+                    {loadingOverview ? (
+                        <div className="w-[80%]">
+                            <Subtitle text="Loading MOA overview..." />
+                        </div>
+                    ) : (
+                        <OasisTable
+                            columns={currentMoaColumns}
+                            data={filteredCurrentMoas}
+                            onRowClick={(row) => setSelectedHte(row.hte)}
+                        />
+                    )}
+                </>
             )}
 
             {activeFilter === "submissions" && (

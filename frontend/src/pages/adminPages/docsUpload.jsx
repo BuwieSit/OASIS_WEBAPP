@@ -1,6 +1,6 @@
 import AdminScreen from '../../layouts/adminScreen.jsx';
 import Title from "../../utilities/title.jsx";
-import { Container, Dropdown } from '../../components/adminComps.jsx';
+import { Container, Dropdown, Filter } from '../../components/adminComps.jsx';
 import { FileUploadField, MultiField, SingleField } from '../../components/fieldComp.jsx';
 import { AnnounceButton } from '../../components/button.jsx';
 import { useEffect, useMemo, useState, useRef } from "react";
@@ -502,25 +502,23 @@ export default function DocsUpload() {
             </div>
 
             <div className="w-[90%] mt-8">
-                {/* MODERN TAB BAR */}
-                <div className="flex flex-row items-center gap-2 p-1.5 bg-gray-100/80 backdrop-blur rounded-2xl w-fit mb-8 border border-gray-200 shadow-inner">
-                    {Object.keys(SECTION_LABELS).map((key) => (
-                        <button
-                            key={key}
-                            onClick={() => setFilter(key)}
-                            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ease-out flex items-center gap-2
-                                ${activeFilter === key 
-                                    ? "bg-white text-oasis-header shadow-md scale-105" 
-                                    : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
-                                }
-                            `}
-                        >
-                            {key === "procedures" && <Plus size={16} />}
-                            {key === "moa" && <Save size={16} />}
-                            {key === "guidelines" && <AlignLeft size={16} />}
-                            {key === "forms" && <FileText size={16} />}
-                            {SECTION_LABELS[key]}
-                        </button>
+                
+                <div className='flex flex-row gap-3 w-full mb-8'>
+                    {Object.entries(SECTION_LABELS).map(([key, label], index) => (
+                        <div key={key} className="flex flex-row gap-3 items-center">
+                            <Subtitle
+                                text={label}
+                                onClick={() => setFilter(key)}
+                                isActive={activeFilter === key}
+                                isLink
+                                weight={"font-bold"}
+                                size="text-[1rem]"
+                                className={"rounded-2xl"}
+                            />
+                            {index < Object.keys(SECTION_LABELS).length - 1 && (
+                                <Subtitle text="|" size="text-[1rem]" />
+                            )}
+                        </div>
                     ))}
                 </div>
 
@@ -556,17 +554,32 @@ export default function DocsUpload() {
 
                     <div className="bg-admin-element border border-gray-200 rounded-4xl shadow-sm overflow-hidden flex flex-col h-[850px]">
                         {/* UPPER SECTION: Fixed Header */}
-                        <div className="p-8 border-b border-gray-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white/50 backdrop-blur-sm z-10">
-                            <div className="flex flex-col">
-                                <Subtitle text="Visual Structure and Configuration" weight="font-bold" size="text-2xl" />
-                                <p className="text-sm text-gray-500">Manage the hierarchy for {SECTION_LABELS[activeFilter]}</p>
+                        <div className="p-8 border-b border-gray-100 flex flex-col gap-6 bg-white/50 backdrop-blur-sm z-10">
+                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                <div className="flex flex-col">
+                                    <Subtitle text="Visual Structure and Configuration" weight="font-bold" size="text-2xl" />
+                                    <p className="text-sm text-gray-500">Manage the hierarchy for {SECTION_LABELS[activeFilter]}</p>
+                                </div>
+                                <button 
+                                    onClick={() => setShowModal(true)}
+                                    className="px-6 py-3.5 bg-oasis-header text-white rounded-2xl hover:bg-oasis-button-dark transition-all hover:scale-105 duration-300 shadow-lg shadow-oasis-header/20 flex items-center gap-2 font-bold text-sm"
+                                >
+                                    <Plus size={20} /> Add Component
+                                </button>
                             </div>
-                            <button 
-                                onClick={() => setShowModal(true)}
-                                className="px-6 py-3.5 bg-oasis-header text-white rounded-2xl hover:bg-oasis-button-dark transition-all hover:scale-105 duration-300 shadow-lg shadow-oasis-header/20 flex items-center gap-2 font-bold text-sm"
-                            >
-                                <Plus size={20} /> Add Component
-                            </button>
+
+                            {/* ADMIN TIP */}
+                            <div className="bg-oasis-blue/5 border border-oasis-blue/10 rounded-3xl p-6 flex items-start gap-4">
+                                <div className="bg-white p-3 rounded-2xl shadow-sm">
+                                    <Check size={20} className="text-oasis-header" />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <p className="text-sm font-bold text-oasis-header">Admin Tip</p>
+                                    <p className="text-xs text-gray-600 leading-relaxed italic">
+                                        Everything in this list, including titles and descriptions, can be added using the "Add Component" modal. Click on document names to preview them.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
                         {/* MIDDLE SECTION: Scrollable Content */}
@@ -593,18 +606,7 @@ export default function DocsUpload() {
                                 )}
                             </div>
 
-                            {/* ADMIN TIP */}
-                            <div className="mt-8 bg-oasis-blue/5 border border-oasis-blue/10 rounded-3xl p-6 flex items-start gap-4">
-                                <div className="bg-white p-3 rounded-2xl shadow-sm">
-                                    <Check size={20} className="text-oasis-header" />
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <p className="text-sm font-bold text-oasis-header">Admin Tip</p>
-                                    <p className="text-xs text-gray-600 leading-relaxed italic">
-                                        Everything in this list, including titles and descriptions, can be added using the "Add Component" modal. Click on document names to preview them.
-                                    </p>
-                                </div>
-                            </div>
+                           
                         </div>
 
                         {/* LOWER SECTION: Fixed Buttons */}
