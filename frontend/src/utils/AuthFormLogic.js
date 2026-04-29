@@ -14,6 +14,8 @@ export default function useAuthFormLogic({ allowAdmin = false } = {}) {
 
   const [userFocus, setUserFocus] = useState(false);
   const [pwdFocus, setPwdFocus] = useState(false);
+  const [userTouched, setUserTouched] = useState(false);
+  const [pwdTouched, setPwdTouched] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -60,6 +62,10 @@ export default function useAuthFormLogic({ allowAdmin = false } = {}) {
     setUserFocus,
     pwdFocus,
     setPwdFocus,
+    userTouched,
+    setUserTouched,
+    pwdTouched,
+    setPwdTouched,
     showPassword,
     togglePasswordVisibility,
   };

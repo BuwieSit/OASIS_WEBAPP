@@ -496,8 +496,8 @@ export default function Admin() {
                                             <p className="text-[0.6rem] md:text-[0.7rem] text-black italic font-normal mb-0.5">
                                                 {a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"}
                                             </p>
-                                            <h3 className="text-[0.85rem] md:text-[1rem] font-bold text-gray-800 truncate block w-full">{a.title}</h3>
-                                            <p className="text-[0.7rem] md:text-[0.8rem] font-medium line-clamp-2 text-gray-600 break-words">{a.content}</p>
+                                            <h3 className="text-table-text-size md:text-[1rem] font-bold text-gray-800 truncate block w-full">{a.title}</h3>
+                                            <p className="text-[0.7rem] md:text-[0.8rem] font-medium line-clamp-2 text-gray-600 wrap-break-word">{a.content}</p>
                                         </div>
 
                                         <div className="flex flex-row gap-2 w-full md:w-auto shrink-0 mt-1 md:mt-0">

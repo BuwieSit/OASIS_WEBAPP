@@ -23,14 +23,17 @@ export default function useRegisterFlow({
   const [otp, setOtp] = useState("");
   const [validOtp, setValidOtp] = useState(false);
   const [otpFocus, setOtpFocus] = useState(false);
+  const [otpTouched, setOtpTouched] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [resendSeconds, setResendSeconds] = useState(0);
+  const [canResend, setCanResend] = useState(false);
 
 
   // ---- MATCH PASSWORD ----
   const [matchPwd, setMatchPwd] = useState("");
   const [validMatch, setValidMatch] = useState(false);
   const [matchFocus, setMatchFocus] = useState(false);
+  const [matchTouched, setMatchTouched] = useState(false);
 
   // ---- SUCCESS / REFRESH ----
   const [success, setSuccess] = useState();
@@ -49,12 +52,15 @@ export default function useRegisterFlow({
 
   // ---- OTP TIMER ----
   useEffect(() => {
-    if (secondsLeft <= 0) return;
+    if (secondsLeft <= 0) {
+      if (step === STEPS.OTP) setCanResend(true);
+      return;
+    }
     const interval = setInterval(() => {
       setSecondsLeft((prev) => prev - 1);
     }, 1000);
     return () => clearInterval(interval);
-  }, [secondsLeft]);
+  }, [secondsLeft, step]);
 
   // ---- RESEND TIMER ----
   useEffect(() => {
@@ -101,11 +107,15 @@ export default function useRegisterFlow({
     validOtp,
     otpFocus,
     setOtpFocus,
+    otpTouched,
+    setOtpTouched,
     secondsLeft,
     setSecondsLeft,
     resendSeconds,
     setResendSeconds,
     formattedTime,
+    canResend,
+    setCanResend,
 
 
     matchPwd,
@@ -113,6 +123,8 @@ export default function useRegisterFlow({
     validMatch,
     matchFocus,
     setMatchFocus,
+    matchTouched,
+    setMatchTouched,
 
     success,
     setSuccess,

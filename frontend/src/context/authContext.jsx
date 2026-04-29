@@ -1,11 +1,13 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { login, me, logout as apiLogout } from "../api/auth.service";
+import { InactivityModal } from "../components/popupModal";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showInactivityPopup, setShowInactivityPopup] = useState(false);
 
   // INITIAL SESSION CHECK
   useEffect(() => {
@@ -23,27 +25,41 @@ export function AuthProvider({ children }) {
   }, []);
 
 
-  // AUTO LOGOUT ON IDLE (15 MIN)
+  // AUTO LOGOUT ON IDLE (15 MIN total, Warning at 10 MIN)
   useEffect(() => {
-    let timeout;
+    if (!user) return; // Only track if logged in
+
+    let warningTimeout;
+    let logoutTimeout;
 
     function resetTimer() {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => {
+      clearTimeout(warningTimeout);
+      clearTimeout(logoutTimeout);
+      
+      if (showInactivityPopup) setShowInactivityPopup(false);
+
+      // Warning at 10 minutes (5 minutes left)
+      warningTimeout = setTimeout(() => {
+        setShowInactivityPopup(true);
+      }, 10 * 60 * 1000);
+
+      // Final Logout at 15 minutes
+      logoutTimeout = setTimeout(() => {
         logoutUser();
       }, 15 * 60 * 1000);
     }
 
-    window.addEventListener("mousemove", resetTimer);
-    window.addEventListener("keydown", resetTimer);
+    const events = ["mousemove", "keydown", "mousedown", "touchstart"];
+    events.forEach(event => window.addEventListener(event, resetTimer));
+    
     resetTimer();
 
     return () => {
-      clearTimeout(timeout);
-      window.removeEventListener("mousemove", resetTimer);
-      window.removeEventListener("keydown", resetTimer);
+      clearTimeout(warningTimeout);
+      clearTimeout(logoutTimeout);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
     };
-  }, []);
+  }, [user, showInactivityPopup]);
 
   async function loginUser(identifier, password) {
     const data = await login(identifier, password);
@@ -55,6 +71,12 @@ export function AuthProvider({ children }) {
   function logoutUser() {
     apiLogout();
     setUser(null);
+    setShowInactivityPopup(false);
+  }
+
+  function stayActive() {
+    setShowInactivityPopup(false);
+    // Timers will be reset by the useEffect watching showInactivityPopup
   }
 
   return (
@@ -64,11 +86,18 @@ export function AuthProvider({ children }) {
         loading,
         loginUser,
         logoutUser,
+        stayActive,
         isAuthenticated: !!user,
         role: user?.role,
       }}
     >
       {children}
+      {showInactivityPopup && (
+        <InactivityModal 
+          onStayActive={stayActive} 
+          onLogout={logoutUser} 
+        />
+      )}
     </AuthContext.Provider>
   );
 }
@@ -76,3 +105,4 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
+

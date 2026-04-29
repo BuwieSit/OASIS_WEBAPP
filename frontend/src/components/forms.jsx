@@ -3,7 +3,6 @@ import Title from "../utilities/title";
 import { useNavigate } from "react-router-dom";
 import { clearToken } from "../api/token";
 import { useAuth } from "../context/authContext";
-import { useEffect } from "react";
 import {
   sendOtp,
   verifyOtp,
@@ -13,10 +12,11 @@ import {
   resetPassword
 } from "../api/auth.service";
 import Subtitle from "../utilities/subtitle";
-import { Eye, EyeClosed } from "lucide-react";
+import { Eye, EyeClosed, X } from "lucide-react";
 import { Label } from "../utilities/label";
 import useRegisterFlow from "../utils/RegisterFlow";
 import useAuthFormLogic from "../utils/AuthFormLogic";
+import { GeneralPopupModal } from "./popupModal";
 
 export function UpdatedReg() {
   const navigate = useNavigate();
@@ -32,10 +32,10 @@ export function UpdatedReg() {
     setErrMsg,
     validName,
     validPwd,
-    userFocus,
-    setUserFocus,
-    pwdFocus,
-    setPwdFocus,
+    userTouched,
+    setUserTouched,
+    pwdTouched,
+    setPwdTouched,
     showPassword,
     togglePasswordVisibility,
   } = useAuthFormLogic();
@@ -49,18 +49,20 @@ export function UpdatedReg() {
     otp,
     setOtp,
     validOtp,
-    otpFocus,
-    setOtpFocus,
+    otpTouched,
+    setOtpTouched,
     secondsLeft,
     setSecondsLeft,
     resendSeconds,
     setResendSeconds,
     formattedTime,
+    canResend,
+    setCanResend,
     matchPwd,
     setMatchPwd,
     validMatch,
-    matchFocus,
-    setMatchFocus,
+    matchTouched,
+    setMatchTouched,
   } = useRegisterFlow({
     user,
     pwd,
@@ -69,7 +71,6 @@ export function UpdatedReg() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("SUBMIT CLICKED", step);
    
     if (step !== STEPS.PASSWORD) return;
   
@@ -77,7 +78,7 @@ export function UpdatedReg() {
       setErrMsg("Invalid Entry");
       return;
     }
-    // /auth/send-otp-register
+
     try {
       clearToken();
       await completeRegistration(user, pwd, matchPwd);
@@ -94,6 +95,16 @@ export function UpdatedReg() {
   
   return (
     <>
+        {errMsg && (
+            <GeneralPopupModal
+                title="Authentication Error"
+                text={errMsg}
+                icon={<X size={35} color="#800020" />}
+                onClose={() => setErrMsg("")}
+                isFailed
+                time={4000}
+            />
+        )}
         <>
           <section className="w-full p-1 flex flex-col items-center justify-center gap-1">
             <Title text={"Register"}></Title>
@@ -115,15 +126,16 @@ export function UpdatedReg() {
                               onChange={(e) => setUser(e.target.value)}
                               ariaInvalid={validName ? "false" : "true"}
                               ariaDescribedBy="uidnote"
-                              onFocus={() => setUserFocus(true)}
-                              onBlur={() => setUserFocus(false)}
+                              onBlur={() => setUserTouched(true)}
+                              hasError={userTouched && !validName}
                             />
                         </div>
                         
-                        <p id="uidnote" className={userFocus && user && !validName ? 
-                          "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center": "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>Must be a valid webmail.<br/> 
-                        E.g. juanmdelacruz@iskolarngbayan.pup.edu.ph
-                        </p>
+                        <div className="w-full min-h-8 flex items-center justify-center">
+                            <p id="uidnote" className={`text-[0.75rem] font-medium transition-all duration-300 ${userTouched && !validName ? "text-red-500 opacity-100 transform translate-y-0" : "opacity-0 transform -translate-y-2 pointer-events-none"}`}>
+                                Must be a valid PUP webmail address
+                            </p>
+                        </div>
                         <Button
                             text="Send OTP"
                             type="button"
@@ -135,6 +147,7 @@ export function UpdatedReg() {
                                     setStep(STEPS.OTP);
                                     setSecondsLeft(10 * 60);
                                     setResendSeconds(0);
+                                    setCanResend(false);
                                 } catch {
                                     setErrMsg("Failed to send OTP");
                                 }
@@ -146,7 +159,7 @@ export function UpdatedReg() {
                 {/* OTP */}
                 {step === STEPS.OTP && (
                     <>
-                        <div className="text-center">
+                        <div className="text-center w-full">
                             <Label labelText={"Enter OTP"} fieldId={"otp"}/>
                             <ValidatedInputField
                                 ref={otpRef}
@@ -157,15 +170,18 @@ export function UpdatedReg() {
                                 placeholder="6-digit OTP"
                                 onChange={(e) => setOtp(e.target.value)}
                                 ariaDescribedBy="otpnote"
-                                onFocus={() => setOtpFocus(true)}
-                                onBlur={() => setOtpFocus(false)}
+                                onBlur={() => setOtpTouched(true)}
+                                hasError={otpTouched && !validOtp}
                             />
-                        <div className="w-full mt-2">
-                          <Subtitle isItalic color={"text-oasis-gray"} text={secondsLeft > 0 ? `OTP expires in ${formattedTime}` : "OTP expired"}/>
+                            <div className="w-full mt-2">
+                                <Subtitle isItalic color={"text-oasis-gray"} text={secondsLeft > 0 ? `OTP expires in ${formattedTime}` : "OTP expired"}/>
+                            </div>
                         </div>
-                        </div>
-                        <div className="w-full h-10 mb-1 flex align-center justify-center">
-                          <p id="otpnote" className={otpFocus && otp && !validOtp ? "opacity-100 font-oasis-text text-red-600 text-xs ": "opacity-0 "}> OTP must be a 6-digit number.</p>
+
+                        <div className="w-full min-h-6 flex items-center justify-center">
+                            <p id="otpnote" className={`text-[0.75rem] font-medium transition-all duration-300 ${otpTouched && !validOtp ? "text-red-500 opacity-100" : "opacity-0 pointer-events-none"}`}>
+                                OTP must be a 6-digit number
+                            </p>
                         </div>
                         
                         <Button
@@ -183,39 +199,42 @@ export function UpdatedReg() {
                             }}
                         />
 
-                        <div className="mt-2 text-center h-5">
-                          {resendSeconds > 0 ? (
-                            <p className="text-oasis-gray text-xs italic">
-                              Resend OTP in {resendSeconds}s
-                            </p>
-                          ) : (
-                            <button
-                              type="button"
-                              className="text-oasis-button-dark hover:text-oasis-button-light font-bold text-xs underline cursor-pointer"
-                              onClick={async (e) => {
-                                e.preventDefault();
-                                try {
-                                  await sendOtp(user);
-                                  setOtp("");
-                                  setSecondsLeft(10 * 60);
-                                  setResendSeconds(60);
-                                  setErrMsg("");
-                                } catch {
-                                  setErrMsg("Failed to send OTP");
-                                }
-                              }}
-                            >
-                              Resend OTP
-                            </button>
-                          )}
-                        </div>
+                        {canResend && (
+                          <div className="mt-2 text-center h-5">
+                            {resendSeconds > 0 ? (
+                              <p className="text-oasis-gray text-xs italic">
+                                Resend OTP in {resendSeconds}s
+                              </p>
+                            ) : (
+                              <button
+                                type="button"
+                                className="text-oasis-button-dark hover:text-oasis-button-light font-bold text-xs underline cursor-pointer"
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  try {
+                                    await sendOtp(user);
+                                    setOtp("");
+                                    setSecondsLeft(10 * 60);
+                                    setResendSeconds(60);
+                                    setCanResend(false);
+                                    setErrMsg("");
+                                  } catch {
+                                    setErrMsg("Failed to send OTP");
+                                  }
+                                }}
+                              >
+                                Resend OTP
+                              </button>
+                            )}
+                          </div>
+                        )}
                     </>
                 )}
 
                 {/* PASSWORD */}
                 {step === STEPS.PASSWORD && (
                   <>
-                      <div className="text-center">
+                      <div className="text-center relative w-full">
                           <Label labelText={"Password"} fieldId={"password"}/>
                           <ValidatedInputField
                               ref={pwdRef}
@@ -226,15 +245,24 @@ export function UpdatedReg() {
                               onChange={(e) => setPwd(e.target.value)}
                               ariaInvalid={!validPwd}
                               ariaDescribedBy="pwdnote"
-                              onFocus={() => setPwdFocus(true)}
-                              onBlur={() => setPwdFocus(false)}
+                              onBlur={() => setPwdTouched(true)}
+                              hasError={pwdTouched && !validPwd}
                           />
 
                           {showPassword ? 
-                            <Eye color="#3E8679" className="absolute top-[35%] right-[10%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/> 
+                            <Eye color="#3E8679" className="absolute top-[65%] right-[5%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/> 
                           : 
-                            <EyeClosed color="#3E8679" className="absolute top-[35%] right-[10%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/>
+                            <EyeClosed color="#3E8679" className="absolute top-[65%] right-[5%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/>
                           }
+                      </div>
+
+                      <div className="w-full min-h-8 flex items-center justify-center text-center">
+                            <p id="pwdnote" className={`text-[0.7rem] leading-tight font-medium transition-all duration-300 ${pwdTouched && !validPwd ? "text-red-500 opacity-100" : "opacity-0 pointer-events-none"}`}>
+                                Password must be 8+ characters with uppercase,<br/>number, and special character
+                            </p>
+                      </div>
+
+                      <div className="text-center relative w-full">
                           <ValidatedInputField
                               type={showPassword ? "text" : "password"}
                               id="confirm_pwd"
@@ -243,25 +271,15 @@ export function UpdatedReg() {
                               ariaInvalid={!validMatch}
                               ariaDescribedBy="matchnote"
                               required
-                              onFocus={() => setMatchFocus(true)}
-                              onBlur={() => setMatchFocus(false)}
+                              onBlur={() => setMatchTouched(true)}
+                              hasError={matchTouched && !validMatch}
                           />
-                          
                       </div>
 
-                      <div className="w-full h-20 flex align-center justify-center">
-                          {pwdFocus && 
-                            <p id="pwdnote" className={pwdFocus && pwd && !validPwd ? "opacity-100 font-oasis-text text-red-600 text-xs ": "opacity-0 "}>
-                            Password must not be less than 8 characters.<br/>
-                            Including an uppercase letter, and special character
+                      <div className="w-full min-h-6 flex items-center justify-center">
+                            <p id="matchnote" className={`text-[0.75rem] font-medium transition-all duration-300 ${matchTouched && !validMatch ? "text-red-500 opacity-100" : "opacity-0 pointer-events-none"}`}>
+                                Passwords do not match
                             </p>
-                          }
-
-                          {matchFocus && 
-                            <p id="matchnote" className={matchFocus && matchPwd && !validMatch ? "opacity-100 font-oasis-text text-red-600 text-xs": "opacity-0 "}>
-                            password not matched!
-                            </p>
-                          }
                       </div>
                       
                     <Button text="Register" type="submit" disabled={!validPwd || !validMatch} />
@@ -269,15 +287,6 @@ export function UpdatedReg() {
             )}
           </form>
         </>
-      <section className="w-full p-1 flex flex-col items-center justify-center gap-1">
-            <p
-              ref={errRef}
-              className={`${errMsg ? "right-0" : "right-full"} text-red-500 italic font-bold`}
-              aria-live="assertive"
-            >
-              {errMsg}
-            </p>
-        </section>
     </>
   );
 }
@@ -298,10 +307,10 @@ export function UpdatedLogin() {
     setErrMsg,
     validName,
     validPwd,
-    userFocus,
-    setUserFocus,
-    pwdFocus,
-    setPwdFocus,
+    userTouched,
+    setUserTouched,
+    pwdTouched,
+    setPwdTouched,
     showPassword,
     togglePasswordVisibility,
   } = useAuthFormLogic({ allowAdmin: true });
@@ -325,6 +334,16 @@ export function UpdatedLogin() {
 
   return (
     <>
+      {errMsg && (
+        <GeneralPopupModal
+            title="Login Error"
+            text={errMsg}
+            icon={<X size={35} color="#800020" />}
+            onClose={() => setErrMsg("")}
+            isFailed
+            time={4000}
+        />
+      )}
       <section className="w-full p-1 flex flex-col items-center justify-center gap-1">
         <Title text={"Login"} />
       </section>
@@ -345,45 +364,45 @@ export function UpdatedLogin() {
             onChange={(e) => setUser(e.target.value)}
             required
             ariaInvalid={!validName}
-            onFocus={() => setUserFocus(true)}
-            onBlur={() => setUserFocus(false)}
+            onBlur={() => setUserTouched(true)}
+            hasError={userTouched && !validName}
           />
 
-          <Label labelText={"Password"} fieldId={"password"}/>
-            <ValidatedInputField
-              type={showPassword ? "text" : "password"}
-              value={pwd}
-              id="password"
-              placeholder="Please enter password"
-              onChange={(e) => setPwd(e.target.value)}
-              required
-              aria-invalid={!validPwd}
-              onFocus={() => setPwdFocus(true)}
-              onBlur={() => setPwdFocus(false)}
-              onCopy={handleLogin}
-              onCut={handleLogin}
-              onPaste={handleLogin}
-            />
-          {showPassword ? 
-            <Eye color="#3E8679" className="absolute top-1/2 right-[10%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/> 
-          : 
-            <EyeClosed color="#3E8679" className="absolute top-1/2 right-[10%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/>}
-          
+          <div className="relative w-full">
+            <Label labelText={"Password"} fieldId={"password"}/>
+              <ValidatedInputField
+                type={showPassword ? "text" : "password"}
+                value={pwd}
+                id="password"
+                placeholder="Please enter password"
+                onChange={(e) => setPwd(e.target.value)}
+                required
+                aria-invalid={!validPwd}
+                onBlur={() => setPwdTouched(true)}
+                onCopy={handleLogin}
+                onCut={handleLogin}
+                onPaste={handleLogin}
+                hasError={pwdTouched && !validPwd}
+              />
+            {showPassword ? 
+              <Eye color="#3E8679" className="absolute top-1/2 right-[5%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/> 
+            : 
+              <EyeClosed color="#3E8679" className="absolute top-1/2 right-[5%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/>}
+          </div>
         </div>
 
         <Button text="Login" type="submit" disabled={!validName || !validPwd}/>
-        <div className="w-full flex justify-center items-center h-10">
-          {userFocus && 
-            <p className={userFocus && user && !validName ? "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center" : "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>
-            Must be a valid PUP webmail. <br/> E.g. juanmdelacruz@iskolarngbayan.pup.edu.ph
-            </p>
-          }
-          {pwdFocus && 
-            <p className={pwdFocus && pwd && !validPwd ? "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center" : "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>
-            Password must be 8+ chars with uppercase, number, special char.
-            </p> 
-          }
-          <Subtitle ariaLive={"assertive"} ref={errRef} text={errMsg} color={"text-red-500"} className={"italic"} weight="font-bold"/>
+        <div className="w-full flex justify-center items-center h-fit">
+            <div className="flex flex-col gap-1 w-full text-center">
+                <div className="min-h-10 flex flex-col items-center justify-center">
+                    <p className={`text-[0.75rem] font-medium transition-all duration-300 ${userTouched && !validName ? "text-red-500 opacity-100" : "opacity-0 pointer-events-none h-0"}`}>
+                        Must be a valid PUP webmail address
+                    </p>
+                    <p className={`text-[0.75rem] font-medium transition-all duration-300 ${pwdTouched && !validPwd ? "text-red-500 opacity-100" : "opacity-0 pointer-events-none h-0"}`}>
+                        Password must be at least 8 characters
+                    </p> 
+                </div>
+            </div>
         </div>
         
       </form>
@@ -406,10 +425,10 @@ export function ForgotPassword() {
     setErrMsg,
     validName,
     validPwd,
-    userFocus,
-    setUserFocus,
-    pwdFocus,
-    setPwdFocus,
+    userTouched,
+    setUserTouched,
+    pwdTouched,
+    setPwdTouched,
     showPassword,
     togglePasswordVisibility,
   } = useAuthFormLogic();
@@ -423,18 +442,20 @@ export function ForgotPassword() {
     otp,
     setOtp,
     validOtp,
-    otpFocus,
-    setOtpFocus,
+    otpTouched,
+    setOtpTouched,
     secondsLeft,
     setSecondsLeft,
     resendSeconds,
     setResendSeconds,
     formattedTime,
+    canResend,
+    setCanResend,
     matchPwd,
     setMatchPwd,
     validMatch,
-    matchFocus,
-    setMatchFocus,
+    matchTouched,
+    setMatchTouched,
   } = useRegisterFlow({
     user,
     pwd,
@@ -450,7 +471,8 @@ export function ForgotPassword() {
         await sendResetOtp(user);
         setStep(STEPS.OTP);
         setSecondsLeft(10 * 60);
-        setResendSeconds(60);
+        setResendSeconds(0);
+        setCanResend(false);
       } else if (step === STEPS.OTP) {
         if (!validOtp) return;
         await verifyResetOtp(user, otp);
@@ -474,6 +496,16 @@ export function ForgotPassword() {
 
   return (
     <>
+      {errMsg && (
+        <GeneralPopupModal
+            title="Password Reset Error"
+            text={errMsg}
+            icon={<X size={35} color="#800020" />}
+            onClose={() => setErrMsg("")}
+            isFailed
+            time={4000}
+        />
+      )}
       <section className="w-full p-1 flex flex-col items-center justify-center gap-1">
         <Title text={"Forgot Password"} />
       </section>
@@ -500,15 +532,16 @@ export function ForgotPassword() {
                 onChange={(e) => setUser(e.target.value)}
                 ariaInvalid={validName ? "false" : "true"}
                 ariaDescribedBy="uidnote"
-                onFocus={() => setUserFocus(true)}
-                onBlur={() => setUserFocus(false)}
+                onBlur={() => setUserTouched(true)}
+                hasError={userTouched && !validName}
               />
             </div>
 
-            <p id="uidnote" className={userFocus && user && !validName ? 
-              "opacity-100 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center": "opacity-0 font-oasis-text text-red-900 text-[0.8rem] italic m-auto text-center"}>Must be a valid webmail.<br/> 
-            E.g. juanmdelacruz@iskolarngbayan.pup.edu.ph
-            </p>
+            <div className="w-full min-h-8 flex items-center justify-center">
+                <p id="uidnote" className={`text-[0.75rem] font-medium transition-all duration-300 ${userTouched && !validName ? "text-red-500 opacity-100 transform translate-y-0" : "opacity-0 transform -translate-y-2 pointer-events-none"}`}>
+                    Must be a valid PUP webmail address
+                </p>
+            </div>
 
             <Button 
               text="Send OTP" 
@@ -520,6 +553,7 @@ export function ForgotPassword() {
                   setStep(STEPS.OTP);
                   setSecondsLeft(10 * 60);
                   setResendSeconds(0);
+                  setCanResend(false);
                 } catch (err) {
                   setErrMsg(err?.response?.data?.error || "Failed to send reset OTP");
                 }
@@ -531,7 +565,7 @@ export function ForgotPassword() {
         {/* STEP 2 — OTP */}
         {step === STEPS.OTP && (
           <>
-            <div className="text-center">
+            <div className="text-center w-full">
               <Label labelText={"Enter OTP"} fieldId={"otp"}/>
               <ValidatedInputField
                 type="text"
@@ -543,16 +577,18 @@ export function ForgotPassword() {
                 onChange={(e) => setOtp(e.target.value)}
                 ariaInvalid={validOtp ? "false" : "true"}
                 ariaDescribedBy="otpnote"
-                onFocus={() => setOtpFocus(true)}
-                onBlur={() => setOtpFocus(false)}
+                onBlur={() => setOtpTouched(true)}
+                hasError={otpTouched && !validOtp}
               />
               <div className="w-full mt-2">
                 <Subtitle isItalic color={"text-oasis-gray"} text={secondsLeft > 0 ? `OTP expires in ${formattedTime}` : "OTP expired"}/>
               </div>
             </div>
 
-            <div className="w-full h-10 mb-1 flex align-center justify-center">
-              <p id="otpnote" className={otpFocus && otp && !validOtp ? "opacity-100 font-oasis-text text-red-600 text-xs ": "opacity-0 "}> OTP must be a 6-digit number.</p>
+            <div className="w-full min-h-6 flex items-center justify-center">
+                <p id="otpnote" className={`text-[0.75rem] font-medium transition-all duration-300 ${otpTouched && !validOtp ? "text-red-500 opacity-100" : "opacity-0 pointer-events-none"}`}>
+                    OTP must be a 6-digit number
+                </p>
             </div>
 
             <Button 
@@ -569,39 +605,42 @@ export function ForgotPassword() {
                 }}
               />
 
-              <div className="mt-2 text-center h-5">
-                {resendSeconds > 0 ? (
-                  <p className="text-oasis-gray text-xs italic">
-                    Resend OTP in {resendSeconds}s
-                  </p>
-                ) : (
-                  <button
-                    type="button"
-                    className="text-oasis-button-dark hover:text-oasis-button-light font-bold text-xs underline cursor-pointer"
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      try {
-                        await sendResetOtp(user);
-                        setOtp("");
-                        setSecondsLeft(10 * 60);
-                        setResendSeconds(60);
-                        setErrMsg("");
-                      } catch (err) {
-                        setErrMsg(err?.response?.data?.error || "Failed to send reset OTP");
-                      }
-                    }}
-                  >
-                    Resend OTP
-                  </button>
-                )}
-              </div>
+              {canResend && (
+                <div className="mt-2 text-center h-5">
+                  {resendSeconds > 0 ? (
+                    <p className="text-oasis-gray text-xs italic">
+                      Resend OTP in {resendSeconds}s
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      className="text-oasis-button-dark hover:text-oasis-button-light font-bold text-xs underline cursor-pointer"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        try {
+                          await sendResetOtp(user);
+                          setOtp("");
+                          setSecondsLeft(10 * 60);
+                          setResendSeconds(60);
+                          setCanResend(false);
+                          setErrMsg("");
+                        } catch (err) {
+                          setErrMsg(err?.response?.data?.error || "Failed to send reset OTP");
+                        }
+                      }}
+                    >
+                      Resend OTP
+                    </button>
+                  )}
+                </div>
+              )}
           </>
         )}
 
         {/* STEP 3 — NEW PASSWORD */}
         {step === STEPS.PASSWORD && (
           <>
-            <div className="text-center">
+            <div className="text-center relative w-full">
               <Label labelText={"New Password"} fieldId={"new_password"}/>
               <ValidatedInputField
                 type={showPassword ? "text" : "password"}
@@ -613,16 +652,24 @@ export function ForgotPassword() {
                 onChange={(e) => setPwd(e.target.value)}
                 ariaInvalid={validPwd ? "false" : "true"}
                 ariaDescribedBy="pwdnote"
-                onFocus={() => setPwdFocus(true)}
-                onBlur={() => setPwdFocus(false)}
+                onBlur={() => setPwdTouched(true)}
+                hasError={pwdTouched && !validPwd}
               />
 
               {showPassword ? 
-                <Eye color="#3E8679" className="absolute top-[35%] right-[10%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/> 
+                <Eye color="#3E8679" className="absolute top-[65%] right-[5%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/> 
               : 
-                <EyeClosed color="#3E8679" className="absolute top-[35%] right-[10%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/>
+                <EyeClosed color="#3E8679" className="absolute top-[65%] right-[5%] -translate-x-1/2 -translate-y-1/2 cursor-pointer" onClick={togglePasswordVisibility} onMouseDown={(e) => e.preventDefault()}/>
               }
+            </div>
 
+            <div className="w-full min-h-8 flex items-center justify-center text-center">
+                <p id="pwdnote" className={`text-[0.7rem] leading-tight font-medium transition-all duration-300 ${pwdTouched && !validPwd ? "text-red-500 opacity-100" : "opacity-0 pointer-events-none"}`}>
+                    Password must be 8+ characters with uppercase,<br/>number, and special character
+                </p>
+            </div>
+
+            <div className="text-center relative w-full">
               <ValidatedInputField
                 type={showPassword ? "text" : "password"}
                 id="confirm_password"
@@ -632,24 +679,15 @@ export function ForgotPassword() {
                 onChange={(e) => setMatchPwd(e.target.value)}
                 ariaInvalid={validMatch ? "false" : "true"}
                 ariaDescribedBy="matchnote"
-                onFocus={() => setMatchFocus(true)}
-                onBlur={() => setMatchFocus(false)}
+                onBlur={() => setMatchTouched(true)}
+                hasError={matchTouched && !validMatch}
               />
             </div>
 
-            <div className="w-full h-20 flex align-center justify-center">
-              {pwdFocus && 
-                <p id="pwdnote" className={pwdFocus && pwd && !validPwd ? "opacity-100 font-oasis-text text-red-600 text-xs ": "opacity-0 "}>
-                Password must not be less than 8 characters.<br/>
-                Including an uppercase letter, and special character
+            <div className="w-full min-h-6 flex items-center justify-center">
+                <p id="matchnote" className={`text-[0.75rem] font-medium transition-all duration-300 ${matchTouched && !validMatch ? "text-red-500 opacity-100" : "opacity-0 pointer-events-none"}`}>
+                    Passwords do not match
                 </p>
-              }
-
-              {matchFocus && 
-                <p id="matchnote" className={matchFocus && matchPwd && !validMatch ? "opacity-100 font-oasis-text text-red-600 text-xs": "opacity-0 "}>
-                password not matched!
-                </p>
-              }
             </div>
 
             <Button
@@ -660,10 +698,6 @@ export function ForgotPassword() {
           </>
         )}
       </form>
-
-      <section className="w-full p-1 flex flex-col items-center justify-center h-10">
-        <Subtitle ariaLive={"assertive"} ref={errRef} text={errMsg} color={"text-red-500"} className={"italic"} weight="font-bold"/>
-      </section>
     </>
   );
 }
@@ -684,6 +718,7 @@ export function ValidatedInputField({
   onCopy,
   onCut,
   onPaste,
+  hasError
 }) {
   return (
     <>
@@ -704,7 +739,11 @@ export function ValidatedInputField({
           onCut={onCut}
           onPaste={onPaste}
 
-          className="w-full p-3 border-b-2 border-oasis-light focus:outline-none focus:border-oasis-aqua transition-all"
+          className={`w-full p-3 border-b-2 transition-all duration-300 focus:outline-none ${
+            hasError 
+            ? "border-red-500 focus:border-red-600 bg-red-50/10" 
+            : "border-oasis-light focus:border-oasis-aqua"
+          }`}
       />
     </>
   )
