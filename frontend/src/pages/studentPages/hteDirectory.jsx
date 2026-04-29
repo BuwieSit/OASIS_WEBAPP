@@ -1,6 +1,6 @@
 import MainScreen from '../../layouts/mainScreen'
 import Title from '../../utilities/title'
-import fallbackImg from "../../assets/fallbackImage.jpg"
+import fallbackImg from '../../assets/hte_placeholder.png';
 import Subtitle from '../../utilities/subtitle';
 import EmblaCarousel from '../../components/EmblaCarousel';
 import "../../embla.css";
@@ -198,7 +198,7 @@ export default function HteDirectory() {
     const OPTIONS = { loop: true }
     const slides = htes.map(hte => ({
         id: hte.id,
-        thumbnail: hte.thumbnail,
+        thumbnail: hte.thumbnail || htePlaceholder,
         hteName: hte.hteName,
         hteAddress: hte.location
     }));

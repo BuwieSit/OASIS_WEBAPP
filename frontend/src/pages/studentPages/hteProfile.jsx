@@ -4,7 +4,7 @@ import Title from "../../utilities/title";
 import Subtitle from "../../utilities/subtitle";
 import { AnnounceButton } from "../../components/button";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import fallbackImg from "../../assets/htePlaceholder.png";
+import fallbackImg from "../../assets/hte_placeholder.png";
 import { fetchHTEById, downloadMOA, submitHteReview, getHteReviews } from "../../api/student.service";
 import { StatusView } from "../../utilities/tableUtil";
 import SvgLoader from "../../components/SvgLoader";

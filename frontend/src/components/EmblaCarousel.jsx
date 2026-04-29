@@ -1,13 +1,13 @@
-import React, { useCallback } from 'react'
+import React, { useCallback } from 'react';
 import {
   PrevButton,
   NextButton,
   usePrevNextButtons
-} from './EmblaCarouselArrowButtons'
-import Autoplay from 'embla-carousel-autoplay'
-import useEmblaCarousel from 'embla-carousel-react'
-import Subtitle from '../utilities/subtitle'
-import { MapPinned } from 'lucide-react'
+} from './EmblaCarouselArrowButtons';
+import Autoplay from 'embla-carousel-autoplay';
+import useEmblaCarousel from 'embla-carousel-react';
+import Subtitle from '../utilities/subtitle';
+import { MapPinned } from 'lucide-react';
 
 export function CarouselItem({ thumbnail, hteName = "Name of HTE", hteAddress = "Address of HTE", onClick }) {
     return (
@@ -23,7 +23,7 @@ export function CarouselItem({ thumbnail, hteName = "Name of HTE", hteAddress = 
                     }}
                 >
                     {/* TEXT CONTENT */}
-                    <div className='w-full flex flex-col items-start p-3 backdrop-blur-sm bg-white/10 text-white select-none'>
+                    <div className='w-full flex flex-col items-start p-3 backdrop-blur-sm bg-black/30 text-white select-none'>
                         <Subtitle text={hteName} weight={"font-bold"} size={"text-[1rem]"} className={"line-clamp-1"}/>
 
                         <section className='w-full flex flex-row justify-start items-center gap-3'>
