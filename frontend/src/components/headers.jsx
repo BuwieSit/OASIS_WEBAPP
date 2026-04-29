@@ -1,5 +1,6 @@
 import LogoWrap from "../utilities/logoWrap";
 import oasisLogo from "../assets/oasisLogo.png";
+import testPfp from "../assets/testprofile.png";
 import NavItem from "./navItem";
 import HoverLift from "./hoverLift";
 import { useState, useEffect, useRef } from "react";
@@ -147,8 +148,8 @@ export function Header({ admin, notifications = [], setNotifications = () => {} 
                     >
                         {!admin && (
                             <img
-                            className="w-8 rounded-full object-cover aspect-square hidden md:block lg:block"
-                            src={profile?.photo_url}
+                            className="w-8 rounded-full object-cover aspect-square hidden md:block lg:block cursor-pointer"
+                            src={profile?.photo_url || testPfp}
                             alt="Profile"
                             />
                         )}
@@ -429,7 +430,7 @@ export function StudentHeader({ showNavigation = true, notifications = [], setNo
                     >
                         <img
                         className="w-8 rounded-full object-cover aspect-square hidden md:block lg:block cursor-pointer"
-                        src={profile?.photo_url}
+                        src={profile?.photo_url || testPfp}
                         alt="Profile"
                         />
                     </HoverLift>
