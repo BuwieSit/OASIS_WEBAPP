@@ -38,6 +38,8 @@ export function UpdatedReg() {
     setPwdTouched,
     showPassword,
     togglePasswordVisibility,
+    isSubmitting,
+    setIsSubmitting,
   } = useAuthFormLogic();
 
   const {
@@ -58,6 +60,8 @@ export function UpdatedReg() {
     formattedTime,
     canResend,
     setCanResend,
+    isSendingOtp,
+    setIsSendingOtp,
     matchPwd,
     setMatchPwd,
     validMatch,
@@ -79,6 +83,7 @@ export function UpdatedReg() {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       clearToken();
       await completeRegistration(user, pwd, matchPwd);
@@ -89,6 +94,8 @@ export function UpdatedReg() {
         err?.response?.data?.message ||
         "Registration failed."
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -137,11 +144,12 @@ export function UpdatedReg() {
                             </p>
                         </div>
                         <Button
-                            text="Send OTP"
+                            text={isSendingOtp ? "Sending OTP..." : "Send OTP"}
                             type="button"
-                            disabled={!validName}
+                            disabled={!validName || isSendingOtp}
                             onClick={async (e) => {
                                 e.preventDefault();
+                                setIsSendingOtp(true);
                                 try {
                                     await sendOtp(user);
                                     setStep(STEPS.OTP);
@@ -150,6 +158,8 @@ export function UpdatedReg() {
                                     setCanResend(false);
                                 } catch (err) {
                                     setErrMsg(err?.response?.data?.error || err?.response?.data?.message || "Failed to send OTP");
+                                } finally {
+                                    setIsSendingOtp(false);
                                 }
                             }}
                         />
@@ -174,7 +184,8 @@ export function UpdatedReg() {
                                 hasError={otpTouched && !validOtp}
                             />
                             <div className="w-full mt-2">
-                                <Subtitle isItalic color={"text-oasis-gray"} text={secondsLeft > 0 ? `OTP expires in ${formattedTime}` : "OTP expired"}/>
+                                <Subtitle isCenter isItalic color={"text-oasis-gray"} text={secondsLeft > 0 ? `OTP expires in ${formattedTime}` : "OTP expired"}/>
+                                <Subtitle isCenter isItalic color={"text-oasis-gray"} size="text-[0.7rem]" text={"Check your junk/spam folder if you don't see the email."} className="mt-1" />
                             </div>
                         </div>
 
@@ -282,7 +293,7 @@ export function UpdatedReg() {
                             </p>
                       </div>
                       
-                    <Button text="Register" type="submit" disabled={!validPwd || !validMatch} />
+                    <Button text={isSubmitting ? "Registering..." : "Register"} type="submit" disabled={!validPwd || !validMatch || isSubmitting} />
                   </>
             )}
           </form>
@@ -313,6 +324,8 @@ export function UpdatedLogin() {
     setPwdTouched,
     showPassword,
     togglePasswordVisibility,
+    isSubmitting,
+    setIsSubmitting,
   } = useAuthFormLogic({ allowAdmin: true });
 
   const handleLogin = async (e) => {
@@ -323,12 +336,15 @@ export function UpdatedLogin() {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const res = await loginUser(user, pwd);
       const redirectPath = res.role === "ADMIN" ? "/admin" : "/home";
       navigate(redirectPath, { replace: true });
     } catch (err) {
       setErrMsg(err?.response?.data?.error || err?.response?.data?.message || "Login failed. Please check your credentials.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -391,7 +407,7 @@ export function UpdatedLogin() {
           </div>
         </div>
 
-        <Button text="Login" type="submit" disabled={!validName || !validPwd}/>
+        <Button text={isSubmitting ? "Logging in..." : "Login"} type="submit" disabled={!validName || !validPwd || isSubmitting}/>
         <div className="w-full flex justify-center items-center h-fit">
             <div className="flex flex-col gap-1 w-full text-center">
                 <div className="min-h-10 flex flex-col items-center justify-center">
@@ -431,6 +447,8 @@ export function ForgotPassword() {
     setPwdTouched,
     showPassword,
     togglePasswordVisibility,
+    isSubmitting,
+    setIsSubmitting,
   } = useAuthFormLogic();
 
   const {
@@ -451,6 +469,8 @@ export function ForgotPassword() {
     formattedTime,
     canResend,
     setCanResend,
+    isSendingOtp,
+    setIsSendingOtp,
     matchPwd,
     setMatchPwd,
     validMatch,
@@ -465,6 +485,7 @@ export function ForgotPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    setIsSubmitting(true);
     try {
       if (step === STEPS.EMAIL) {
         if (!validName) return;
@@ -491,6 +512,8 @@ export function ForgotPassword() {
         err?.response?.data?.error ||
         "An error occurred. Please try again."
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -544,10 +567,11 @@ export function ForgotPassword() {
             </div>
 
             <Button 
-              text="Send OTP" 
+              text={isSendingOtp ? "Sending OTP..." : "Send OTP"} 
               type="button" 
-              disabled={!validName} 
+              disabled={!validName || isSendingOtp} 
               onClick={async () => {
+                setIsSendingOtp(true);
                 try {
                   await sendResetOtp(user);
                   setStep(STEPS.OTP);
@@ -556,6 +580,8 @@ export function ForgotPassword() {
                   setCanResend(false);
                 } catch (err) {
                   setErrMsg(err?.response?.data?.error || "Failed to send reset OTP");
+                } finally {
+                  setIsSendingOtp(false);
                 }
               }}
             />
@@ -581,7 +607,8 @@ export function ForgotPassword() {
                 hasError={otpTouched && !validOtp}
               />
               <div className="w-full mt-2">
-                <Subtitle isItalic color={"text-oasis-gray"} text={secondsLeft > 0 ? `OTP expires in ${formattedTime}` : "OTP expired"}/>
+                <Subtitle isCenter isItalic color={"text-oasis-gray"} text={secondsLeft > 0 ? `OTP expires in ${formattedTime}` : "OTP expired"}/>
+                <Subtitle isCenter isItalic color={"text-oasis-gray"} size="text-[0.7rem]" text={"Check your junk/spam folder if you don't see the email."} className="mt-1" />
               </div>
             </div>
 
@@ -691,9 +718,9 @@ export function ForgotPassword() {
             </div>
 
             <Button
-              text="Reset Password"
+              text={isSubmitting ? "Resetting..." : "Reset Password"}
               type="submit"
-              disabled={!validPwd || !validMatch}
+              disabled={!validPwd || !validMatch || isSubmitting}
             />
           </>
         )}

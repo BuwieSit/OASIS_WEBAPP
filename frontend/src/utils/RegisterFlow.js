@@ -27,6 +27,7 @@ export default function useRegisterFlow({
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [resendSeconds, setResendSeconds] = useState(0);
   const [canResend, setCanResend] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
 
 
   // ---- MATCH PASSWORD ----
@@ -116,6 +117,8 @@ export default function useRegisterFlow({
     formattedTime,
     canResend,
     setCanResend,
+    isSendingOtp,
+    setIsSendingOtp,
 
 
     matchPwd,

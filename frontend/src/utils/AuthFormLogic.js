@@ -18,6 +18,7 @@ export default function useAuthFormLogic({ allowAdmin = false } = {}) {
   const [pwdTouched, setPwdTouched] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const togglePasswordVisibility = () => {
     setShowPassword(prev => !prev);
@@ -68,5 +69,7 @@ export default function useAuthFormLogic({ allowAdmin = false } = {}) {
     setPwdTouched,
     showPassword,
     togglePasswordVisibility,
+    isSubmitting,
+    setIsSubmitting,
   };
 }
