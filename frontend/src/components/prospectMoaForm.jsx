@@ -359,9 +359,9 @@ export default function ProspectMoaForm() {
                                     onChange={handleFileChange}
                                     hasError={attemptedSubmit && errMsg.includes("PDF")}
                                 />
-                                <p className="mt-2 text-[0.7rem] text-oasis-blue font-medium flex items-center gap-1.5">
+                                <p className="mt-2 text-[0.7rem] text-oasis-header font-medium flex items-center gap-1.5">
                                     <Info size={12} />
-                                    Optional: Upload a pre-signed or template MOA (PDF only)
+                                    Optional: Upload a pre-signed MOA document (PDF Only)
                                 </p>
                             </div>
 
