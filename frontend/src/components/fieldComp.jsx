@@ -11,11 +11,14 @@ export function SingleField({
   onChange,
   icon,
   disabled = false,
-  autoComplete = "off"
+  autoComplete = "off",
+  hasError
 }) {
   return (
     <div className="w-full">
-      <Label fieldId={fieldId} labelText={labelText} />
+      <Label fieldId={fieldId} labelText={labelText}>
+        {icon && <span className="text-oasis-button-light">{icon}</span>}
+      </Label>
       <AdminField
         hasBorder={hasBorder}
         type={fieldType}
@@ -25,6 +28,7 @@ export function SingleField({
         onChange={onChange}
         disabled={disabled}
         autoComplete={autoComplete}
+        hasError={hasError}
       />
     </div>
   );
@@ -58,7 +62,7 @@ export function MultiField({
   );
 }
 
-export function FileUploadField({ labelText, fieldId, accept, onChange, disabled = false }) {
+export function FileUploadField({ labelText, fieldId, accept, onChange, disabled = false, hasError }) {
   return (
     <div>
       <Label fieldId={fieldId} labelText={labelText} />
@@ -67,6 +71,7 @@ export function FileUploadField({ labelText, fieldId, accept, onChange, disabled
         accept={accept}
         onChange={onChange}
         disabled={disabled}
+        hasError={hasError}
       />
     </div>
   );

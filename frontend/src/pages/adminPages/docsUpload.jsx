@@ -5,20 +5,35 @@ import { FileUploadField, MultiField, SingleField } from '../../components/field
 import { AnnounceButton } from '../../components/button.jsx';
 import { useEffect, useMemo, useState, useRef } from "react";
 import useQueryParam from '../../hooks/useQueryParams.jsx';
-import { Plus, PlusCircle, Pencil, Save, Trash, FileText, AlignLeft, X, Check } from 'lucide-react';
+import { 
+    Plus, 
+    PlusCircle, 
+    Pencil, 
+    Save, 
+    Trash, 
+    FileText, 
+    AlignLeft, 
+    X, 
+    Check, 
+    Type, 
+    ListOrdered, 
+    List, 
+    GripVertical, 
+    CopyPlus, 
+    Edit2, 
+    Eye, 
+    Layout 
+} from 'lucide-react';
 import Subtitle from '../../utilities/subtitle.jsx';
-import { TreeRenderer } from '../../utilities/TreeRenderer.jsx';
 import { AdminAPI } from '../../api/admin.api.js';
 import { ConfirmModal, GeneralPopupModal, ViewModal } from '../../components/popupModal.jsx';
 import api from "../../api/axios.jsx";
+import Accordion from '../../components/accordion.jsx';
+import FormDownloadable from '../../components/formDownloadable.jsx';
 
 const API_BASE = api.defaults.baseURL;
 
-
-const EMPTY_SECTION_STATE = {
-    items: [],
-    isLoaded: false
-};
+// --- CONSTANTS & HELPERS ---
 
 const SECTION_LABELS = {
     procedures: "Procedures",
@@ -27,153 +42,121 @@ const SECTION_LABELS = {
     forms: "Forms & Templates"
 };
 
-const ITEM_TYPE_OPTIONS = [
-    { label: "Header", value: "header" },
-    { label: "Description", value: "description" },
-    { label: "Numerical List", value: "numerical_list" },
-    { label: "Bulleted List", value: "bulleted_list" },
-    { label: "Alphabetical List", value: "alphabetical_list" },
-    { label: "Document", value: "document" }
+const ITEM_TYPES = [
+    { label: "Header", value: "header", icon: <Type size={16} />, prefix: "Head: " },
+    { label: "Description", value: "description", icon: <AlignLeft size={16} />, prefix: "" },
+    { label: "Numerical List", value: "numerical_list", icon: <ListOrdered size={16} />, prefix: "1. " },
+    { label: "Bulleted List", value: "bulleted_list", icon: <List size={16} />, prefix: "- " },
+    { label: "Alphabetical List", value: "alphabetical_list", icon: <List size={16} />, prefix: "a. " },
+    { label: "Document", value: "document", icon: <FileText size={16} />, prefix: "Doc: " }
 ];
 
-function flattenItems(items, depth = 0, result = []) {
-    items.forEach((item) => {
-        result.push({
-            id: item.id,
-            label: `${"— ".repeat(depth)}${item.title || (item.type === "description" ? "Description" : item.type)}`
-        });
-
-        if (item.children?.length) {
-            flattenItems(item.children, depth + 1, result);
-        }
-    });
-
-    return result;
-}
-
-function insertItemIntoTree(items, newItem) {
-    if (!newItem.parentId) {
-        return [...items, { ...newItem, children: newItem.children || [] }];
+const getSequentialPrefix = (items, index, type) => {
+    if (type === 'header') return "Head: ";
+    if (type === 'description') return "";
+    if (type === 'bulleted_list') return "- ";
+    if (type === 'document') return "Doc: ";
+    
+    if (type !== 'numerical_list' && type !== 'alphabetical_list') return "";
+    
+    let startIndex = index;
+    while (startIndex > 0 && items[startIndex - 1].type === type) {
+        startIndex--;
     }
+    const sequencePos = index - startIndex + 1;
+    
+    if (type === 'numerical_list') return `${sequencePos}. `;
+    if (type === 'alphabetical_list') return `${String.fromCharCode(96 + (sequencePos % 26 || 26))}. `;
+    return "";
+};
 
-    return items.map((item) => {
-        if (item.id === newItem.parentId) {
-            return {
-                ...item,
-                children: [...(item.children || []), { ...newItem, children: newItem.children || [] }]
-            };
+const parseBulkAdd = (text) => {
+    const lines = text.split('\n');
+    const rootItems = [];
+    const stack = [{ indent: -1, children: rootItems }];
+
+    lines.forEach(line => {
+        if (!line.trim()) return;
+        const indentMatch = line.match(/^(\s*)/);
+        const indent = indentMatch ? indentMatch[1].length : 0;
+        const content = line.trim();
+        let type = 'description';
+        let title = content;
+
+        if (content.startsWith('Head: ')) {
+            type = 'header';
+            title = content.substring(6);
+        } else if (content.startsWith('- ')) {
+            type = 'bulleted_list';
+            title = content.substring(2);
+        } else if (content.match(/^[a-z]\.\s/i)) {
+            type = 'alphabetical_list';
+            title = content.substring(content.indexOf('.') + 2);
+        } else if (content.match(/^\d+\.\s/)) {
+            type = 'numerical_list';
+            title = content.substring(content.indexOf('.') + 2);
         }
 
-        if (item.children?.length) {
-            return {
-                ...item,
-                children: insertItemIntoTree(item.children, newItem)
-            };
+        const newItem = {
+            id: crypto.randomUUID(),
+            type,
+            title,
+            children: []
+        };
+
+        while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
+            stack.pop();
         }
 
-        return item;
+        stack[stack.length - 1].children.push(newItem);
+        stack.push({ indent, children: newItem.children });
     });
-}
 
-function removeItemFromTree(items, targetId) {
-    return items
-        .filter((item) => item.id !== targetId)
-        .map((item) => {
-            if (item.children?.length) {
-                return {
-                    ...item,
-                    children: removeItemFromTree(item.children, targetId)
-                };
+    return rootItems;
+};
+
+const findAndRemove = (list, id) => {
+    let removed = null;
+    const search = (items) => {
+        let result = [];
+        for (let item of items) {
+            if (item.id === id) {
+                removed = item;
+            } else {
+                const [newChildren, found] = search(item.children || []);
+                if (found) removed = found;
+                result.push({ ...item, children: newChildren });
             }
-            return item;
-        });
-}
-
-function updateItemInTree(items, updatedItem) {
-    return items.map((item) => {
-        if (item.id === updatedItem.id) {
-            return {
-                ...item,
-                ...updatedItem,
-                children: item.children // Preserve children
-            };
         }
+        return [result, removed];
+    };
+    return search(list);
+};
 
-        if (item.children?.length) {
-            return {
-                ...item,
-                children: updateItemInTree(item.children, updatedItem)
-            };
-        }
-
-        return item;
-    });
-}
-
-function findAndRemoveFromTree(items, targetId) {
-    let removedItem = null;
-    const filteredItems = items.filter((item) => {
+const insertAt = (list, targetId, itemToInsert) => {
+    if (!targetId) return [...list, { ...itemToInsert, parentId: null }];
+    return list.map(item => {
         if (item.id === targetId) {
-            removedItem = item;
-            return false;
+            return {
+                ...item,
+                children: [...(item.children || []), { ...itemToInsert, parentId: targetId }]
+            };
         }
-        return true;
-    }).map((item) => {
-        if (item.children?.length) {
-            const [newChildren, found] = findAndRemoveFromTree(item.children, targetId);
-            if (found) removedItem = found;
-            return { ...item, children: newChildren };
-        }
-        return item;
+        return {
+            ...item,
+            children: item.children ? insertAt(item.children, targetId, itemToInsert) : []
+        };
     });
-    return [filteredItems, removedItem];
-}
+};
 
-function isDescendant(item, targetId) {
-    if (!item.children) return false;
-    return item.children.some(child => child.id === targetId || isDescendant(child, targetId));
-}
-
-function moveItemInTree(items, draggedId, targetId) {
-    // 1. Find and remove the dragged item
-    const [treeWithoutDragged, draggedItem] = findAndRemoveFromTree(items, draggedId);
-    if (!draggedItem) return items;
-
-    // 2. If targetId is null, move to root
-    if (!targetId) {
-        return [...treeWithoutDragged, { ...draggedItem, parentId: null }];
-    }
-
-    // Check for circular reference (dragging parent into own child)
-    if (isDescendant(draggedItem, targetId)) {
-        return items;
-    }
-
-    // 3. Insert as child of targetId
-    function insertAsChild(currentItems, tId, itemToMove) {
-        return currentItems.map((item) => {
-            if (item.id === tId) {
-                return {
-                    ...item,
-                    children: [...(item.children || []), { ...itemToMove, parentId: tId }]
-                };
-            }
-            if (item.children?.length) {
-                return {
-                    ...item,
-                    children: insertAsChild(item.children, tId, itemToMove)
-                };
-            }
-            return item;
-        });
-    }
-
-    return insertAsChild(treeWithoutDragged, targetId, draggedItem);
-}
+const isChildOf = (parent, childId) => {
+    if (!parent.children) return false;
+    return parent.children.some(child => child.id === childId || isChildOf(child, childId));
+};
 
 function normalizeTreeForSave(items) {
     return items.map((item) => ({
-        id: item.id,
+        id: typeof item.id === 'string' && item.id.length > 30 ? null : item.id,
         type: item.type,
         title: item.title,
         description: item.description || null,
@@ -184,155 +167,64 @@ function normalizeTreeForSave(items) {
     }));
 }
 
+// --- MAIN COMPONENT ---
+
 export default function DocsUpload() {
     const [activeFilter, setFilter] = useQueryParam("tab", "procedures");
-    const [showModal, setShowModal] = useState(false);
+    const [items, setItems] = useState([]);
+    const [isEditMode, setIsEditMode] = useState(true);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [deleteItemConfirm, setDeleteItemConfirm] = useState(null);
-    const [viewDoc, setViewDoc] = useState(null);
     const [popup, setPopup] = useState(null);
-    const [editItem, setEditItem] = useState(null);
-    
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmAction, setConfirmAction] = useState(null); // { text, action }
+    const [viewDoc, setViewDoc] = useState(null);
+    const [editingItem, setEditingItem] = useState(null); // { id, title }
+    const [showAddItemDropdown, setShowAddItemDropdown] = useState(null);
+    const [showBulkAdd, setShowBulkAdd] = useState(null);
+    const [bulkText, setBulkText] = useState("");
+    const [showDocUploadModal, setShowDocUploadModal] = useState(null); // id of parent
+
     // DRAFT STATES
     const [hasDraft, setHasDraft] = useState(false);
     const [restoringDraft, setRestoringDraft] = useState(false);
-    const backendDataRef = useRef({});
+    const backendDataRef = useRef("");
+    const isInitialLoad = useRef(true);
 
-    const [sections, setSections] = useState({
-        procedures: { ...EMPTY_SECTION_STATE },
-        moa: { ...EMPTY_SECTION_STATE },
-        guidelines: { ...EMPTY_SECTION_STATE },
-        forms: { ...EMPTY_SECTION_STATE }
-    });
-
-    const activeSectionState = sections[activeFilter] || EMPTY_SECTION_STATE;
-
-    // AUTO-SAVE TO LOCAL STORAGE
-    useEffect(() => {
-        if (!loading && !restoringDraft && activeSectionState.isLoaded) {
-            const currentItemsJson = JSON.stringify(activeSectionState.items);
-            const backendItemsJson = backendDataRef.current[activeFilter];
-            
-            // Only save if current state is different from backend
-            if (currentItemsJson !== backendItemsJson) {
-                const draftKey = `docs_upload_draft_${activeFilter}`;
-                localStorage.setItem(draftKey, currentItemsJson);
-            }
-        }
-    }, [activeSectionState.items, activeSectionState.isLoaded, activeFilter, loading, restoringDraft]);
-
-    // CHECK FOR DRAFTS ON LOAD
-    useEffect(() => {
-        if (loading || !activeSectionState.isLoaded) return; // Don't check while fetching or before loaded
-
-        const draftKey = `docs_upload_draft_${activeFilter}`;
-        const savedDraft = localStorage.getItem(draftKey);
-        
-        if (savedDraft) {
-            try {
-                const parsedDraft = JSON.parse(savedDraft);
-                // Only show draft banner if draft items length > 0
-                // and they aren't already exactly what's in state
-                if (parsedDraft.length > 0 && JSON.stringify(parsedDraft) !== JSON.stringify(activeSectionState.items)) {
-                    setHasDraft(true);
-                } else {
-                    setHasDraft(false);
-                }
-            } catch (e) {
-                console.error("Failed to parse draft", e);
-            }
-        } else {
-            setHasDraft(false);
-        }
-    }, [activeFilter, activeSectionState.items, activeSectionState.isLoaded, loading]);
-
-    const handleRestoreDraft = () => {
-        const draftKey = `docs_upload_draft_${activeFilter}`;
-        const savedDraft = localStorage.getItem(draftKey);
-        if (savedDraft) {
-            setRestoringDraft(true);
-            const parsed = JSON.parse(savedDraft);
-            setSections(prev => ({
-                ...prev,
-                [activeFilter]: {
-                    ...prev[activeFilter],
-                    items: parsed
-                }
-            }));
-            setHasDraft(false);
-            setTimeout(() => setRestoringDraft(false), 100);
-            
-            setPopup({
-                title: "Restored",
-                text: "Your unsaved changes have been loaded.",
-                icon: <Check size={50} />,
-                type: "success",
-                time: 2000
-            });
-        }
-    };
-
-    const handleDiscardDraft = () => {
-        const draftKey = `docs_upload_draft_${activeFilter}`;
-        localStorage.removeItem(draftKey);
-        setHasDraft(false);
-    };
-
-    const buildFileUrl = (filePath) => {
-        if (!filePath) return null;
-        let path = String(filePath).trim();
-        if (path.startsWith("/")) path = path.slice(1);
-        if (path.startsWith("uploads/")) path = path.replace("uploads/", "");
-        return `${API_BASE}/uploads/${path}`;
-    };
-
-    const handleViewDocument = (item) => {
-        const url = buildFileUrl(item.file);
-        if (url) {
-            setViewDoc({
-                url,
-                title: item.title,
-                originalFilename: item.originalFilename
-            });
-        }
-    };
-
-    const parentOptions = useMemo(() => {
-        return flattenItems(activeSectionState.items).map((item) => item.label);
-    }, [activeSectionState.items]);
-
-    const parentOptionMap = useMemo(() => {
-        const flat = flattenItems(activeSectionState.items);
-        const map = {};
-        flat.forEach((item) => {
-            map[item.label] = item.id;
-        });
-        return map;
-    }, [activeSectionState.items]);
+    const isForms = activeFilter === "forms";
 
     useEffect(() => {
         loadSection(activeFilter);
     }, [activeFilter]);
 
+    // AUTO-SAVE TO LOCAL STORAGE
+    useEffect(() => {
+        if (!loading && !restoringDraft && !isInitialLoad.current) {
+            const currentItemsJson = JSON.stringify(items);
+            if (currentItemsJson !== backendDataRef.current) {
+                localStorage.setItem(`docs_upload_draft_${activeFilter}`, currentItemsJson);
+                setHasDraft(true);
+            } else {
+                localStorage.removeItem(`docs_upload_draft_${activeFilter}`);
+                setHasDraft(false);
+            }
+        }
+    }, [items, activeFilter, loading, restoringDraft]);
+
     async function loadSection(section) {
         try {
             setLoading(true);
-
+            isInitialLoad.current = true;
             const response = await AdminAPI.getDocuments(section);
-            const backendItems = response?.data?.items || [];
+            const fetchedItems = response?.data?.items || [];
+            
+            backendDataRef.current = JSON.stringify(fetchedItems);
+            setItems(fetchedItems);
+            
+            const savedDraft = localStorage.getItem(`docs_upload_draft_${section}`);
+            setHasDraft(!!savedDraft && savedDraft !== backendDataRef.current);
 
-            // Store the backend state for comparison in auto-save
-            backendDataRef.current[section] = JSON.stringify(backendItems);
-
-            setSections((prev) => ({
-                ...prev,
-                [section]: {
-                    items: backendItems,
-                    isLoaded: true
-                }
-            }));
+            setTimeout(() => { isInitialLoad.current = false; }, 100);
         } catch (error) {
             console.error(`Failed to load ${section}:`, error);
         } finally {
@@ -340,139 +232,45 @@ export default function DocsUpload() {
         }
     }
 
-    function handleCreateItem(payload) {
-        const itemToInsert = {
-            id: crypto.randomUUID(),
-            type: payload.type,
-            title:
-                payload.title ||
-                (payload.type === "description"
-                    ? (payload.description || "").trim()
-                    : payload.listItems?.find(i => i.trim() !== "")?.trim() || ""),
-            description:
-                payload.description || (
-                    payload.listItems?.length ? payload.listItems.join("\n") : null
-                ),
-            listItems: payload.listItems || null,
-            parentId: payload.parentId || null,
-            file: payload.file || null,
-            originalFilename: payload.originalFilename || null,
-            children: []
-        };
-
-        setSections((prev) => ({
-            ...prev,
-            [activeFilter]: {
-                ...prev[activeFilter],
-                items: insertItemIntoTree(prev[activeFilter].items, itemToInsert)
-            }
-        }));
-
-        setShowModal(false);
-    }
-
-    function handleEditItem(item) {
-        setEditItem(item);
-        setShowModal(true);
-    }
-
-    function handleUpdateItem(payload) {
-        const updatedItem = {
-            ...editItem,
-            type: payload.type,
-            title: payload.title,
-            description: payload.description,
-            listItems: payload.listItems,
-            file: payload.file || editItem.file,
-            originalFilename: payload.originalFilename || editItem.originalFilename
-        };
-
-        setSections((prev) => ({
-            ...prev,
-            [activeFilter]: {
-                ...prev[activeFilter],
-                items: updateItemInTree(prev[activeFilter].items, updatedItem)
-            }
-        }));
-
-        setShowModal(false);
-        setEditItem(null);
-    }
-
-    async function handleDeleteItem(item) {
-        try {
-            setSaving(true);
-            
-            const updatedItems = removeItemFromTree(activeSectionState.items, item.id);
-            const tempState = {
-                items: updatedItems
-            };
-
-            const normalizedItems = normalizeTreeForSave(updatedItems);
-            
-            await AdminAPI.saveDocuments(activeFilter, normalizedItems);
-            
-            // Clear draft after successful direct delete/save
-            localStorage.removeItem(`docs_upload_draft_${activeFilter}`);
-
-            setSections((prev) => ({
-                ...prev,
-                [activeFilter]: tempState
-            }));
-            
-            setPopup({
-                title: "Deleted",
-                text: `"${item.title || item.type}" and its children have been removed.`,
-                icon: <Trash size={50} />,
-                type: "success",
-                time: 2000
-            });
-        } catch (error) {
-            console.error("Failed to delete item:", error);
-            setPopup({
-                title: "Error",
-                text: "Failed to delete item.",
-                icon: <X size={50} />,
-                type: "failed",
-                time: 2000
-            });
-        } finally {
-            setSaving(false);
-            setDeleteItemConfirm(null);
+    const handleRestoreDraft = () => {
+        const savedDraft = localStorage.getItem(`docs_upload_draft_${activeFilter}`);
+        if (savedDraft) {
+            setRestoringDraft(true);
+            setItems(JSON.parse(savedDraft));
+            setHasDraft(false);
+            setTimeout(() => setRestoringDraft(false), 100);
+            setPopup({ title: "Restored", text: "Your unsaved changes have been loaded.", icon: <Check size={50} />, type: "success" });
         }
-    }
+    };
+
+    const handleDiscardDraft = () => {
+        localStorage.removeItem(`docs_upload_draft_${activeFilter}`);
+        setHasDraft(false);
+        loadSection(activeFilter);
+    };
+
+    const triggerConfirm = (text, action) => {
+        setConfirmAction({ text, action });
+        setShowConfirmModal(true);
+    };
 
     async function handleSaveSection() {
         try {
             setSaving(true);
-            const normalizedItems = normalizeTreeForSave(activeSectionState.items);
-
+            const normalizedItems = normalizeTreeForSave(items);
             await AdminAPI.saveDocuments(activeFilter, normalizedItems);
             
-            // CLEAR DRAFT ON SUCCESSFUL SAVE
+            backendDataRef.current = JSON.stringify(items);
             localStorage.removeItem(`docs_upload_draft_${activeFilter}`);
             setHasDraft(false);
 
-            setPopup({
-                title: "Success",
-                text: `${SECTION_LABELS[activeFilter]} saved successfully.`,
-                icon: <Check size={50} />,
-                type: "success",
-                time: 2000
-            });
-            
-            await loadSection(activeFilter);
+            setPopup({ title: "Success", text: `${SECTION_LABELS[activeFilter]} saved successfully.`, icon: <Check size={50} />, type: "success" });
         } catch (error) {
-            console.error("Failed to save section:", error);
-            setPopup({
-                title: "Error",
-                text: "Failed to save section.",
-                icon: <X size={50} />,
-                type: "failed",
-                time: 2000
-            });
+            console.error("Failed to save:", error);
+            setPopup({ title: "Error", text: "Failed to save section.", icon: <X size={50} />, type: "failed" });
         } finally {
             setSaving(false);
+            setShowConfirmModal(false);
         }
     }
 
@@ -480,545 +278,270 @@ export default function DocsUpload() {
         try {
             setSaving(true);
             await AdminAPI.clearDocuments(activeFilter);
-
-            // CLEAR DRAFT TOO
+            setItems([]);
+            backendDataRef.current = "[]";
             localStorage.removeItem(`docs_upload_draft_${activeFilter}`);
             setHasDraft(false);
-
-            setSections((prev) => ({
-                ...prev,
-                [activeFilter]: { ...EMPTY_SECTION_STATE }
-            }));
-            
-            setPopup({
-                title: "Cleared",
-                text: "Section data has been reset.",
-                icon: <Trash size={50} />,
-                type: "neutral",
-                time: 2000
-            });
+            setPopup({ title: "Cleared", text: "Section data reset.", icon: <Trash size={50} />, type: "neutral" });
         } catch (error) {
-            console.error("Failed to clear section:", error);
+            console.error("Failed to clear:", error);
         } finally {
             setSaving(false);
+            setShowConfirmModal(false);
         }
     }
 
-    const handleMoveItem = (draggedId, targetId) => {
-        setSections((prev) => {
-            const currentItems = prev[activeFilter].items;
-            const updatedItems = moveItemInTree(currentItems, draggedId, targetId);
-            
-            if (updatedItems === currentItems) return prev;
+    const addComponent = () => {
+        const newComp = { id: crypto.randomUUID(), type: "header", title: "New Component", children: [] };
+        setItems([...items, newComp]);
+        setEditingItem({ id: newComp.id, title: newComp.title });
+    };
 
-            return {
-                ...prev,
-                [activeFilter]: {
-                    ...prev[activeFilter],
-                    items: updatedItems
-                }
+    const deleteItem = (id, title) => {
+        triggerConfirm(`delete "${title}" and all its children?`, () => {
+            const [newList] = findAndRemove(items, id);
+            setItems(newList);
+            setPopup({ title: "Removed", text: "Item removed from local structure. Save to apply changes.", icon: <Trash size={50} />, type: "neutral" });
+        });
+    };
+
+    const updateItemTitle = (id, newTitle) => {
+        const updateInTree = (list) => list.map(item => {
+            if (item.id === id) return { ...item, title: newTitle };
+            return { ...item, children: item.children ? updateInTree(item.children) : [] };
+        });
+        setItems(updateInTree(items));
+        setEditingItem(null);
+    };
+
+    const handleMove = (draggedId, targetId) => {
+        if (draggedId === targetId) return;
+        const checkCircular = (list) => {
+            for (let item of list) {
+                if (item.id === draggedId && isChildOf(item, targetId)) return true;
+                if (item.children && checkCircular(item.children)) return true;
+            }
+            return false;
+        };
+        if (checkCircular(items)) return;
+
+        const [listWithoutDragged, draggedItem] = findAndRemove(items, draggedId);
+        if (!draggedItem) return;
+        setItems(insertAt(listWithoutDragged, targetId, draggedItem));
+    };
+
+    const addItemToParent = (parentId, type) => {
+        if (type === 'document') {
+            setShowDocUploadModal(parentId);
+            setShowAddItemDropdown(null);
+            return;
+        }
+        const newItem = { id: crypto.randomUUID(), type, title: `New ${type.replace('_', ' ')}`, children: [] };
+        setItems(insertAt(items, parentId, newItem));
+        setShowAddItemDropdown(null);
+        setEditingItem({ id: newItem.id, title: newItem.title });
+    };
+
+    const handleBulkAdd = (parentId) => {
+        const parsed = parseBulkAdd(bulkText);
+        const addToTree = (list) => list.map(item => {
+            if (item.id === parentId) return { ...item, children: [...(item.children || []), ...parsed] };
+            return { ...item, children: item.children ? addToTree(item.children) : [] };
+        });
+        setItems(addToTree(items));
+        setShowBulkAdd(null);
+        setBulkText("");
+    };
+
+    const handleDocUpload = async (parentId, title, file) => {
+        try {
+            setSaving(true);
+            const response = await AdminAPI.uploadDocument(activeFilter, title, file);
+            const uploaded = response?.data;
+            const newItem = {
+                id: crypto.randomUUID(),
+                type: "document",
+                title: title,
+                file: uploaded.file,
+                originalFilename: uploaded.originalFilename,
+                children: []
             };
-        });
-        
-        setPopup({
-            title: "Moved",
-            text: "Structure updated successfully.",
-            icon: <Check size={20} />,
-            type: "success",
-            time: 1500
-        });
+            setItems(insertAt(items, parentId, newItem));
+            setShowDocUploadModal(null);
+        } catch (error) {
+            console.error("Upload failed:", error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleViewDocument = (item) => {
+        if (item.file) setViewDoc({ url: `${API_BASE}${item.file}`, title: item.title, originalFilename: item.originalFilename });
     };
 
     return (
         <AdminScreen>
-            {popup && (
-                <GeneralPopupModal
-                    icon={popup.icon}
-                    time={popup.time}
-                    title={popup.title}
-                    text={popup.text}
-                    onClose={() => setPopup(null)}
-                    isSuccess={popup.type === "success"}
-                    isFailed={popup.type === "failed"}
-                    isNeutral={popup.type === "neutral"}
-                />
-            )}
-            {showModal && (
-                <DocsAddModal
-                    section={activeFilter}
-                    parents={parentOptions}
-                    parentOptionMap={parentOptionMap}
-                    onClick={() => {
-                        setShowModal(false);
-                        setEditItem(null);
-                    }}
-                    onCreate={editItem ? handleUpdateItem : handleCreateItem}
-                    editItem={editItem}
-                />
-            )}
-            {showConfirmModal && 
-                <ConfirmModal
-                    confText='clear the entire structure?'
-                    onConfirm={() => {
-                        handleClearSection();
-                        setShowConfirmModal(false);
-                    }}
-                    onCancel={() => setShowConfirmModal(false)}
-                />
-            }
-            {deleteItemConfirm && (
-                <ConfirmModal
-                    confText={`delete "${deleteItemConfirm.title || deleteItemConfirm.type}" and all its children?`}
-                    onConfirm={() => handleDeleteItem(deleteItemConfirm)}
-                    onCancel={() => setDeleteItemConfirm(null)}
-                />
-            )}
+            {popup && <GeneralPopupModal icon={popup.icon} title={popup.title} text={popup.text} onClose={() => setPopup(null)} isSuccess={popup.type === "success"} isFailed={popup.type === "failed"} isNeutral={popup.type === "neutral"} />}
+            {showConfirmModal && <ConfirmModal confText={confirmAction?.text} onConfirm={() => confirmAction?.action()} onCancel={() => setShowConfirmModal(false)} />}
+            <ViewModal visible={!!viewDoc} onClose={() => setViewDoc(null)} isDocument={true} resourceTitle={viewDoc?.title} file={viewDoc?.url} />
+            {showDocUploadModal && <DocUploadModal parentId={showDocUploadModal} onCancel={() => setShowDocUploadModal(null)} onUpload={handleDocUpload} saving={saving} />}
 
-            <ViewModal
-                visible={!!viewDoc}
-                onClose={() => setViewDoc(null)}
-                isDocument={true}
-                resourceTitle={viewDoc?.title || "Document Viewer"}
-                file={viewDoc?.url}
-            />
-            
             <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b border-gray-400 py-5'>
                 <Title text="Documents Upload" size='text-[2.2rem]'/>
                 <Subtitle text={"Configure the guidelines, procedures, and resources for the Student OJT Hub."}/>
             </div>
 
             <div className="w-[90%] mt-8">
-                
                 <div className='flex flex-row gap-3 w-full mb-8'>
                     {Object.entries(SECTION_LABELS).map(([key, label], index) => (
                         <div key={key} className="flex flex-row gap-3 items-center">
-                            <Subtitle
-                                text={label}
-                                onClick={() => setFilter(key)}
-                                isActive={activeFilter === key}
-                                isLink
-                                weight={"font-bold"}
-                                size="text-[1rem]"
-                                className={"rounded-2xl"}
-                            />
-                            {index < Object.keys(SECTION_LABELS).length - 1 && (
-                                <Subtitle text="|" size="text-[1rem]" />
-                            )}
+                            <Subtitle text={label} onClick={() => setFilter(key)} isActive={activeFilter === key} isLink weight={"font-bold"} size="text-[1rem]" className={"rounded-2xl"} />
+                            {index < Object.keys(SECTION_LABELS).length - 1 && <Subtitle text="|" size="text-[1rem]" />}
                         </div>
                     ))}
                 </div>
 
-                <div className='w-full max-w-5xl mx-auto mb-20 animate__animated animate__fadeIn'>
-                    {/* DRAFT NOTIFICATION BANNER */}
+                <div className='w-full max-w-5xl mx-auto mb-20 flex flex-col gap-6'>
                     {hasDraft && (
-                        <div className="mb-6 bg-amber-50 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 animate__animated animate__slideInDown animate__faster shadow-lg shadow-amber-900/5">
+                        <div className="bg-amber-50 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 animate__animated animate__slideInDown animate__faster shadow-lg shadow-amber-900/5 border border-amber-100">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 text-amber-600 rounded-2xl">
-                                    <Save size={24} />
-                                </div>
-                                <div>
-                                    <p className="font-bold text-amber-900">Unsaved changes detected</p>
-                                    <p className="text-xs text-amber-700">We found a local draft for {SECTION_LABELS[activeFilter]} that wasn't saved to the server.</p>
-                                </div>
+                                <div className="p-3 text-amber-600 bg-white rounded-2xl shadow-sm"><Save size={24} /></div>
+                                <div><p className="font-bold text-amber-900">Unsaved changes detected</p><p className="text-xs text-amber-700">We found a local draft for {SECTION_LABELS[activeFilter]} that wasn't saved.</p></div>
                             </div>
                             <div className="flex items-center gap-3 w-full md:w-auto">
-                                <button 
-                                    onClick={handleDiscardDraft}
-                                    className="flex-1 md:flex-none px-6 py-2.5 text-xs font-bold text-amber-700 hover:bg-amber-100 rounded-xl transition-all"
-                                >
-                                    Discard
-                                </button>
-                                <button 
-                                    onClick={handleRestoreDraft}
-                                    className="flex-1 md:flex-none px-8 py-2.5 text-xs font-bold bg-amber-600 text-white hover:bg-amber-700 rounded-xl transition-all shadow-md shadow-amber-600/20"
-                                >
-                                    Restore Draft
-                                </button>
+                                <button onClick={handleDiscardDraft} className="flex-1 md:flex-none px-6 py-2.5 text-xs font-bold text-amber-700 hover:bg-amber-100 rounded-xl transition-all">Discard</button>
+                                <button onClick={handleRestoreDraft} className="flex-1 md:flex-none px-8 py-2.5 text-xs font-bold bg-amber-600 text-white hover:bg-amber-700 rounded-xl transition-all shadow-md shadow-amber-600/20">Restore Draft</button>
                             </div>
                         </div>
                     )}
 
-                    <div className="bg-admin-element border border-gray-200 rounded-4xl shadow-sm overflow-hidden flex flex-col h-[850px]">
-                        {/* UPPER SECTION: Fixed Header */}
-                        <div className="p-8 border-b border-gray-100 flex flex-col gap-6 bg-white/50 backdrop-blur-sm z-10">
-                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                <div className="flex flex-col">
-                                    <Subtitle text="Visual Structure and Configuration" weight="font-bold" size="text-2xl" />
-                                    <p className="text-sm text-gray-500">Manage the hierarchy for {SECTION_LABELS[activeFilter]}</p>
-                                </div>
-                                <button 
-                                    onClick={() => setShowModal(true)}
-                                    className="px-6 py-3.5 bg-oasis-header text-white rounded-2xl hover:bg-oasis-button-dark transition-all hover:scale-105 duration-300 shadow-lg shadow-oasis-header/20 flex items-center gap-2 font-bold text-sm"
-                                >
-                                    <Plus size={20} /> Add Component
-                                </button>
-                            </div>
-
-                            {/* ADMIN TIP */}
-                            <div className="bg-oasis-blue/5 border border-oasis-blue/10 rounded-3xl p-6 flex items-start gap-4">
-                                <div className="bg-white p-3 rounded-2xl shadow-sm">
-                                    <Check size={20} className="text-oasis-header" />
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <p className="text-sm font-bold text-oasis-header">Admin Tip</p>
-                                    <p className="text-xs text-gray-600 leading-relaxed italic">
-                                        Everything in this list, including titles and descriptions, can be added using the "Add Component" modal. Click on document names to preview them.
-                                    </p>
-                                </div>
-                            </div>
+                    <div className="flex items-center justify-between bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
+                        <div className="flex gap-2 p-1 bg-gray-100 rounded-2xl">
+                            <button onClick={() => setIsEditMode(true)} className={`flex items-center gap-2 px-6 py-2 rounded-xl font-bold transition-all ${isEditMode ? "bg-white text-oasis-header shadow-sm" : "text-gray-500 hover:text-gray-700"}`}><Edit2 size={18} /> Edit Mode</button>
+                            <button onClick={() => setIsEditMode(false)} className={`flex items-center gap-2 px-6 py-2 rounded-xl font-bold transition-all ${!isEditMode ? "bg-white text-oasis-header shadow-sm" : "text-gray-500 hover:text-gray-700"}`}><Eye size={18} /> Preview Mode</button>
                         </div>
-
-                        {/* MIDDLE SECTION: Scrollable Content */}
-                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-admin-element">
-                            
-                            <div 
-                                onDragOver={(e) => {
-                                    e.preventDefault();
-                                    e.currentTarget.classList.add("border-oasis-header", "bg-oasis-header/5");
-                                }}
-                                onDragLeave={(e) => {
-                                    e.currentTarget.classList.remove("border-oasis-header", "bg-oasis-header/5");
-                                }}
-                                onDrop={(e) => {
-                                    e.preventDefault();
-                                    e.currentTarget.classList.remove("border-oasis-header", "bg-oasis-header/5");
-                                    const draggedId = e.dataTransfer.getData("draggedId");
-                                    if (draggedId) {
-                                        handleMoveItem(draggedId, null);
-                                    }
-                                }}
-                                className="bg-gray-50/30 rounded-[2.5rem] p-8 border border-dashed border-gray-200 min-h-[500px] transition-all"
-                            >
-                                {activeSectionState.items.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center h-full py-32 text-gray-400 gap-4">
-                                        <div className="p-6 bg-gray-100 rounded-full">
-                                            <PlusCircle size={48} className="text-gray-300" />
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="font-bold text-gray-500">Structure is empty</p>
-                                            <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">Start building your section by clicking the "Add Component" button above.</p>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <TreeRenderer
-                                        items={activeSectionState.items}
-                                        onDelete={(item) => setDeleteItemConfirm(item)}
-                                        onView={handleViewDocument}
-                                        onEdit={handleEditItem}
-                                        onMove={handleMoveItem}
-                                    />
-                                )}
-                            </div>
-
-                           
-                        </div>
-
-                        {/* LOWER SECTION: Fixed Buttons */}
-                        <div className="p-8 border-t border-gray-100 bg-white/50 backdrop-blur-sm flex flex-row items-center justify-end gap-5">
-                            <button 
-                                onClick={() => setShowConfirmModal(true)}
-                                className="px-8 py-3.5 rounded-2xl font-bold text-gray-500 hover:bg-gray-100 hover:text-red-500 transition-all flex items-center gap-2 border border-transparent hover:border-red-100"
-                                disabled={saving}
-                            >
-                                <Trash size={18} /> Clear Structure
-                            </button>
-                            <button 
-                                onClick={handleSaveSection}
-                                disabled={saving || loading}
-                                className={`px-12 py-3.5 rounded-2xl font-bold text-white shadow-xl shadow-oasis-header/20 flex items-center gap-2 transition-all
-                                    ${saving || loading 
-                                        ? "bg-gray-300 cursor-not-allowed shadow-none" 
-                                        : "bg-oasis-header hover:bg-oasis-button-dark hover:scale-105 active:scale-95"
-                                    }
-                                `}
-                            >
-                                {saving ? "Saving Changes..." : <><Save size={18} /> Save {SECTION_LABELS[activeFilter]}</>}
-                            </button>
+                        <div className="flex gap-3">
+                            <button onClick={() => triggerConfirm("clear the entire structure?", handleClearSection)} className="flex items-center gap-2 px-5 py-2 text-gray-500 hover:text-red-500 font-bold transition-all"><Trash size={18} /> Clear</button>
+                            <button onClick={() => triggerConfirm(`save changes to ${SECTION_LABELS[activeFilter]}?`, handleSaveSection)} disabled={saving || loading} className="flex items-center gap-2 px-8 py-2 bg-oasis-header text-white rounded-xl font-bold hover:bg-oasis-button-dark transition-all shadow-lg shadow-oasis-header/20"><Save size={18} /> {saving ? "Saving..." : `Save ${SECTION_LABELS[activeFilter]}`}</button>
                         </div>
                     </div>
+
+                    {isEditMode ? (
+                        <div className="flex flex-col gap-6 animate__animated animate__fadeIn">
+                            <div className="flex justify-between items-center px-2"><Subtitle text="Visual Structure" weight="font-bold" size="text-xl" /><button onClick={addComponent} className="flex items-center gap-2 px-5 py-2.5 bg-oasis-header/10 text-oasis-header rounded-2xl font-bold hover:bg-oasis-header hover:text-white transition-all border border-oasis-header/20"><Plus size={20} /> Add Component</button></div>
+                            <div className="space-y-6">
+                                {loading ? <div className="py-20 text-center text-gray-400 animate-pulse font-bold tracking-widest uppercase text-xs">Loading structure...</div> : 
+                                items.length === 0 ? <div className="py-20 bg-gray-50 rounded-[3rem] border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-4"><Layout size={48} className="text-gray-200" /><p className="font-bold">No components added yet</p><button onClick={addComponent} className="text-oasis-header underline font-bold text-sm">Add your first component</button></div> : 
+                                items.map((component) => (
+                                    <div key={component.id} className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden border-l-4 border-l-oasis-header" onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }} onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleMove(e.dataTransfer.getData("draggedId"), component.id); }}>
+                                        <div className="p-6 flex items-center justify-between bg-gray-50/50">
+                                            <div className="flex items-center gap-4 flex-1"><div draggable onDragStart={(e) => { e.dataTransfer.setData("draggedId", component.id); e.dataTransfer.effectAllowed = "move"; }} className="mt-1 cursor-grab active:cursor-grabbing text-gray-300 hover:text-oasis-header transition-colors"><GripVertical size={20} /></div><div className="p-2 bg-white rounded-xl shadow-sm text-oasis-header"><Layout size={20} /></div>
+                                                {editingItem?.id === component.id ? <div className="flex items-center gap-2 w-full max-w-md"><span className="text-gray-400 font-bold text-lg whitespace-nowrap">Head:</span><input autoFocus className="bg-white border border-oasis-header px-4 py-1.5 rounded-lg font-bold text-lg w-full focus:outline-none" value={editingItem.title} onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })} onBlur={() => updateItemTitle(component.id, editingItem.title)} onKeyDown={(e) => e.key === 'Enter' && updateItemTitle(component.id, editingItem.title)} /></div> : 
+                                                <h3 className="font-bold text-lg text-gray-800 cursor-pointer hover:text-oasis-header transition-colors flex items-center gap-2" onClick={() => setEditingItem({ id: component.id, title: component.title })}><span className="text-gray-400">Head:</span> {component.title}</h3>}
+                                            </div>
+                                            <div className="flex items-center gap-2"><button onClick={() => setShowAddItemDropdown(showAddItemDropdown === component.id ? null : component.id)} className="p-2.5 text-gray-400 hover:text-oasis-header hover:bg-white rounded-xl transition-all shadow-sm" title="Add Item"><PlusCircle size={20} /></button>
+                                                {!isForms && <button onClick={() => setShowBulkAdd(showBulkAdd === component.id ? null : component.id)} className="p-2.5 text-gray-400 hover:text-oasis-header hover:bg-white rounded-xl transition-all shadow-sm" title="Bulk Add"><CopyPlus size={20} /></button>}
+                                                <button onClick={() => deleteItem(component.id, component.title)} className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-white rounded-xl transition-all shadow-sm" title="Delete Component"><Trash size={20} /></button>
+                                            </div>
+                                        </div>
+                                        {showAddItemDropdown === component.id && <div className="px-6 py-4 bg-white border-b border-gray-100 flex flex-wrap gap-2 animate__animated animate__fadeInDown animate__faster">{ITEM_TYPES.filter(t => isForms ? ["header", "document"].includes(t.value) : t.value !== "document").map(type => <button key={type.value} onClick={() => addItemToParent(component.id, type.value)} className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-oasis-header hover:text-white rounded-xl text-xs font-bold transition-all border border-gray-100">{type.icon} {type.label}</button>)}</div>}
+                                        {showBulkAdd === component.id && <div className="p-6 bg-white border-b border-gray-100 flex flex-col gap-4 animate__animated animate__fadeInDown animate__faster"><textarea className="w-full h-40 p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-oasis-header text-sm font-mono custom-scrollbar" placeholder="Paste lines here..." value={bulkText} onChange={(e) => setBulkText(e.target.value)}></textarea><div className="flex justify-end gap-3"><button onClick={() => setShowBulkAdd(null)} className="px-6 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl">Cancel</button><button disabled={!bulkText.trim()} onClick={() => handleBulkAdd(component.id)} className="px-6 py-2 bg-oasis-header text-white text-sm font-bold rounded-xl hover:bg-oasis-button-dark transition-all disabled:opacity-50">Add {bulkText.split('\n').filter(l => l.trim()).length} items</button></div></div>}
+                                        <div className="p-6">{component.children?.length > 0 ? <RecursiveTree items={component.children} onDelete={deleteItem} onEdit={(id, title) => setEditingItem({ id, title })} editingItem={editingItem} onUpdateTitle={updateItemTitle} onMove={handleMove} onAddItem={addItemToParent} onView={handleViewDocument} isForms={isForms}/> : <div className="py-10 text-center text-gray-300 italic text-sm">Empty section. Add items above.</div>}</div>
+                                    </div>
+                                ))}
+                                <div onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); handleMove(e.dataTransfer.getData("draggedId"), null); }} className="py-10 border-2 border-dashed border-gray-100 rounded-[3rem] text-center text-gray-300 text-sm italic">Drop here to move to root</div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-8 animate__animated animate__fadeIn">
+                            <Subtitle text="Student Preview" weight="font-bold" size="text-xl" />
+                            <div className="flex flex-col gap-6">
+                                {items.length === 0 ? <div className="py-20 text-center text-gray-400 italic bg-white rounded-3xl border border-gray-100">Nothing to preview.</div> : 
+                                items.map((component) => (
+                                    isForms ? (
+                                        <div key={component.id} className="bg-white/50 backdrop-blur-sm rounded-3xl p-6 md:p-10 border border-gray-100 shadow-sm"><h2 className="font-bold text-oasis-button-dark text-xl mb-8 border-b border-gray-100 pb-4">{component.title}</h2><StudentTreeRenderer items={component.children} onView={handleViewDocument}/></div>
+                                    ) : (
+                                        <Accordion key={component.id} headerText={component.title}><div className="py-4"><StudentTreeRenderer items={component.children} onView={handleViewDocument}/></div></Accordion>
+                                    )
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </AdminScreen>
     );
 }
 
-export function DocsAddModal({
-    section,
-    onClick,
-    onCreate,
-    parents = [],
-    parentOptionMap = {},
-    editItem = null
-}) {
-    const isForms = section === "forms";
+function RecursiveTree({ items, onDelete, onEdit, editingItem, onUpdateTitle, onMove, onAddItem, onView, isForms, level = 0 }) {
+    return (
+        <div className={`flex flex-col gap-3 ${level > 0 ? "ml-8 border-l border-gray-100 pl-4 mt-2" : ""}`}>
+            {items.map((item, index) => {
+                const prefix = getSequentialPrefix(items, index, item.type);
+                return (
+                    <div key={item.id} className="group/item relative" onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }} onDrop={(e) => { e.preventDefault(); e.stopPropagation(); onMove(e.dataTransfer.getData("draggedId"), item.id); }}>
+                        <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-gray-100 hover:border-oasis-header/30 hover:shadow-sm transition-all">
+                            <div draggable onDragStart={(e) => { e.dataTransfer.setData("draggedId", item.id); e.dataTransfer.effectAllowed = "move"; }} className="text-gray-300 cursor-grab active:cursor-grabbing hover:text-oasis-header transition-colors"><GripVertical size={14} /></div>
+                            <div className="p-1.5 bg-gray-50 rounded-lg text-gray-400 group-hover/item:text-oasis-header transition-colors">{ITEM_TYPES.find(t => t.value === item.type)?.icon}</div>
+                            <div className="flex-1 flex items-center gap-2">
+                                {editingItem?.id === item.id ? <div className="flex items-center gap-1 w-full"><span className="text-gray-400 font-bold whitespace-nowrap">{prefix}</span><input autoFocus className="bg-white border border-oasis-header px-3 py-1 rounded-lg text-sm w-full focus:outline-none" value={editingItem.title} onChange={(e) => onEdit(item.id, e.target.value)} onBlur={() => onUpdateTitle(item.id, editingItem.title)} onKeyDown={(e) => e.key === 'Enter' && onUpdateTitle(item.id, editingItem.title)} /></div> : 
+                                <span className="text-sm font-medium text-gray-700 cursor-pointer hover:text-oasis-header flex items-center gap-1" onClick={() => onEdit(item.id, item.title)}><span className="text-gray-400">{prefix}</span> {item.title}</span>}
+                            </div>
+                            <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                {!isForms && item.type === "header" && <button onClick={() => onAddItem(item.id, "description")} className="p-1.5 text-gray-400 hover:text-oasis-header hover:bg-gray-50 rounded-lg"><PlusCircle size={14}/></button>}
+                                {item.type === 'document' && <button onClick={() => onView(item)} className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg"><Eye size={14}/></button>}
+                                <button onClick={() => onDelete(item.id, item.title)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash size={14}/></button>
+                            </div>
+                        </div>
+                        {item.children?.length > 0 && <RecursiveTree items={item.children} onDelete={onDelete} onEdit={onEdit} editingItem={editingItem} onUpdateTitle={onUpdateTitle} onMove={onMove} onAddItem={onAddItem} onView={onView} isForms={isForms} level={level + 1} />}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
 
-    const LIST_TYPES = [
-        "numerical_list",
-        "bulleted_list",
-        "alphabetical_list"
-    ];
-
-    const [itemType, setItemType] = useState(() => {
-        if (editItem) {
-            const option = ITEM_TYPE_OPTIONS.find(o => o.value === editItem.type);
-            return option ? option.label : "";
-        }
-        return isForms ? "Document" : "";
+function StudentTreeRenderer({ items = [], onView, level = 0 }) {
+    const renderItems = [];
+    let currentList = null;
+    items.forEach((item) => {
+        const isList = ["numerical_list", "bulleted_list", "alphabetical_list"].includes(item.type);
+        if (isList) {
+            if (currentList && currentList.type === item.type) currentList.items.push(item);
+            else { currentList = { type: item.type, items: [item] }; renderItems.push(currentList); }
+        } else { currentList = null; renderItems.push(item); }
     });
-    const [title, setTitle] = useState(editItem?.title || "");
-    const [description, setDescription] = useState(editItem?.description || "");
-    const [parent, setParent] = useState(() => {
-        if (editItem?.parentId) {
-            const entry = Object.entries(parentOptionMap).find(([_, id]) => id === editItem.parentId);
-            return entry ? entry[0] : "";
-        }
-        return "";
-    });
-    const [isChecked, setIsChecked] = useState(!!editItem?.parentId);
-    const [file, setFile] = useState(null);
-    const [uploading, setUploading] = useState(false);
-
-    const [listItems, setListItems] = useState(() => {
-        if (editItem?.listItems) return editItem.listItems;
-        if (editItem?.description && LIST_TYPES.includes(editItem.type)) {
-            return editItem.description.split("\n");
-        }
-        return [""];
-    });
-
-    const itemTypeLabels = ITEM_TYPE_OPTIONS
-        .filter((option) => {
-            if (section === "forms") {
-                return ["header", "document"].includes(option.value);
-            }
-            return true;
-        })
-        .map((option) => option.label);
-
-    const labelToValueMap = ITEM_TYPE_OPTIONS.reduce((acc, option) => {
-        acc[option.label] = option.value;
-        return acc;
-    }, {});
-
-    const selectedTypeValue = labelToValueMap[itemType] || "";
-    const isListType = LIST_TYPES.includes(selectedTypeValue);
-
-    const handleCheckbox = (e) => {
-        const checked = e.target.checked;
-        setIsChecked(checked);
-        if (!checked) setParent("");
-    };
-
-    const isCreateEnabled =
-        selectedTypeValue !== "" &&
-        ((selectedTypeValue === "description" && description.trim() !== "") ||
-         (selectedTypeValue === "header" && title.trim() !== "") ||
-         (selectedTypeValue === "document" && title.trim() !== "" && (file !== null || (editItem && editItem.file))) ||
-         (isListType && listItems.some(i => i.trim() !== "")));
-
-    const handleCreate = async (e) => {
-        e.preventDefault();
-        if (!isCreateEnabled) return;
-
-        try {
-            let uploadedFile = null;
-            if (selectedTypeValue === "document" && file) {
-                setUploading(true);
-                const response = await AdminAPI.uploadDocument(section, title.trim(), file);
-                uploadedFile = response?.data || null;
-            }
-
-            onCreate({
-                type: selectedTypeValue,
-                title:
-                    title.trim() ||
-                    (selectedTypeValue === "description"
-                        ? description.trim()
-                        : isListType
-                            ? listItems.find(i => i.trim() !== "")?.trim() || selectedTypeValue.replace("_", " ")
-                            : null),
-
-                description:
-                    (selectedTypeValue === "description" || (selectedTypeValue === "document" && !isForms))
-                        ? description.trim()
-                        : isListType
-                            ? listItems.filter(i => i.trim() !== "").join("\n")
-                            : null,
-
-                listItems: isListType ? listItems.filter(i => i.trim() !== "") : null,
-                parentId: isChecked ? parentOptionMap[parent] || null : null,
-                file: uploadedFile?.file || (editItem?.file || null),
-                originalFilename: uploadedFile?.originalFilename || (editItem?.originalFilename || null)
-            });
-
-            if (!editItem) {
-                setItemType(isForms ? "Document" : ""); setTitle(""); setDescription(""); setParent(""); setIsChecked(false); setFile(null);
-            }
-        } catch (error) {
-            console.error("Failed to process item:", error);
-        } finally {
-            setUploading(false);
-        }
-    };
-
-    const addListItem = () => setListItems(prev => [...prev, ""]);
-    const updateListItem = (index, value) => setListItems(prev => prev.map((item, i) => (i === index ? value : item)));
-    const removeListItem = (index) => setListItems(prev => prev.filter((_, i) => i !== index));
 
     return (
+        <div className={`w-full flex flex-col gap-6 ${level > 0 ? "ml-4 md:ml-8 border-l-2 border-gray-100 pl-4 md:pl-6 mt-4" : ""}`}>
+            {renderItems.map((group, idx) => {
+                if (group.items) {
+                    const listClass = group.type === "numerical_list" ? "list-decimal" : group.type === "bulleted_list" ? "list-disc" : "list-[lower-alpha]";
+                    return (
+                        <ul key={idx} className={`${listClass} px-6 md:px-10 py-1 text-justify flex flex-col gap-3 text-[0.95rem] font-oasis-text text-gray-700`}>
+                            {group.items.map(li => <li key={li.id} className="leading-relaxed"><div className="flex flex-col gap-2"><span>{li.title}</span>{li.children?.length > 0 && <StudentTreeRenderer items={li.children} onView={onView} level={level + 1} />}</div></li>)}
+                        </ul>
+                    );
+                }
+                const item = group;
+                if (item.type === "header") return <div key={item.id} className="w-full flex flex-col gap-2"><h2 className={`font-bold text-oasis-button-dark ${level === 0 ? "text-xl" : "text-lg"} tracking-tight`}>{item.title}</h2>{item.children?.length > 0 && <StudentTreeRenderer items={item.children} onView={onView} level={level + 1} />}</div>;
+                if (item.type === "description") return <div key={item.id} className="w-full flex flex-col gap-2"><p className="text-[0.9rem] text-gray-700 leading-relaxed whitespace-pre-wrap">{item.title}</p>{item.children?.length > 0 && <StudentTreeRenderer items={item.children} onView={onView} level={level + 1} />}</div>;
+                if (item.type === "document") return <FormDownloadable key={item.id} text={item.title} link={`${API_BASE}${item.file}`} />;
+                return null;
+            })}
+        </div>
+    );
+}
+
+function DocUploadModal({ parentId, onCancel, onUpload, saving }) {
+    const [title, setTitle] = useState("");
+    const [file, setFile] = useState(null);
+    return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-150 p-4">
-            <div className="w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate__animated animate__zoomIn animate__faster flex flex-col max-h-[90vh]">
-                {/* MODAL HEADER */}
-                <div className="p-8 flex items-center justify-between bg-admin-element">
-                    <div className="flex flex-col">
-                        <h2 className="text-2xl font-bold text-gray-800">{editItem ? "Edit Content Item" : (isForms ? "Add Form / Template" : "Add Content Item")}</h2>
-                        <p className="text-sm text-gray-500">{editItem ? "Update the details of this item" : (isForms ? "Upload a new document or add a header for organization" : "Define a new element for your document structure")}</p>
-                    </div>
-                    <div className="p-3 rounded-2xl">
-                        {editItem ? <Pencil size={28} className="text-oasis-header" /> : (isForms ? <FileText size={28} className="text-oasis-header" /> : <PlusCircle size={28} className="text-oasis-header" />)}
-                    </div>
-                </div>
-
-                {/* MODAL CONTENT */}
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-admin-element">
-                    <form className="flex flex-col gap-8" onSubmit={handleCreate}>
-                        {/* TYPE SELECTOR */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Component Type</label>
-                            <Dropdown
-                                placeholder="What kind of item is this?"
-                                categories={itemTypeLabels}
-                                value={itemType}
-                                onChange={setItemType}
-                                hasBorder
-                            />
-                        </div>
-
-                        {/* DYNAMIC FIELDS BASED ON TYPE */}
-                        {selectedTypeValue && (
-                            <div className={`p-6 bg-gray-50/50 rounded-3xl border border-gray-100 space-y-6 ${isForms ? "mt-0" : ""}`}>
-                                {(selectedTypeValue === "header" || selectedTypeValue === "document") && (
-                                    <SingleField
-                                        labelText={selectedTypeValue === "header" ? "Header Name *" : (isForms ? "Document Name *" : "Title / Label *")}
-                                        fieldHolder={selectedTypeValue === "header" ? "e.g., Required Documents" : (isForms ? "e.g., Internship Application Form" : "e.g., Section 1: Introduction")}
-                                        fieldId="itemTitle"
-                                        value={title}
-                                        onChange={(e) => setTitle(e.target.value)}
-                                    />
-                                )}
-
-                                {(selectedTypeValue === "description" || (selectedTypeValue === "document" && !isForms)) && (
-                                    <MultiField
-                                        labelText={selectedTypeValue === "document" ? "Notes (Optional)" : "Content Description *"}
-                                        fieldHolder="Provide the detailed text for this section..."
-                                        fieldId="itemDescription"
-                                        value={description}
-                                        onChange={(e) => setDescription(e.target.value)}
-                                    />
-                                )}
-
-                                {isListType && (
-                                    <div className="space-y-4">
-                                        <label className="text-sm font-bold text-gray-700 block">List Entries</label>
-                                        <div className="flex flex-col gap-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-                                            {listItems.map((item, index) => (
-                                                <div key={index} className="flex gap-2 group animate__animated animate__fadeIn">
-                                                    <div className="flex-1">
-                                                        <SingleField
-                                                            fieldHolder={`Enter item ${index + 1}...`}
-                                                            value={item}
-                                                            onChange={(e) => updateListItem(index, e.target.value)}
-                                                        />
-                                                    </div>
-                                                    {listItems.length > 1 && (
-                                                        <button 
-                                                            type="button" 
-                                                            onClick={() => removeListItem(index)}
-                                                            className="p-2 text-black hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                                                        >
-                                                            <Trash size={20}/>
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <button 
-                                            type="button" 
-                                            onClick={addListItem}
-                                            className="flex items-center gap-2 text-xs font-bold text-oasis-header hover:text-oasis-button-dark transition-colors ml-1"
-                                        >
-                                            <PlusCircle size={16}/> Add another row
-                                        </button>
-                                    </div>
-                                )}
-
-                                {selectedTypeValue === "document" && (
-                                    <div className="pt-2">
-                                        <FileUploadField
-                                            labelText={editItem?.file ? `Source Document (Currently: ${editItem.originalFilename})` : "Source Document (PDF/Docx) *"}
-                                            fieldId="documentFile"
-                                            onChange={(e) => setFile(e.target.files?.[0] || null)}
-                                        />
-                                        {editItem?.file && <p className="text-[10px] text-gray-400 mt-2 ml-1 italic">Leave empty to keep the current file.</p>}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* NESTING CONFIGURATION */}
-                        <div className="p-6 bg-admin-element rounded-3xl space-y-4">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <input
-                                        type="checkbox"
-                                        id="nestToggle"
-                                        checked={isChecked}
-                                        onChange={handleCheckbox}
-                                        className="w-5 h-5 rounded-lg border-gray-300 text-oasis-header focus:ring-oasis-header cursor-pointer"
-                                    />
-                                    <label htmlFor="nestToggle" className="text-sm font-bold text-gray-700 cursor-pointer">
-                                        Nest under an existing parent?
-                                    </label>
-                                </div>
-                                <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-tighter ${isChecked ? "bg-oasis-header text-white" : "bg-gray-200 text-gray-400"}`}>
-                                    {isChecked ? "Active" : "Disabled"}
-                                </span>
-                            </div>
-                            
-                            <div className={`transition-all duration-300 ${isChecked ? "opacity-100 max-h-40" : "opacity-40 max-h-0 pointer-events-none overflow-hidden"}`}>
-                                <Dropdown
-                                    placeholder="Choose parent item..."
-                                    categories={parents.filter(p => !editItem || (p !== editItem.title && p !== editItem.type))}
-                                    value={parent}
-                                    onChange={setParent}
-                                    hasBorder
-                                />
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
-                {/* MODAL FOOTER */}
-                <div className="p-8 bg-admin-element flex gap-4 justify-end">
-                    <button 
-                        onClick={onClick}
-                        className="px-8 py-3 rounded-2xl font-bold text-gray-500 hover:bg-gray-200 transition-all flex items-center gap-2"
-                    >
-                        <X size={18} /> Cancel
-                    </button>
-                    <button 
-                        onClick={handleCreate}
-                        disabled={!isCreateEnabled || uploading}
-                        className={`px-10 py-3 rounded-2xl font-bold text-oasis-header shadow-xl shadow-oasis-header/20 flex items-center gap-2 transition-all
-                            ${!isCreateEnabled || uploading 
-                                ? "bg-gray-300 cursor-not-allowed shadow-none" 
-                                : "bg-oasis-header text-white hover:bg-oasis-button-dark hover:scale-105"
-                            }
-                        `}
-                    >
-                        {uploading ? "Uploading..." : <>{editItem ? <Check size={18} /> : (isForms ? <FileText size={18} /> : <Check size={18} />)} {editItem ? "Save Changes" : (isForms ? "Add Document" : "Add Component")}</>}
-                    </button>
-                </div>
+            <div className="w-full max-w-xl bg-admin-element rounded-[2.5rem] shadow-2xl p-8 animate__animated animate__zoomIn animate__faster">
+                <h2 className="text-2xl font-bold mb-6">Upload Document</h2>
+                <div className="space-y-6"><SingleField labelText="Document Name" fieldHolder="e.g. Internship Form" value={title} onChange={(e) => setTitle(e.target.value)} /><FileUploadField labelText="Choose File (PDF/Docx)" onChange={(e) => setFile(e.target.files[0])} /></div>
+                <div className="flex justify-end gap-4 mt-8"><button onClick={onCancel} className="px-6 py-2 font-bold text-gray-500 hover:bg-gray-100 rounded-xl">Cancel</button><button onClick={() => onUpload(parentId, title, file)} disabled={!title || !file || saving} className="px-8 py-2 bg-oasis-header text-white font-bold rounded-xl hover:bg-oasis-button-dark disabled:opacity-50">{saving ? "Uploading..." : "Upload & Add"}</button></div>
             </div>
         </div>
     );

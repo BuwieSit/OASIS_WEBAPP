@@ -9,7 +9,8 @@ export function AdminField({
   onChange,
   hasBorder,
   disabled = false,
-  autoComplete = "off"
+  autoComplete = "off",
+  hasError
 }) {
   return (
     <input
@@ -20,8 +21,10 @@ export function AdminField({
       onChange={onChange}
       disabled={disabled}
       autoComplete={autoComplete}
-      className={`bg-white w-full px-2 py-2 text-[0.9rem] rounded text-black ${
+      className={`bg-white w-full px-2 py-2 text-[0.9rem] rounded text-black transition-all duration-300 ${
         hasBorder ? "border" : ""
+      } ${
+        hasError ? "border-2 border-red-500 ring-2 ring-red-100" : ""
       } ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
     />
   );
@@ -54,7 +57,7 @@ export function ContentField({
   );
 }
 
-export function UploadField({ id, accept, onChange, disabled = false }) {
+export function UploadField({ id, accept, onChange, disabled = false, hasError }) {
   const inputId = useMemo(
     () => id || `upload-${Math.random().toString(36).slice(2, 10)}`,
     [id]
@@ -77,7 +80,8 @@ export function UploadField({ id, accept, onChange, disabled = false }) {
   return (
     <label
       htmlFor={inputId}
-      className={`flex items-center gap-4 p-3 rounded border transition 
+      className={`flex items-center gap-4 p-3 rounded border transition-all duration-300 
+        ${hasError ? "border-2 border-red-500 ring-2 ring-red-100" : ""}
         ${fileName !== "Select a file to upload" ? 
           "border-oasis-button-light bg-oasis-button-light text-white" 
           : "bg-white border-gray-300"} 

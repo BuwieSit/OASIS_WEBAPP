@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Subtitle from "../utilities/subtitle";
 import Title from "../utilities/title";
 import { AnnounceButton } from "./button";
@@ -6,7 +6,18 @@ import { FileUploadField, SingleField } from "./fieldComp";
 import imgBg from "../assets/fallbackImage.jpg";
 import { submitMoaProspect } from "../api/student.service";
 import { GeneralPopupModal } from "./popupModal";
-import { X } from "lucide-react";
+import { 
+    X, 
+    Building2, 
+    Briefcase, 
+    MapPin, 
+    User, 
+    Mail, 
+    Phone, 
+    FileText, 
+    CheckCircle,
+    Info
+} from "lucide-react";
 
 export default function ProspectMoaForm() {
     const moaSteps = [
@@ -85,10 +96,13 @@ export default function ProspectMoaForm() {
 
     const [formData, setFormData] = useState(initialFormData);
 
+    useEffect(() => {
+        setErrMsg("");
+    }, [formData]);
+
     const handleChange = (field) => (e) => {
         let value = e.target.value;
         if (field === "contact_number") {
-            // Only allow numbers
             value = value.replace(/\D/g, "");
         }
         setFormData((prev) => ({
@@ -105,7 +119,7 @@ export default function ProspectMoaForm() {
                 ...prev,
                 moa_file: null,
             }));
-            setFileKey(Date.now()); // Force reset of internal UploadField state
+            setFileKey(Date.now());
             return;
         }
         setErrMsg("");
@@ -149,6 +163,7 @@ export default function ProspectMoaForm() {
         setAttemptedSubmit(true);
 
         if (allErrors.length > 0) {
+            setErrMsg("Invalid Entry. Please fill in all required fields correctly.");
             return;
         }
 
@@ -226,8 +241,8 @@ export default function ProspectMoaForm() {
             {errMsg && 
                 <GeneralPopupModal 
                     text={errMsg} 
-                    title={"Error"} 
-                    time={3000} 
+                    title={"Submission Error"} 
+                    time={4000} 
                     icon={<X color="#800020" size={35}/>}
                     isFailed={true}
                     onClose={() => setErrMsg("")}
@@ -236,126 +251,203 @@ export default function ProspectMoaForm() {
             
             <div
                 id="prospectForm"
-                className="relative w-full px-5 py-10 flex flex-col gap-2 justify-center items-center shadow-[inset_0_0_50px_rgba(0,0,0,1)]"
+                className="relative w-full px-5 py-20 flex flex-col gap-10 justify-center items-center overflow-hidden"
             >
+                {/* Visual Background Elements */}
                 <img
                     src={imgBg}
-                    className="w-full h-full object-cover z-1 absolute top-1/2 left-1/2 
-                    -translate-x-1/2 -translate-y-1/2 opacity-50"
+                    className="w-full h-full object-cover z-0 absolute top-0 left-0 opacity-40 blur-[2px]"
                 />
+                <div className="absolute inset-0 z-0 bg-linear-to-b from-black/40 to-black/40" />
 
-                <section className="mb-5 z-10">
-                    <Title text={"MOA Prospect Submission"} />
-                    <Subtitle text={"Please fill out this form to propose a new Host Training Establishment (HTE) for partnership."} />
+                <section className="relative z-10 text-center max-w-4xl px-4 flex flex-col items-center">
+                    <div className="animate__animated animate__fadeInDown">
+                        <Subtitle text={"MOA Prospect Submission"} size="text-3xl md:text-5xl" color={"text-white"} weight={"font-bold"}/>
+                        <div className="w-24 h-1 bg-white mx-auto mt-4 rounded-full mb-6" />
+                        <Subtitle 
+                            color="text-white/90" 
+                            size="text-sm md:text-base" 
+                            weight="font-medium"
+                            isCenter={true}
+                            text={"Partner with us! Submit a new Host Training Establishment (HTE) for MOA processing."} 
+                        />
+                    </div>
                 </section>
 
-                <section className="w-full grid md:grid-cols-2 lg:grid-cols-2 place-items-start justify-items-center gap-5 z-10">
-                    <div className="bg-oasis-gradient hidden w-[450px] p-10 md:flex lg:flex flex-col justify-center items-start shadow-[3px_3px_2px_rgba(0,0,0,0.4)] rounded-3xl">
-                        <Subtitle size={"text-[1.2rem]"} color={"text-black"} weight={"font-bold"} text={"MOA Process Flow"} />
+                <section className="relative z-10 w-full max-w-7xl grid lg:grid-cols-5 gap-8 items-start px-4">
+                    
+                    {/* LEFT PANEL: PROCESS FLOW */}
+                    <div className="lg:col-span-2 order-2 lg:order-1 h-full">
+                        <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-8 md:p-10 rounded-[2.5rem] shadow-2xl sticky top-20 flex flex-col gap-8">
+                            <div className="flex items-center gap-3 border-b border-white/10 pb-6">
+                                <div className="p-3 bg-oasis-button-light/20 rounded-2xl text-oasis-button-light">
+                                    <Info size={28} />
+                                </div>
+                                <Subtitle 
+                                    size={"text-xl"} 
+                                    color={"text-white"} 
+                                    weight={"font-black"} 
+                                    text={"MOA Process Flow"} 
+                                />
+                            </div>
 
-                        <div className="mt-5 w-full font-oasis-text text-table-text-size flex flex-col gap-4">
-                            <MOAStepList steps={moaSteps} />
+                            <div className="overflow-y-auto max-h-[600px] custom-scrollbar pr-2">
+                                <MOAStepList steps={moaSteps} />
+                            </div>
                         </div>
                     </div>
 
-                    <div className="w-full max-w-[600px] px-4 sm:px-6 lg:px-0">
+                    {/* RIGHT PANEL: FORM */}
+                    <div className="lg:col-span-3 order-1 lg:order-2">
                         <form
                             onSubmit={handleSubmit}
-                            className="bg-oasis-gradient p-5 sm:p-8 md:p-10 flex flex-col justify-center items-start shadow-[3px_3px_2px_rgba(0,0,0,0.4)] rounded-3xl gap-3"
+                            className="bg-white p-8 md:p-12 flex flex-col shadow-2xl rounded-[2.5rem] gap-8 relative border border-white/50"
                         >
-                            <Subtitle
-                                size={"text-[1rem]"}
-                                color={"text-black"}
-                                weight={"font-bold"}
-                                text={"HTE Information"}
-                            />
+                            {/* Form Header */}
+                            <div className="space-y-2 border-b border-gray-100 pb-6">
+                                <div className="flex items-center gap-2 text-oasis-button-dark">
+                                    <Building2 size={24} />
+                                    <Subtitle
+                                        size={"text-lg"}
+                                        color={"text-oasis-button-dark"}
+                                        weight={"font-black"}
+                                        text={"HTE INFORMATION"}
+                                    />
+                                </div>
+                                <p className="text-gray-400 text-xs font-medium uppercase tracking-widest">General details of the establishment</p>
+                            </div>
 
-                            <SingleField
-                                labelText={"HTE / Company Name"}
-                                fieldHolder={"Enter Company Name"}
-                                fieldId={"company_name"}
-                                value={formData.company_name}
-                                onChange={handleChange("company_name")}
-                            />
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="md:col-span-2">
+                                    <SingleField
+                                        labelText={"HTE / Company Name"}
+                                        fieldHolder={"Enter legal company name"}
+                                        fieldId={"company_name"}
+                                        value={formData.company_name}
+                                        onChange={handleChange("company_name")}
+                                        icon={<Building2 size={18} />}
+                                        hasError={attemptedSubmit && !formData.company_name.trim()}
+                                    />
+                                </div>
 
-                            <SingleField
-                                labelText={"Nature of Business / Industry"}
-                                fieldHolder={"Enter nature of business / industry"}
-                                fieldId={"industry"}
-                                value={formData.industry}
-                                onChange={handleChange("industry")}
-                            />
-
-                            <SingleField
-                                labelText={"HTE Address"}
-                                fieldHolder={"Enter Address"}
-                                fieldId={"address"}
-                                value={formData.address}
-                                onChange={handleChange("address")}
-                            />
-
-                            <FileUploadField
-                                key={fileKey}
-                                labelText={"MOA Document (Optional)"}
-                                fieldId={"moa_file"}
-                                onChange={handleFileChange}
-                            />
-
-                            <Subtitle
-                                size={"text-[1rem]"}
-                                color={"text-black"}
-                                weight={"font-bold"}
-                                text={"Primary Contact Person"}
-                            />
-
-                            <SingleField
-                                labelText={"Contact Person Name"}
-                                fieldHolder={"Enter contact name"}
-                                fieldId={"contact_person"}
-                                value={formData.contact_person}
-                                onChange={handleChange("contact_person")}
-                            />
-
-                            <SingleField
-                                labelText={"Position / Designation"}
-                                fieldHolder={"Enter contact person position"}
-                                fieldId={"contact_position"}
-                                value={formData.contact_position}
-                                onChange={handleChange("contact_position")}
-                            />
-
-                            <SingleField
-                                labelText={"Email Address"}
-                                fieldHolder={"Enter contact person email"}
-                                fieldId={"contact_email"}
-                                fieldType={"email"}
-                                value={formData.contact_email}
-                                onChange={handleChange("contact_email")}
-                            />
-
-                            <SingleField
-                                labelText={"Contact Number"}
-                                fieldHolder={"Enter contact person number"}
-                                fieldId={"contact_number"}
-                                value={formData.contact_number}
-                                onChange={handleChange("contact_number")}
-                            />
-
-                            {attemptedSubmit && allErrors.length > 0 && (
-                                <Subtitle
-                                    color="text-red-600"
-                                    size="text-[0.8rem]"
-                                    isItalic
-                                    text={`${allErrors.join(", ")} ${allErrors.length > 1 ? "are" : "is"} invalid or required`}
+                                <SingleField
+                                    labelText={"Nature of Business"}
+                                    fieldHolder={"e.g. IT, Finance, Healthcare"}
+                                    fieldId={"industry"}
+                                    value={formData.industry}
+                                    onChange={handleChange("industry")}
+                                    icon={<Briefcase size={18} />}
+                                    hasError={attemptedSubmit && !formData.industry.trim()}
                                 />
+
+                                <SingleField
+                                    labelText={"HTE Address"}
+                                    fieldHolder={"Complete street address"}
+                                    fieldId={"address"}
+                                    value={formData.address}
+                                    onChange={handleChange("address")}
+                                    icon={<MapPin size={18} />}
+                                    hasError={attemptedSubmit && !formData.address.trim()}
+                                />
+                            </div>
+
+                            <div className="bg-oasis-blue/5 p-6 rounded-3xl border border-oasis-blue/10">
+                                <FileUploadField
+                                    key={fileKey}
+                                    labelText={"Supporting MOA Document"}
+                                    fieldId={"moa_file"}
+                                    onChange={handleFileChange}
+                                    hasError={attemptedSubmit && errMsg.includes("PDF")}
+                                />
+                                <p className="mt-2 text-[0.7rem] text-oasis-blue font-medium flex items-center gap-1.5">
+                                    <Info size={12} />
+                                    Optional: Upload a pre-signed or template MOA (PDF only)
+                                </p>
+                            </div>
+
+                            {/* Contact Person Section */}
+                            <div className="space-y-2 border-b border-gray-100 pb-6 pt-4">
+                                <div className="flex items-center gap-2 text-oasis-button-dark">
+                                    <User size={24} />
+                                    <Subtitle
+                                        size={"text-lg"}
+                                        color={"text-oasis-button-dark"}
+                                        weight={"font-black"}
+                                        text={"PRIMARY CONTACT PERSON"}
+                                    />
+                                </div>
+                                <p className="text-gray-400 text-xs font-medium uppercase tracking-widest">Who should we communicate with?</p>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <SingleField
+                                    labelText={"Full Name"}
+                                    fieldHolder={"Enter contact person name"}
+                                    fieldId={"contact_person"}
+                                    value={formData.contact_person}
+                                    onChange={handleChange("contact_person")}
+                                    icon={<User size={18} />}
+                                    hasError={attemptedSubmit && !formData.contact_person.trim()}
+                                />
+
+                                <SingleField
+                                    labelText={"Position"}
+                                    fieldHolder={"Enter their designation"}
+                                    fieldId={"contact_position"}
+                                    value={formData.contact_position}
+                                    onChange={handleChange("contact_position")}
+                                    icon={<CheckCircle size={18} />}
+                                    hasError={attemptedSubmit && !formData.contact_position.trim()}
+                                />
+
+                                <SingleField
+                                    labelText={"Email Address"}
+                                    fieldHolder={"example@company.com"}
+                                    fieldId={"contact_email"}
+                                    fieldType={"email"}
+                                    value={formData.contact_email}
+                                    onChange={handleChange("contact_email")}
+                                    icon={<Mail size={18} />}
+                                    hasError={attemptedSubmit && (!formData.contact_email.trim() || !isEmailValid(formData.contact_email))}
+                                />
+
+                                <SingleField
+                                    labelText={"Contact Number"}
+                                    fieldHolder={"Enter 11-digit mobile/landline"}
+                                    fieldId={"contact_number"}
+                                    value={formData.contact_number}
+                                    onChange={handleChange("contact_number")}
+                                    icon={<Phone size={18} />}
+                                    hasError={attemptedSubmit && !formData.contact_number.trim()}
+                                />
+                            </div>
+
+                            {/* Error Summary */}
+                            {attemptedSubmit && allErrors.length > 0 && (
+                                <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex items-start gap-3 animate__animated animate__shakeX">
+                                    <div className="p-1.5 bg-red-100 rounded-lg text-red-600 shrink-0">
+                                        <X size={16} />
+                                    </div>
+                                    <Subtitle
+                                        color="text-red-600"
+                                        size="text-[0.75rem]"
+                                        weight="font-bold"
+                                        text={`Missing Required Fields: ${allErrors.join(", ")}`}
+                                    />
+                                </div>
                             )}
 
-                            <div className="w-full col-span-2 flex justify-center">
+                            <div className="pt-6">
                                 <AnnounceButton
                                     isFullWidth={true}
                                     btnText="Submit MOA Prospect"
                                     type="submit"
+                                    icon={<FileText size={20} />}
+                                    className="py-5 text-lg rounded-2xl shadow-xl shadow-oasis-button-dark/20"
                                 />
+                                <p className="text-center text-gray-400 text-[0.65rem] mt-4 font-bold uppercase tracking-tighter italic">
+                                    By submitting, you ensure that the contact information is accurate for OJT processing.
+                                </p>
                             </div>
                         </form>
                     </div>
@@ -366,40 +458,33 @@ export default function ProspectMoaForm() {
 }
 
 export function MOAStepList({ steps }) {
-    const oasisBgClasses = [
-        "bg-oasis-aqua",
-        "bg-oasis-blue",
-        "bg-oasis-dark",
-        "bg-oasis-header"
-    ];
-
-    const getRandomBg = () => {
-        return oasisBgClasses[
-            Math.floor(Math.random() * oasisBgClasses.length)
-        ];
-    };
-
     return (
-        <div className="flex flex-col gap-6">
+        <div className="relative flex flex-col gap-8 py-4">
+            {/* Timeline Line */}
+            <div className="absolute left-[19px] top-6 bottom-6 w-0.5 bg-linear-to-b from-oasis-button-light via-oasis-aqua/50 to-oasis-blue/20" />
+
             {steps.map((step, index) => (
-                <div key={index} className="flex gap-3 items-start">
+                <div key={index} className="group relative flex gap-6 items-start animate__animated animate__fadeInLeft" style={{ animationDelay: `${index * 100}ms` }}>
+                    {/* Step Number Circle */}
+                    
                     <div
                         className={`
-                        shrink-0 w-10 h-10 rounded-full
+                        relative z-10 shrink-0 w-10 h-10 rounded-xl
                         flex items-center justify-center
-                        text-white font-bold shadow-md
-                        ${step.bg || getRandomBg()}
+                        text-white font-black text-sm shadow-lg 
+                        ${step.bg || "bg-oasis-aqua"}
                     `}
                     >
                         {(index + 1).toString().padStart(2, "0")}
+
                     </div>
 
-                    <div>
-                        <h3 className="font-bold text-[0.95rem] mb-1">
+                    <div className="flex flex-col gap-1 pt-0.5">
+                        <h3 className="font-black text-white text-[1rem] group-hover:text-oasis-button-light transition-colors duration-300">
                             {step.title}
                         </h3>
 
-                        <p className="text-justify text-sm">
+                        <p className="text-white/60 text-[0.75rem] leading-relaxed line-clamp-2 group-hover:line-clamp-none transition-all duration-300">
                             {step.description}
                         </p>
                     </div>
