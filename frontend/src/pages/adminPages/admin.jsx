@@ -497,7 +497,7 @@ export default function Admin() {
                                                 {a.created_at ? new Date(a.created_at).toLocaleDateString() : "-"}
                                             </p>
                                             <h3 className="text-table-text-size md:text-[1rem] font-bold text-gray-800 truncate block w-full">{a.title}</h3>
-                                            <p className="text-[0.7rem] md:text-[0.8rem] font-medium line-clamp-2 text-gray-600 wrap-break-word">{a.content}</p>
+                                            <p className="text-[0.7rem] md:text-[0.8rem] font-medium line-clamp-2 text-gray-600 wrap-break-word whitespace-pre-wrap">{a.content}</p>
                                         </div>
 
                                         <div className="flex flex-row gap-2 w-full md:w-auto shrink-0 mt-1 md:mt-0">
@@ -541,7 +541,7 @@ export default function Admin() {
                                     className='w-full bg-white p-4 rounded-2xl border-l-4 border-l-oasis-button-dark border border-gray-100 hover:shadow-md transition-all cursor-default'
                                 >
                                     <h3 className='text-[0.8rem] font-bold text-gray-800'>{alert.title}</h3>
-                                    <p className='text-[0.75rem] font-light text-gray-600 mt-1'>{alert.message}</p>
+                                    <p className='text-[0.75rem] font-light text-gray-600 mt-1 whitespace-pre-wrap'>{alert.message}</p>
                                     <p className='text-[0.65rem] text-gray-400 mt-2 font-medium'>
                                         {alert.date ? new Date(alert.date).toLocaleDateString() : ""}
                                     </p>

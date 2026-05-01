@@ -140,7 +140,7 @@ export default function AdmNotifications() {
                                             </span>
                                         </div>
                                         <h3 className="text-lg font-bold text-oasis-header">{alert.title}</h3>
-                                        <p className="text-gray-600">{alert.message}</p>
+                                        <p className="text-gray-600 whitespace-pre-wrap">{alert.message}</p>
                                     </div>
 
                                     <div className="p-2 text-gray-300 group-hover:text-oasis-aqua transition-colors">

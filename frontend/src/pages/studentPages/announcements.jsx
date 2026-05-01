@@ -185,6 +185,7 @@ export default function Announcements() {
                                         <Subtitle
                                             text={a.content}
                                             className="line-clamp-2 text-sm text-black mt-1"
+                                            isPreWrap={true}
                                         />
                                     </div>
                                     

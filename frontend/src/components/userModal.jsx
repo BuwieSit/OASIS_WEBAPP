@@ -113,7 +113,6 @@ export function AnnouncementModal({ visible, onClose, title, content, date, time
                     <div className="max-w-prose mx-auto w-full">
                         <p className="
                             text-sm sm:text-base
-                            text-justify
                             font-oasis-text
                             text-gray-700
                             leading-relaxed
@@ -168,7 +167,7 @@ export function NotificationModal({ visible, onClose, notification }) {
 
                 {/* CONTENT */}
                 <div className="p-8 flex-1 overflow-y-auto max-h-[60vh] custom-scrollbar">
-                    <p className="text-sm md:text-base text-gray-700 leading-relaxed font-oasis-text">
+                    <p className="text-sm md:text-base text-gray-700 leading-relaxed font-oasis-text whitespace-pre-wrap">
                         {notification.message}
                     </p>
                 </div>

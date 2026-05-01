@@ -157,17 +157,30 @@ export function Header({ admin, notifications = [], setNotifications = () => {} 
                     
                     {/* MOBILE */}
                     <Menu onClick={() => toggleDropdown("menu")} className="md:hidden lg:hidden absolute left-[5%] cursor-pointer" color="#54A194" />
-    
-                    
                 </div>
             </header>
         }
 
-            {/* MOBILE */}
+            {/* SHARED UI ELEMENTS (Rendered once to avoid double-listener bugs) */}
+            {confirmation && (
+                <ConfirmModal 
+                    confText="logout?" 
+                    onLogOut={handleLogout} 
+                    onCancel={() => setConfirmation(false)}
+                />
+            )}
+
+            {activeDropdown === "notifs" && (
+                <Notifications
+                    open={activeDropdown === "notifs"}
+                    onClose={() => setActiveDropdown(null)}
+                    notifications={notifications}
+                    setNotifications={setNotifications}
+                />
+            )}
+
+            {/* MOBILE ONLY DROPDOWNS */}
             <div className="block md:hidden">
-                {confirmation && 
-                    <ConfirmModal confText="logout?" onLogOut={handleLogout} onCancel={() => setConfirmation(false)}/>
-                }
                 {activeDropdown === "menu" && (
                     <NavigationDropdown 
                         onClose={() => setActiveDropdown(null)} 
@@ -190,33 +203,16 @@ export function Header({ admin, notifications = [], setNotifications = () => {} 
                         unreadCount={unreadCount}
                     />
                 )}
-                {activeDropdown === "notifs" && (
-                    <Notifications
-                        open={activeDropdown === "notifs"}
-                        onClose={() => setActiveDropdown(null)}
-                        notifications={notifications}
-                        setNotifications={setNotifications}
-                    />
-                )}
             </div>
 
-            {/* DESKTOP */}
+            {/* DESKTOP ONLY DROPDOWNS */}
             <div className="hidden md:block">
                 {activeDropdown === "profile" && (
                     <UserDropdownSettings
                         open={activeDropdown === "profile"}
                         onClose={() => setActiveDropdown(null)}
                         className={animationClass}
-                        items={[{ text: "Profile", to: "/student-profile" }, { text: "Log out" }]}
-                    />
-                )}
-
-                {activeDropdown === "notifs" && (
-                    <Notifications
-                        open={activeDropdown === "notifs"}
-                        onClose={() => setActiveDropdown(null)}
-                        notifications={notifications}
-                        setNotifications={setNotifications}
+                        items={[{ text: "Profile", to: "/student-profile" }, { text: "Log out", onClick: () => setConfirmation(true) }]}
                     />
                 )}
             </div>

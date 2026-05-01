@@ -17,6 +17,7 @@ const Subtitle = forwardRef(({
     isActive,
     isItalic,
     isMobile,
+    isPreWrap = false,
     ariaLive
 }, ref) => {
 
@@ -26,6 +27,7 @@ const Subtitle = forwardRef(({
         ${weight}
         ${isJustify ? "text-justify" : ""}
         ${isCenter ? "text-center" : "text-start"}
+        ${isPreWrap ? "whitespace-pre-wrap" : ""}
         ${size}
         ${color}
         ${isActive ? "font-bold border-0 border-b-5 border-b-oasis-header" : ""}
