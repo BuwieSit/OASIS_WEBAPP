@@ -14,6 +14,9 @@ import Subtitle from '../../utilities/subtitle.jsx';
 import { AdminAPI } from "../../api/admin.api";
 import { Dropdown } from '../../components/adminComps.jsx';
 import SearchBar from '../../components/searchBar.jsx';
+import api from "../../api/axios.jsx";
+
+const API_BASE = api.defaults.baseURL;
 
 export default function MoaOverview() {
     const [activeFilter, setFilter] = useQueryParam("tab", "overview");
@@ -139,11 +142,26 @@ export default function MoaOverview() {
         }
     };
 
-    const openPdf = async (moaId, companyName) => {
+    const openPdf = async (moaId, companyName, filePath = null) => {
         try {
             setViewingId(moaId);
-            const blobUrl = await fetchMoaBlobUrl(moaId);
-            if (!blobUrl) return;
+            
+            let url = null;
+            // CHECK: Prioritize physical file path if it exists
+            if (typeof filePath === 'string' && filePath.trim() !== '' && filePath !== '—') {
+                const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+                const separator = API_BASE.endsWith('/') ? '' : '/';
+                url = filePath.startsWith("http") ? filePath : `${API_BASE}${separator}${cleanPath}`;
+            } 
+            // FALLBACK: Use Blob API for approved MOAs stored in DB
+            else if (moaId) {
+                url = await fetchMoaBlobUrl(moaId);
+            }
+
+            if (!url) {
+                console.error("No valid URL or Blob found for PDF viewing.");
+                return;
+            }
 
             if (filePdf && filePdf.startsWith("blob:")) {
                 window.URL.revokeObjectURL(filePdf);
@@ -154,24 +172,37 @@ export default function MoaOverview() {
                 .replace(/[^\w\-]/g, "");
 
             setCurrentFileName(`${safeName}_MOA.pdf`);
-            setFilePdf(blobUrl);
+            setFilePdf(url);
             setOpenView(true);
         } finally {
             setViewingId(null);
         }
     };
 
-    const downloadMoa = async (moaId, companyName) => {
-        if (!moaId) return;
+    const downloadMoa = async (moaId, companyName, filePath = null) => {
+        if (!moaId && (!filePath || filePath === '—')) return;
 
         try {
-            const res = await AdminAPI.getMoaFileBlob(moaId);
-            const blob = res?.data;
+            let url = null;
+            let isBlob = false;
 
-            if (!blob || blob.size === 0) {
-                console.error("No blob returned for download:", moaId);
-                return;
+            if (typeof filePath === 'string' && filePath.trim() !== '' && filePath !== '—') {
+                const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+                const separator = API_BASE.endsWith('/') ? '' : '/';
+                url = filePath.startsWith("http") ? filePath : `${API_BASE}${separator}${cleanPath}`;
+            } else if (moaId) {
+                const res = await AdminAPI.getMoaFileBlob(moaId);
+                const blob = res?.data;
+
+                if (!blob || blob.size === 0 || blob.type === "application/json") {
+                    console.error("No valid blob returned for download:", moaId);
+                    return;
+                }
+                url = window.URL.createObjectURL(blob);
+                isBlob = true;
             }
+
+            if (!url) return;
 
             const safeName = (companyName || "HTE")
                 .replace(/\s+/g, "_")
@@ -179,16 +210,18 @@ export default function MoaOverview() {
 
             const filename = `${safeName}_MOA.pdf`;
 
-            const url = window.URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
             link.download = filename;
+            if (!isBlob) link.target = "_blank";
 
             document.body.appendChild(link);
             link.click();
             link.remove();
 
-            window.URL.revokeObjectURL(url);
+            if (isBlob) {
+                window.URL.revokeObjectURL(url);
+            }
         } catch (err) {
             console.error("Download MOA failed:", err?.response?.data || err.message || err);
         }
@@ -255,8 +288,8 @@ export default function MoaOverview() {
                 <ViewMoaButton
                     url={(r.document_path || r.has_document_blob) ? "#" : null}
                     loading={viewingId === r.id}
-                    onClick={() => openPdf(r.id, r.hte?.company_name)}
-                    onDownload={() => downloadMoa(r.id, r.hte?.company_name)}
+                    onClick={() => openPdf(r.id, r.hte?.company_name, r.document_path)}
+                    onDownload={() => downloadMoa(r.id, r.hte?.company_name, r.document_path)}
                 />
             )
         }
@@ -321,8 +354,8 @@ export default function MoaOverview() {
                     <ViewMoaButton
                         url={r.moa_file_path ? "#" : null}
                         loading={viewingId === r.id}
-                        onClick={() => openPdf(r.id, r.company_name)}
-                        onDownload={() => downloadMoa(r.id, r.company_name)}
+                        onClick={() => openPdf(r.id, r.company_name, r.moa_file_path)}
+                        onDownload={() => downloadMoa(r.id, r.company_name, r.moa_file_path)}
                     />
                 );
             }
