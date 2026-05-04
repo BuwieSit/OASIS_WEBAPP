@@ -101,7 +101,8 @@ const parseBulkAdd = (text) => {
             id: crypto.randomUUID(),
             type,
             title,
-            children: []
+            children: [],
+            isDraft: true
         };
 
         while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
@@ -280,9 +281,12 @@ export default function DocsUpload() {
         try {
             setSaving(true);
             const normalizedItems = normalizeTreeForSave(items);
-            await AdminAPI.saveDocuments(activeFilter, normalizedItems);
+            const response = await AdminAPI.saveDocuments(activeFilter, normalizedItems);
             
-            backendDataRef.current = JSON.stringify(items);
+            const savedItems = response?.data?.items || items;
+            setItems(savedItems);
+            backendDataRef.current = JSON.stringify(savedItems);
+
             localStorage.removeItem(`docs_upload_draft_${activeFilter}`);
             setHasDraft(false);
 
@@ -314,7 +318,7 @@ export default function DocsUpload() {
     }
 
     const addComponent = () => {
-        const newComp = { id: crypto.randomUUID(), type: "header", title: "New Component", children: [] };
+        const newComp = { id: crypto.randomUUID(), type: "header", title: "New Component", children: [], isDraft: true };
         setItems([...items, newComp]);
         setEditingItem({ id: newComp.id, title: newComp.title });
     };
@@ -323,13 +327,14 @@ export default function DocsUpload() {
         triggerConfirm(`delete "${title}" and all its children?`, () => {
             const [newList] = findAndRemove(items, id);
             setItems(newList);
+            setShowConfirmModal(false);
             setPopup({ title: "Removed", text: "Item removed from local structure. Save to apply changes.", icon: <Trash size={50} />, type: "neutral" });
         });
     };
 
     const updateItemTitle = (id, newTitle) => {
         const updateInTree = (list) => list.map(item => {
-            if (item.id === id) return { ...item, title: newTitle };
+            if (item.id === id) return { ...item, title: newTitle, isDraft: true };
             return { ...item, children: item.children ? updateInTree(item.children) : [] };
         });
         setItems(updateInTree(items));
@@ -352,7 +357,8 @@ export default function DocsUpload() {
         const [listWithoutDragged, draggedItem] = findAndRemove(items, draggedId);
         if (!draggedItem) return;
         
-        setItems(insertAt(listWithoutDragged, targetId, draggedItem, position));
+        const markedDraggedItem = { ...draggedItem, isDraft: true };
+        setItems(insertAt(listWithoutDragged, targetId, markedDraggedItem, position));
         setDropTarget(null);
         setDraggedId(null);
     };
@@ -363,7 +369,7 @@ export default function DocsUpload() {
             setShowAddItemDropdown(null);
             return;
         }
-        const newItem = { id: crypto.randomUUID(), type, title: `New ${type.replace('_', ' ')}`, children: [] };
+        const newItem = { id: crypto.randomUUID(), type, title: `New ${type.replace('_', ' ')}`, children: [], isDraft: true };
         setItems(insertAt(items, parentId, newItem));
         setShowAddItemDropdown(null);
         setEditingItem({ id: newItem.id, title: newItem.title });
@@ -391,7 +397,8 @@ export default function DocsUpload() {
                 title: title,
                 file: uploaded.file,
                 originalFilename: uploaded.originalFilename,
-                children: []
+                children: [],
+                isDraft: true
             };
             setItems(insertAt(items, parentId, newItem));
             setShowDocUploadModal(null);
@@ -460,7 +467,7 @@ export default function DocsUpload() {
                                 {loading ? <div className="py-20 text-center text-gray-400 animate-pulse font-bold tracking-widest uppercase text-xs">Loading structure...</div> : 
                                 items.length === 0 ? <div className="py-20 bg-gray-50 rounded-[3rem] border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-4"><Layout size={48} className="text-gray-200" /><p className="font-bold">No components added yet</p><button onClick={addComponent} className="text-oasis-header underline font-bold text-sm">Add your first component</button></div> : 
                                 items.map((component) => (
-                                    <div key={component.id} className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden border-l-4 border-l-oasis-header" onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }} onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleMove(e.dataTransfer.getData("draggedId"), component.id); }}>
+                                    <div key={component.id} className={`bg-white rounded-[2.5rem] border shadow-sm overflow-hidden border-l-4 border-l-oasis-header transition-all duration-300 ${component.isDraft ? 'border-amber-300 shadow-[0_0_20px_rgba(251,191,36,0.2)] ring-1 ring-amber-400/10' : 'border-gray-100'}`} onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }} onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleMove(e.dataTransfer.getData("draggedId"), component.id); }}>
                                         <div className="p-6 flex items-center justify-between bg-gray-50/50">
                                             <div className="flex items-center gap-4 flex-1"><div draggable onDragStart={(e) => { e.dataTransfer.setData("draggedId", component.id); e.dataTransfer.effectAllowed = "move"; }} className="mt-1 cursor-grab active:cursor-grabbing text-gray-300 hover:text-oasis-header transition-colors"><GripVertical size={20} /></div><div className="p-2 bg-white rounded-xl shadow-sm text-oasis-header"><Layout size={20} /></div>
                                                 {editingItem?.id === component.id ? <div className="flex items-center gap-2 w-full max-w-md"><span className="text-gray-400 font-bold text-lg whitespace-nowrap">Head:</span><input autoFocus className="bg-white border border-oasis-header px-4 py-1.5 rounded-lg font-bold text-lg w-full focus:outline-none" value={editingItem.title} onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })} onBlur={() => updateItemTitle(component.id, editingItem.title)} onKeyDown={(e) => e.key === 'Enter' && updateItemTitle(component.id, editingItem.title)} /></div> : 
@@ -586,116 +593,169 @@ function RecursiveTree({
         }
     };
 
-    return (
-        <div className={`flex flex-col gap-3 ${level > 0 ? "ml-8 border-l border-gray-100 pl-4 mt-2" : ""}`}>
-            {items.map((item, index) => {
-                const prefix = getSequentialPrefix(items, index, item.type);
-                const isBeingDragged = draggedId === item.id;
-                const isDropTarget = dropTarget?.id === item.id;
+    const processedItems = [];
+    let currentGroup = null;
 
-                return (
+    items.forEach((item, index) => {
+        const isList = ["numerical_list", "bulleted_list", "alphabetical_list"].includes(item.type);
+        if (isList) {
+            if (currentGroup && currentGroup.type === item.type) {
+                currentGroup.items.push({ item, index });
+            } else {
+                currentGroup = { type: item.type, items: [{ item, index }], isGroup: true };
+                processedItems.push(currentGroup);
+            }
+        } else {
+            currentGroup = null;
+            processedItems.push({ item, index, isGroup: false });
+        }
+    });
+
+    const renderItemNode = (item, index, inGroup = false) => {
+        const prefix = getSequentialPrefix(items, index, item.type);
+        const isBeingDragged = draggedId === item.id;
+        const isDropTarget = dropTarget?.id === item.id;
+        const hasChildren = item.children?.length > 0;
+        const isList = ["numerical_list", "bulleted_list", "alphabetical_list"].includes(item.type);
+        const isDraft = !!item.isDraft;
+
+        let hoverStyles = "hover:border-oasis-header/30 hover:shadow-sm";
+        let iconBgClass = "bg-gray-50 text-gray-400";
+        let baseBorderClass = isDraft ? "border-amber-200" : "border-gray-100";
+        let baseBgClass = isDraft ? "bg-amber-50/20" : "bg-white";
+        
+        if (hasChildren) {
+            hoverStyles = isDraft 
+                ? "hover:border-amber-400 hover:bg-amber-50/50 hover:shadow-[0_0_20px_rgba(251,191,36,0.15)]"
+                : "hover:border-indigo-300 hover:bg-indigo-50/50 hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]";
+            iconBgClass = `bg-gray-50 text-gray-400 group-hover/item:${isDraft ? "bg-amber-100 text-amber-600" : "bg-indigo-100 text-indigo-600"}`;
+        } else if (isList) {
+            hoverStyles = isDraft
+                ? "hover:border-amber-400 hover:bg-amber-50/50 hover:shadow-[0_0_20px_rgba(251,191,36,0.15)]"
+                : "hover:border-emerald-300 hover:bg-emerald-50/50 hover:shadow-[0_0_20px_rgba(16,185,129,0.15)]";
+            iconBgClass = `bg-gray-50 text-gray-400 group-hover/item:${isDraft ? "bg-amber-100 text-amber-600" : "bg-emerald-100 text-emerald-600"}`;
+        } else {
+            iconBgClass = `bg-gray-50 text-gray-400 group-hover/item:${isDraft ? "bg-amber-100 text-amber-600" : "bg-oasis-header/10 text-oasis-header"}`;
+            if (isDraft) hoverStyles = "hover:border-amber-400 hover:bg-amber-50/50 hover:shadow-[0_0_20px_rgba(251,191,36,0.15)]";
+        }
+
+        return (
+            <div 
+                key={item.id} 
+                className={`group/item relative ${inGroup ? "last:mb-0" : ""}`} 
+                onDragOver={(e) => handleDragOver(e, item.id)}
+                onDrop={(e) => { 
+                    e.preventDefault(); 
+                    e.stopPropagation(); 
+                    if (dropTarget) {
+                        onMove(draggedId, dropTarget.id, dropTarget.position); 
+                    }
+                }}
+            >
+                {/* Visual Indicators */}
+                {isDropTarget && dropTarget.position === 'before' && (
+                    <div className="absolute -top-1.5 left-0 right-0 h-1 bg-oasis-header rounded-full z-10 animate-pulse" />
+                )}
+
+                <div className={`
+                    flex items-center gap-3 p-3 rounded-2xl border transition-all duration-300
+                    ${isBeingDragged ? 'opacity-40 grayscale bg-gray-50 border-dashed' : `${baseBgClass} ${baseBorderClass}`}
+                    ${isDropTarget && dropTarget.position === 'inside' ? 'border-oasis-header bg-oasis-header/5 ring-2 ring-oasis-header/20' : hoverStyles}
+                    ${isDraft && !isBeingDragged ? 'shadow-[0_0_15px_rgba(251,191,36,0.3)] border-amber-300 ring-1 ring-amber-400/20' : ''}
+                `}>
                     <div 
-                        key={item.id} 
-                        className="group/item relative" 
-                        onDragOver={(e) => handleDragOver(e, item.id)}
-                        onDrop={(e) => { 
-                            e.preventDefault(); 
-                            e.stopPropagation(); 
-                            if (dropTarget) {
-                                onMove(draggedId, dropTarget.id, dropTarget.position); 
-                            }
+                        draggable 
+                        onDragStart={(e) => { 
+                            setDraggedId(item.id); 
+                            e.dataTransfer.effectAllowed = "move"; 
+                        }} 
+                        onDragEnd={() => {
+                            setDraggedId(null);
+                            setDropTarget(null);
                         }}
+                        className="text-gray-300 cursor-grab active:cursor-grabbing hover:text-oasis-header transition-colors"
                     >
-                        {/* Visual Indicators */}
-                        {isDropTarget && dropTarget.position === 'before' && (
-                            <div className="absolute -top-1.5 left-0 right-0 h-1 bg-oasis-header rounded-full z-10 animate-pulse" />
-                        )}
-
-                        <div className={`
-                            flex items-center gap-3 p-3 rounded-2xl border transition-all duration-200
-                            ${isBeingDragged ? 'opacity-40 grayscale bg-gray-50 border-dashed' : 'bg-white border-gray-100'}
-                            ${isDropTarget && dropTarget.position === 'inside' ? 'border-oasis-header bg-oasis-header/5 ring-2 ring-oasis-header/20' : 'hover:border-oasis-header/30 hover:shadow-sm'}
-                        `}>
-                            <div 
-                                draggable 
-                                onDragStart={(e) => { 
-                                    setDraggedId(item.id); 
-                                    e.dataTransfer.effectAllowed = "move"; 
-                                }} 
-                                onDragEnd={() => {
-                                    setDraggedId(null);
-                                    setDropTarget(null);
-                                }}
-                                className="text-gray-300 cursor-grab active:cursor-grabbing hover:text-oasis-header transition-colors"
+                        <GripVertical size={14} />
+                    </div>
+                    <div className={`p-1.5 rounded-lg transition-all duration-300 ${iconBgClass}`}>
+                        {ITEM_TYPES.find(t => t.value === item.type)?.icon}
+                    </div>
+                    <div className="flex-1 flex items-center gap-2 overflow-hidden">
+                        {editingItem?.id === item.id ? (
+                            <div className="flex items-center gap-1 w-full">
+                                <span className="text-gray-400 font-bold whitespace-nowrap">{prefix}</span>
+                                <input 
+                                    autoFocus 
+                                    className="bg-white border border-oasis-header px-3 py-1 rounded-lg text-sm w-full focus:outline-none" 
+                                    value={editingItem.title} 
+                                    onChange={(e) => onEdit(item.id, e.target.value)} 
+                                    onBlur={() => onUpdateTitle(item.id, editingItem.title)} 
+                                    onKeyDown={(e) => e.key === 'Enter' && onUpdateTitle(item.id, editingItem.title)} 
+                                />
+                            </div>
+                        ) : (
+                            <span 
+                                className="text-sm font-medium text-gray-700 cursor-pointer hover:text-oasis-header flex items-center gap-1 truncate" 
+                                onClick={() => onEdit(item.id, item.title)}
                             >
-                                <GripVertical size={14} />
-                            </div>
-                            <div className="p-1.5 bg-gray-50 rounded-lg text-gray-400 group-hover/item:text-oasis-header transition-colors">
-                                {ITEM_TYPES.find(t => t.value === item.type)?.icon}
-                            </div>
-                            <div className="flex-1 flex items-center gap-2 overflow-hidden">
-                                {editingItem?.id === item.id ? (
-                                    <div className="flex items-center gap-1 w-full">
-                                        <span className="text-gray-400 font-bold whitespace-nowrap">{prefix}</span>
-                                        <input 
-                                            autoFocus 
-                                            className="bg-white border border-oasis-header px-3 py-1 rounded-lg text-sm w-full focus:outline-none" 
-                                            value={editingItem.title} 
-                                            onChange={(e) => onEdit(item.id, e.target.value)} 
-                                            onBlur={() => onUpdateTitle(item.id, editingItem.title)} 
-                                            onKeyDown={(e) => e.key === 'Enter' && onUpdateTitle(item.id, editingItem.title)} 
-                                        />
-                                    </div>
-                                ) : (
-                                    <span 
-                                        className="text-sm font-medium text-gray-700 cursor-pointer hover:text-oasis-header flex items-center gap-1 truncate" 
-                                        onClick={() => onEdit(item.id, item.title)}
-                                    >
-                                        <span className="text-gray-400">{prefix}</span> {item.title}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                                {!isForms && item.type === "header" && (
-                                    <button onClick={() => onAddItem(item.id, "description")} className="p-1.5 text-gray-400 hover:text-oasis-header hover:bg-gray-50 rounded-lg">
-                                        <PlusCircle size={14}/>
-                                    </button>
-                                )}
-                                {item.type === 'document' && (
-                                    <button onClick={() => onView(item)} className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg">
-                                        <Eye size={14}/>
-                                    </button>
-                                )}
-                                <button onClick={() => onDelete(item.id, item.title)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
-                                    <Trash size={14}/>
-                                </button>
-                            </div>
-                        </div>
-
-                        {isDropTarget && dropTarget.position === 'after' && (
-                            <div className="absolute -bottom-1.5 left-0 right-0 h-1 bg-oasis-header rounded-full z-10 animate-pulse" />
-                        )}
-
-                        {item.children?.length > 0 && (
-                            <RecursiveTree 
-                                items={item.children} 
-                                onDelete={onDelete} 
-                                onEdit={onEdit} 
-                                editingItem={editingItem} 
-                                onUpdateTitle={onUpdateTitle} 
-                                onMove={onMove} 
-                                onAddItem={onAddItem} 
-                                onView={onView} 
-                                isForms={isForms} 
-                                draggedId={draggedId}
-                                setDraggedId={setDraggedId}
-                                dropTarget={dropTarget}
-                                setDropTarget={setDropTarget}
-                                level={level + 1} 
-                            />
+                                <span className="text-gray-400">{prefix}</span> {item.title}
+                            </span>
                         )}
                     </div>
-                );
+                    <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                        {!isForms && item.type === "header" && (
+                            <button onClick={() => onAddItem(item.id, "description")} className="p-1.5 text-gray-400 hover:text-oasis-header hover:bg-gray-50 rounded-lg">
+                                <PlusCircle size={14}/>
+                            </button>
+                        )}
+                        {item.type === 'document' && (
+                            <button onClick={() => onView(item)} className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg">
+                                <Eye size={14}/>
+                            </button>
+                        )}
+                        <button onClick={() => onDelete(item.id, item.title)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
+                            <Trash size={14}/>
+                        </button>
+                    </div>
+                </div>
+
+                {isDropTarget && dropTarget.position === 'after' && (
+                    <div className="absolute -bottom-1.5 left-0 right-0 h-1 bg-oasis-header rounded-full z-10 animate-pulse" />
+                )}
+
+                {item.children?.length > 0 && (
+                    <RecursiveTree 
+                        items={item.children} 
+                        onDelete={onDelete} 
+                        onEdit={onEdit} 
+                        editingItem={editingItem} 
+                        onUpdateTitle={onUpdateTitle} 
+                        onMove={onMove} 
+                        onAddItem={onAddItem} 
+                        onView={onView} 
+                        isForms={isForms} 
+                        draggedId={draggedId}
+                        setDraggedId={setDraggedId}
+                        dropTarget={dropTarget}
+                        setDropTarget={setDropTarget}
+                        level={level + 1} 
+                    />
+                )}
+            </div>
+        );
+    };
+
+    return (
+        <div className={`flex flex-col gap-3 ${level > 0 ? "ml-8 border-l border-gray-100 pl-4 mt-2" : ""}`}>
+            {processedItems.map((node, idx) => {
+                if (node.isGroup) {
+                    return (
+                        <div key={`group-${idx}`} className="flex flex-col gap-2 p-2 rounded-[2rem] border border-transparent hover:border-emerald-100/70 hover:bg-oasis-aqua/10 transition-all duration-300 group/list-group">
+                            {node.items.map((entry) => renderItemNode(entry.item, entry.index, true))}
+                        </div>
+                    );
+                }
+                return renderItemNode(node.item, node.index, false);
             })}
         </div>
     );
@@ -718,15 +778,20 @@ function StudentTreeRenderer({ items = [], onView, level = 0 }) {
                 if (group.items) {
                     const listClass = group.type === "numerical_list" ? "list-decimal" : group.type === "bulleted_list" ? "list-disc" : "list-[lower-alpha]";
                     return (
-                        <ul key={idx} className={`${listClass} px-6 md:px-10 py-1 text-justify flex flex-col gap-3 text-[0.95rem] font-oasis-text text-gray-700`}>
+                        <ul key={idx} className={`${listClass} px-6 md:px-10 py-3 text-justify flex flex-col gap-3 text-[0.95rem] font-oasis-text text-gray-700 hover:bg-emerald-50/30 rounded-3xl transition-all duration-300 border border-transparent hover:border-emerald-100/50`}>
                             {group.items.map(li => <li key={li.id} className="leading-relaxed"><div className="flex flex-col gap-2"><span>{li.title}</span>{li.children?.length > 0 && <StudentTreeRenderer items={li.children} onView={onView} level={level + 1} />}</div></li>)}
                         </ul>
                     );
                 }
                 const item = group;
-                if (item.type === "header") return <div key={item.id} className="w-full flex flex-col gap-2"><h2 className={`font-bold text-oasis-button-dark ${level === 0 ? "text-xl" : "text-lg"} tracking-tight`}>{item.title}</h2>{item.children?.length > 0 && <StudentTreeRenderer items={item.children} onView={onView} level={level + 1} />}</div>;
-                if (item.type === "description") return <div key={item.id} className="w-full flex flex-col gap-2"><p className="text-[0.9rem] text-gray-700 leading-relaxed whitespace-pre-wrap">{item.title}</p>{item.children?.length > 0 && <StudentTreeRenderer items={item.children} onView={onView} level={level + 1} />}</div>;
-                if (item.type === "document") return <FormDownloadable key={item.id} text={item.title} link={`${API_BASE}${item.file}`} />;
+                if (item.type === "header") return (
+                    <div key={item.id} className={`w-full flex flex-col gap-2 transition-all duration-300 rounded-3xl p-4 border border-transparent ${item.children?.length > 0 ? "hover:bg-indigo-50/30 hover:border-indigo-100/50" : "hover:bg-gray-50"}`}>
+                        <h2 className={`font-bold text-oasis-button-dark ${level === 0 ? "text-xl" : "text-lg"} tracking-tight`}>{item.title}</h2>
+                        {item.children?.length > 0 && <StudentTreeRenderer items={item.children} onView={onView} level={level + 1} />}
+                    </div>
+                );
+                if (item.type === "description") return <div key={item.id} className="w-full flex flex-col gap-2 p-2 hover:bg-gray-50 rounded-2xl transition-all duration-300"><p className="text-[0.9rem] text-gray-700 leading-relaxed whitespace-pre-wrap">{item.title}</p>{item.children?.length > 0 && <StudentTreeRenderer items={item.children} onView={onView} level={level + 1} />}</div>;
+                if (item.type === "document") return <div key={item.id} className="hover:scale-[1.01] transition-transform duration-300"><FormDownloadable text={item.title} link={`${API_BASE}${item.file}`} /></div>;
                 return null;
             })}
         </div>

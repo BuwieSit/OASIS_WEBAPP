@@ -60,18 +60,20 @@ export const AdminAPI = {
         return api.patch(`/api/admin/moa-prospects/${id}/reject`);
     },
 
-    downloadHTEsExcel(status) {
+    downloadHTEsExcel(status, config = {}) {
         return api.get("/api/admin/htes/export", {
             params: status ? { status } : {},
             responseType: "blob",
+            ...config
         });
     },
 
-    uploadHTEsExcel(file) {
+    uploadHTEsExcel(file, config = {}) {
         const formData = new FormData();
         formData.append("file", file);
         return api.post("/api/admin/htes/import", formData, {
             headers: { "Content-Type": "multipart/form-data" },
+            ...config
         });
     },
 

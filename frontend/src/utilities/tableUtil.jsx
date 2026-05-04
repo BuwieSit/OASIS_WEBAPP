@@ -161,14 +161,15 @@ export function AdviserDropdown({ value, options = [], onChange }) {
 //   />
 // )
 
-export function ViewMoaButton({ url, onClick, label = "View MOA", disabled = false}) {
+export function ViewMoaButton({ url, onClick, label = "View MOA", disabled = false, loading = false }) {
     if (!url) {
-        return <span className="text-gray-400 text-[0.8rem]">No file found</span>
+        return <span className="text-gray-400 text-[0.8rem] italic font-medium">No MOA</span>
     }
     return(
         <>
             <AnnounceButton
-                btnText={label}
+                btnText={loading ? "Viewing..." : label}
+                disabled={disabled || loading}
                 onClick={(e) => {
                     e.stopPropagation();
                     if (onClick) {

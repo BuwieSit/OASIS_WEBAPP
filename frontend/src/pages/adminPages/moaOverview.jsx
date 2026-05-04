@@ -27,6 +27,7 @@ export default function MoaOverview() {
     const [loadingProspects, setLoadingProspects] = useState(false);
     const [loadingOverview, setLoadingOverview] = useState(false);
     const [processingId, setProcessingId] = useState(null);
+    const [viewingId, setViewingId] = useState(null);
 
     const [popup, setPopup] = useState(null);
 
@@ -139,20 +140,25 @@ export default function MoaOverview() {
     };
 
     const openPdf = async (moaId, companyName) => {
-        const blobUrl = await fetchMoaBlobUrl(moaId);
-        if (!blobUrl) return;
+        try {
+            setViewingId(moaId);
+            const blobUrl = await fetchMoaBlobUrl(moaId);
+            if (!blobUrl) return;
 
-        if (filePdf && filePdf.startsWith("blob:")) {
-            window.URL.revokeObjectURL(filePdf);
+            if (filePdf && filePdf.startsWith("blob:")) {
+                window.URL.revokeObjectURL(filePdf);
+            }
+
+            const safeName = (companyName || "HTE")
+                .replace(/\s+/g, "_")
+                .replace(/[^\w\-]/g, "");
+
+            setCurrentFileName(`${safeName}_MOA.pdf`);
+            setFilePdf(blobUrl);
+            setOpenView(true);
+        } finally {
+            setViewingId(null);
         }
-
-        const safeName = (companyName || "HTE")
-            .replace(/\s+/g, "_")
-            .replace(/[^\w\-]/g, "");
-
-        setCurrentFileName(`${safeName}_MOA.pdf`);
-        setFilePdf(blobUrl);
-        setOpenView(true);
     };
 
     const downloadMoa = async (moaId, companyName) => {
@@ -247,7 +253,8 @@ export default function MoaOverview() {
             header: "View MOA",
             render: r => (
                 <ViewMoaButton
-                    url="#"
+                    url={(r.document_path || r.has_document_blob) ? "#" : null}
+                    loading={viewingId === r.id}
                     onClick={() => openPdf(r.id, r.hte?.company_name)}
                     onDownload={() => downloadMoa(r.id, r.hte?.company_name)}
                 />
@@ -312,7 +319,8 @@ export default function MoaOverview() {
 
                 return (
                     <ViewMoaButton
-                        url="#"
+                        url={r.moa_file_path ? "#" : null}
+                        loading={viewingId === r.id}
                         onClick={() => openPdf(r.id, r.company_name)}
                         onDownload={() => downloadMoa(r.id, r.company_name)}
                     />
@@ -352,37 +360,46 @@ export default function MoaOverview() {
                 <Title text="MOA Overview and Submissions" size='text-[2rem]'/>
                 <Subtitle text={"Overview MOA Information and set status to MOA Prospect Submissions"}/>
             </div>
-            <div className='w-[90%] flex flex-row justify-end items-center z-70'>
-                <SearchBar
-                    value={search}
-                    onChange={setSearch}
-                />
-            </div>
-            <div className='flex flex-row gap-3 w-[90%]'>
-                <Subtitle
-                    text="MOA Overview"
-                    onClick={() => setFilter("overview")}
-                    isActive={activeFilter === "overview"}
-                    isLink
-                    weight={"font-bold"}
-                    size="text-[1rem]"
-                    className={"rounded-2xl"}
-                />
-                <Subtitle text="|" size="text-[1rem]" />
-                <Subtitle
-                    text="MOA Prospect Submissions"
-                    onClick={() => setFilter("submissions")}
-                    isActive={activeFilter === "submissions"}
-                    isLink
-                    weight={"font-bold"}
-                    size="text-[1rem]"
-                    className={"rounded-2xl"}
-                />
-            </div>
 
+            <div className='flex flex-row justify-between items-center w-[90%]'>
+                <div className='flex gap-3'>
+                    <Subtitle
+                        text="MOA Overview"
+                        onClick={() => setFilter("overview")}
+                        isActive={activeFilter === "overview"}
+                        isLink
+                        weight={"font-bold"}
+                        size="text-[1rem]"
+                        className={"rounded-2xl"}
+                    />
+                    <Subtitle text="|" size="text-[1rem]" />
+                    <Subtitle
+                        text="MOA Prospect Submissions"
+                        onClick={() => setFilter("submissions")}
+                        isActive={activeFilter === "submissions"}
+                        isLink
+                        weight={"font-bold"}
+                        size="text-[1rem]"
+                        className={"rounded-2xl"}
+                    />
+                </div>
+                <div className='flex flex-row justify-end items-center z-70'>
+                    <SearchBar
+                        value={search}
+                        onChange={setSearch}
+                    />
+                </div>
+            </div>
+            
             {activeFilter === "overview" && (
                 <>
+                    <div className='flex justify-between items-center w-[90%] border-b border-gray-200 pb-3'>
+                        <Title text={"MOA Overview"} />
+                    </div>
+                                
+
                     {loadingOverview ? (
+                        
                         <div className="w-[80%]">
                             <Subtitle text="Loading MOA overview..." />
                         </div>
@@ -398,6 +415,9 @@ export default function MoaOverview() {
 
             {activeFilter === "submissions" && (
                 <>
+                    <div className='flex justify-between items-center w-[90%] border-b border-gray-200 pb-3'>
+                        <Title text={"MOA Prospect Submissions"} />
+                    </div>
                     {loadingProspects ? (
                         <div className="w-[80%]">
                             <Subtitle text="Loading MOA prospect submissions..." />

@@ -357,7 +357,7 @@ export default function Admin() {
                 <Link to={"/admOperations"}>
                     <AdmCard
                         hasRibbon={true}
-                        ribbonColor={"bg-black"}
+                        ribbonColor={"bg-oasis-gray"}
                         cardTitle="Host Training Establishments"
                         cardIcon={<Building2 color="#377268" />}
                         cardNumber={
@@ -399,8 +399,8 @@ export default function Admin() {
                             <OasisBarChart
                                 data={[
                                     { name: 'Students', value: dashboard?.metrics?.total_students ?? 0, color: '#00D0FF'},
-                                    { name: 'HTEs', value: dashboard?.metrics?.total_htes ?? 0 },
-                                    { name: 'Prospects', value: dashboard?.metrics?.total_moa_prospects ?? 0 },
+                                    { name: 'HTEs', value: dashboard?.metrics?.total_htes ?? 0, color: '#333333' },
+                                    { name: 'Prospects', value: dashboard?.metrics?.total_moa_prospects ?? 0, color: '#7E22CE' },
                                 ]}
                             />
                         </div>
@@ -414,15 +414,15 @@ export default function Admin() {
 
             <section className='w-full px-4 md:px-0 md:w-[90%] grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10 font-oasis-text text-oasis-button-dark min-w-0'>
                 {/* POSTING FORM & FEED */}
-                <div className='lg:col-span-8 flex flex-col gap-6 w-full min-w-0'>
+                <div className='lg:col-span-8 flex flex-col w-full min-w-0 h-full max-h-[1000px]'>
                     <form
-                        className='w-full p-4 md:p-6 lg:p-10 bg-admin-element flex flex-col items-start justify-center gap-5 text-black rounded-3xl shadow-sm overflow-hidden box-border min-w-0'
+                        className='w-full h-full p-4 md:p-6 lg:p-10 bg-admin-element flex flex-col items-start justify-start gap-5 text-black rounded-3xl shadow-sm overflow-hidden box-border min-w-0'
                         onSubmit={(e) => {
                             e.preventDefault();
                             handlePost(e);
                         }}
                     >
-                        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-5 min-w-0">
+                        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-5 min-w-0 shrink-0">
                             <div className="md:col-span-2 w-full min-w-0">
                                 <SingleField
                                     labelText="Announcement Title"
@@ -457,7 +457,7 @@ export default function Admin() {
                             </div>
                         </div>
 
-                        <div className="w-full mt-5 max-w-full min-w-0">
+                        <div className="w-full mt-5 max-w-full min-w-0 shrink-0">
                             <Label labelText={"Filter Announcements"} />
                             <section id='announcements' className='w-full flex flex-wrap items-center justify-start gap-2 mt-2 overflow-hidden'>
                                 {["All", "HTE Related", "Deadlines", "Newly Approved HTEs", "Events and Webinars", "Others"].map(f => (
@@ -471,7 +471,7 @@ export default function Admin() {
                             </section>
                         </div>
 
-                        <div className="w-full max-w-full min-w-0">
+                        <div className="w-full max-w-full min-w-0 shrink-0">
                             <Label labelText={"Search by Title"} />
                             <div className="w-full mt-2 min-w-0">
                                 <input
@@ -483,7 +483,7 @@ export default function Admin() {
                             </div>
                         </div>
 
-                        <div className='w-full flex flex-col gap-4 max-h-[500px] md:max-h-[600px] overflow-y-auto p-1 md:p-2 custom-scrollbar overflow-x-hidden min-w-0'>
+                        <div className='w-full flex-1 flex flex-col gap-4 overflow-y-auto p-1 md:p-2 custom-scrollbar overflow-x-hidden min-w-0'>
                             {filteredAnnouncements.length === 0 ? (
                                 <p className="text-center text-gray-500 py-10 italic text-sm">No announcements found</p>
                             ) : (
@@ -525,7 +525,7 @@ export default function Admin() {
                 </div>
 
                 {/* NOTIFICATIONS SIDEBAR */}
-                <div id='notifications' className='lg:col-span-4 w-full rounded-3xl bg-admin-element flex flex-col max-h-[1000px] shadow-sm border border-gray-100 overflow-hidden'>
+                <div id='notifications' className='lg:col-span-4 w-full rounded-3xl bg-admin-element flex flex-col h-full max-h-[1000px] shadow-sm border border-gray-100 overflow-hidden'>
                     <div className='sticky top-0 bg-admin-element w-full px-6 lg:px-10 py-5 border-b border-gray-200 z-10'>
                         <p className='text-[0.9rem] font-black'>System Notifications</p>
                     </div>

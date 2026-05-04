@@ -188,12 +188,7 @@ export default function RegStudents() {
         <Title text="Students Overview" size='text-[2rem]'/>
         <Subtitle text={"Oversee and Archive Registered Students."}/>
       </div>
-      <div className='w-[90%] flex flex-row justify-end items-center z-70'>
-          <SearchBar
-              value={search}
-              onChange={setSearch}
-          />
-      </div>
+
 
       <div className="w-full flex flex-col gap-10 justify-center items-center">
         <div className='flex justify-start items-center w-[90%] gap-5 border-b border-gray-400 pb-5'>
@@ -216,7 +211,13 @@ export default function RegStudents() {
                   weight={"font-bold"}
                   className={"rounded-2xl"}
                 />
-
+            </div>
+            
+            <div className='w-[90%] flex flex-row justify-end items-center z-70'>
+                <SearchBar
+                    value={search}
+                    onChange={setSearch}
+                />
             </div>
         </div>
 

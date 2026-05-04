@@ -33,7 +33,7 @@ export function AnnouncementModal({ visible, onClose, title, content, date, time
                 max-w-2xl
                 max-h-[85vh]
                 bg-white
-                rounded-[2rem]
+                rounded-4xl
                 shadow-2xl
                 overflow-hidden
                 flex flex-col
@@ -70,7 +70,7 @@ export function AnnouncementModal({ visible, onClose, title, content, date, time
                     relative
                     w-full
                     pt-10 pb-6 px-8
-                    bg-gradient-to-br
+                    bg-linear-to-br
                     from-oasis-header
                     to-[#1e453f]
                     flex flex-col
@@ -85,7 +85,7 @@ export function AnnouncementModal({ visible, onClose, title, content, date, time
                     />
                     
                     <div className="relative z-10 flex flex-col gap-2 p-3 w-full">
-                        <h2 className="font-oasis-text font-bold text-lg sm:text-xl lg:text-2xl text-white leading-tight break-words w-full">
+                        <h2 className="font-oasis-text font-bold text-lg sm:text-xl lg:text-2xl text-white leading-tight wrap-break-word w-full">
                             {title}
                         </h2>
 
@@ -117,7 +117,7 @@ export function AnnouncementModal({ visible, onClose, title, content, date, time
                             text-gray-700
                             leading-relaxed
                             whitespace-pre-wrap
-                            break-words
+                            wrap-break-word
                             w-full
                         ">
                             {content}
@@ -145,7 +145,7 @@ export function NotificationModal({ visible, onClose, notification }) {
 
     return (
         <div className="fixed inset-0 z-200 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl overflow-hidden flex flex-col animate__animated animate__zoomIn animate__faster">
+            <div className="relative w-full max-w-lg bg-white rounded-4xl shadow-2xl overflow-hidden flex flex-col animate__animated animate__zoomIn animate__faster">
                 
                 {/* HEADER */}
                 <div className="p-8 bg-oasis-gradient flex flex-col gap-2">

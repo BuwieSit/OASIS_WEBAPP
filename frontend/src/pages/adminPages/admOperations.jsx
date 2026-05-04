@@ -11,7 +11,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { AdminAPI } from "../../api/admin.api";
 import { Check, Download, FileCheck, Save, Upload, X, PlusCircle } from 'lucide-react';
-import { ConfirmModal, GeneralPopupModal } from '../../components/popupModal.jsx';
+import { ConfirmModal, GeneralPopupModal, ProgressModal } from '../../components/popupModal.jsx';
 import HteDetailModal from '../../components/HteDetailModal.jsx';
 import SearchBar from '../../components/searchBar.jsx';
 
@@ -68,6 +68,14 @@ export default function AdmOperations() {
 
     const [confirmClear, setConfirmClear] = useState(false);
     const [popup, setPopup] = useState(null);
+
+    // Progress and Processing State
+    const [progress, setProgress] = useState(0);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [processingTitle, setProcessingTitle] = useState("");
+    const [abortController, setAbortController] = useState(null);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
 
     // =============================
     // REVIEWS MODERATION STATE
@@ -385,11 +393,32 @@ export default function AdmOperations() {
     };
 
     const handleDownload = async () => {
+        const controller = new AbortController();
+        setAbortController(controller);
+        setIsProcessing(true);
+        setIsDownloading(true);
+        setProcessingTitle("Downloading HTEs...");
+        setProgress(0);
+
         try {
-            const res = await AdminAPI.downloadHTEsExcel(status || "ALL");
+            const res = await AdminAPI.downloadHTEsExcel(status || "ALL", {
+                signal: controller.signal,
+                onDownloadProgress: (progressEvent) => {
+                    if (progressEvent.total) {
+                        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        setProgress(percent);
+                    } else {
+                        setProgress(prev => Math.min(prev + 5, 95));
+                    }
+                }
+            });
+
+            setProgress(100);
             const blob = new Blob([res.data], {
                 type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             });
+
+            await new Promise(r => setTimeout(r, 600));
 
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
@@ -399,18 +428,36 @@ export default function AdmOperations() {
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
-        } catch (err) {
-            console.error(err);
+            
+            setIsProcessing(false);
             setPopup({
-                title: "Error",
-                text: "Download failed",
-                icon: <X color="#800020" size={35}/>,
-                type: "failed"
+                title: "Download Successful",
+                text: "The HTE list has been downloaded successfully.",
+                icon: <Check size={35} color="#22C55E"/>,
+                type: "success"
             });
+        } catch (err) {
+            if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') {
+                console.log('Download canceled');
+            } else {
+                console.error(err);
+                setPopup({
+                    title: "Error",
+                    text: "Download failed. Please try again later.",
+                    icon: <X color="#800020" size={35}/>,
+                    type: "failed"
+                });
+            }
+            setIsProcessing(false);
+        } finally {
+            setIsDownloading(false);
+            setAbortController(null);
+            setProgress(0);
         }
     };
 
     const handleUploadPick = () => {
+        if (isProcessing) return;
         uploadRef.current?.click();
     };
 
@@ -418,8 +465,26 @@ export default function AdmOperations() {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        const controller = new AbortController();
+        setAbortController(controller);
+        setIsProcessing(true);
+        setIsUploading(true);
+        setProcessingTitle("Uploading HTEs...");
+        setProgress(0);
+
         try {
-            const res = await AdminAPI.uploadHTEsExcel(file);
+            const res = await AdminAPI.uploadHTEsExcel(file, {
+                signal: controller.signal,
+                onUploadProgress: (progressEvent) => {
+                    const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    setProgress(percent);
+                }
+            });
+
+            setProgress(100);
+            await new Promise(r => setTimeout(r, 600));
+
+            setIsProcessing(false);
             setPopup({
                 title: "Upload Completed",
                 text: `Created: ${res.data.created_htes} | Updated: ${res.data.updated_htes} | Failed: ${res.data.failed_rows.length}`,
@@ -431,14 +496,22 @@ export default function AdmOperations() {
             const refreshed = await AdminAPI.getHTEs(status);
             setData(refreshed.data);
         } catch (err) {
-            console.error(err);
-            setPopup({
-                title: "Upload Failed",
-                text: "Upload failed. Check console for details.",
-                icon: <X color="#800020" size={35}/>,
-                type: "failed"
-            });
+            if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') {
+                console.log('Upload canceled');
+            } else {
+                console.error(err);
+                setPopup({
+                    title: "Upload Failed",
+                    text: "The file upload failed. Please check the format and try again.",
+                    icon: <X color="#800020" size={35}/>,
+                    type: "failed"
+                });
+            }
+            setIsProcessing(false);
         } finally {
+            setIsUploading(false);
+            setAbortController(null);
+            setProgress(0);
             e.target.value = "";
         }
     };
@@ -482,33 +555,30 @@ export default function AdmOperations() {
                 <Title text="Operations" size='text-[2rem]'/>
                 <Subtitle text={"Overview and Management of HTEs, upload or export HTE tables, and Moderate Student Reviews."}/>
             </div>
-            <div className='w-[90%] flex flex-row justify-end items-center z-70'>
-                <SearchBar
-                    value={search}
-                    onChange={setSearch}
-                />
-            </div>
 
-            <div className='flex flex-row gap-3 w-[90%] mt-5'>
-                <Subtitle
-                    text="HTE Management"
-                    onClick={() => setViewTab("hte")}
-                    isActive={viewTab === "hte"}
-                    isLink
-                    weight={"font-bold"}
-                    size="text-[1rem]"
-                    className={"rounded-2xl"}
-                />
-                <Subtitle text="|" size="text-[1rem]" />
-                <Subtitle
-                    text="Reviews Moderation"
-                    onClick={() => setViewTab("reviews")}
-                    isActive={viewTab === "reviews"}
-                    isLink
-                    weight={"font-bold"}
-                    size="text-[1rem]"
-                    className={"rounded-2xl"}
-                />
+            <div className='flex flex-row justify-between items-center gap-3 w-[90%] mt-5'>
+                <div className='flex gap-3'>
+                    <Subtitle
+                        text="HTE Management"
+                        onClick={() => setViewTab("hte")}
+                        isActive={viewTab === "hte"}
+                        isLink
+                        weight={"font-bold"}
+                        size="text-[1rem]"
+                        className={"rounded-2xl"}
+                    />
+                    <Subtitle text="|" size="text-[1rem]" />
+                    <Subtitle
+                        text="Reviews Moderation"
+                        onClick={() => setViewTab("reviews")}
+                        isActive={viewTab === "reviews"}
+                        isLink
+                        weight={"font-bold"}
+                        size="text-[1rem]"
+                        className={"rounded-2xl"}
+                    />
+                </div>
+                
             </div>
 
             <input
@@ -521,7 +591,17 @@ export default function AdmOperations() {
 
             {viewTab === "hte" && (
                 <div className="w-full flex flex-col items-center animate__animated animate__fadeIn">
+                    <div className='flex justify-between items-center w-[90%] mb-5 border-b border-gray-200 pb-3'>
+                        <Title text={"HTE Management"} />
+                        <div className='flex flex-row justify-end items-center z-70'>
+                            <SearchBar
+                                value={search}
+                                onChange={setSearch}
+                            />
+                        </div>
+                    </div>
                     {htesLoading ? (
+                        
                         <div className="w-[80%] flex justify-start items-center h-40">
                             <Subtitle text="Loading HTEs..." />
                         </div>
@@ -574,12 +654,36 @@ export default function AdmOperations() {
                                 </div>
 
                                 <div className='w-full flex flex-row justify-end items-center gap-3'>
-                                    <AnnounceButton icon={<Upload />} btnText="Upload" onClick={handleUploadPick} />
-                                    <AnnounceButton icon={<Download />} btnText="Download" onClick={handleDownload} />
+                                    <AnnounceButton 
+                                        icon={<Upload />} 
+                                        btnText={isUploading ? "Uploading..." : "Upload"} 
+                                        onClick={handleUploadPick} 
+                                        disabled={isProcessing}
+                                    />
+                                    <AnnounceButton 
+                                        icon={<Download />} 
+                                        btnText={isDownloading ? "Downloading..." : "Download"} 
+                                        onClick={handleDownload} 
+                                        disabled={isProcessing}
+                                    />
                                 </div>
                             </div>
                         </OasisTable>
                     )}
+
+                    <ProgressModal
+                        visible={isProcessing}
+                        progress={progress}
+                        title={processingTitle}
+                        onCancel={() => {
+                            if (abortController) {
+                                abortController.abort();
+                                setIsProcessing(false);
+                                setAbortController(null);
+                                setProgress(0);
+                            }
+                        }}
+                    />
 
                     <HteDetailModal 
                         visible={!!selectedHte} 
@@ -767,7 +871,7 @@ export default function AdmOperations() {
 
             {/* REVIEWS SECTION */}
             {viewTab === "reviews" && (
-                <div className='w-[90%] flex flex-col items-center mt-16 mb-20 animate__animated animate__fadeIn'>
+                <div className='w-[90%] flex flex-col items-center mb-20 animate__animated animate__fadeIn'>
                     <div className='flex justify-start items-start w-full mb-5 border-b border-gray-200 pb-3'>
                         <Title text={"Reviews Moderation"} />
                     </div>

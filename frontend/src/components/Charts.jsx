@@ -103,11 +103,14 @@ export function OasisBarChart({ data = [] }) {
                     />
                     <Bar 
                         dataKey="value" 
-                        fill={data.color || '#2B6259'} 
                         radius={[6, 6, 0, 0]} 
                         barSize={40}
                         animationDuration={1500}
-                    />
+                    >
+                        {data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color || '#2B6259'} />
+                        ))}
+                    </Bar>
                 </BarChart>
             </ResponsiveContainer>
         </div>

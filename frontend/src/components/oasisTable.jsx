@@ -173,7 +173,7 @@ export function StudentTable({ columns = [], data = [], children, onRowClick }) 
                                 >
                                     {columns.map((col, colIndex) => (
                                         <td key={colIndex} className="py-3 px-2">
-                                            <div className="flex justify-center items-center w-full min-h-10 max-w-[150px] lg:max-w-[250px] mx-auto overflow-hidden break-words">
+                                            <div className="flex justify-center items-center w-full min-h-10 max-w-[150px] lg:max-w-[250px] mx-auto overflow-hidden wrap-break-word">
                                                 {col.render(row)}
                                             </div>
                                         </td>
@@ -270,7 +270,7 @@ export function MobileStudentTable({
                     className="w-full p-5 rounded-2xl flex flex-col text-oasis-header border border-oasis-header mb-5 cursor-pointer hover:shadow-md transition"
                 >
                     {/* Header */}
-                    <section className="w-full flex justify-center border-b border-gray-300 py-2 font-bold break-words text-center">
+                    <section className="w-full flex justify-center border-b border-gray-300 py-2 font-bold wrap-break-word text-center">
                         {columns[0]?.render?.(row) ?? "HTE -"}
                     </section>
 

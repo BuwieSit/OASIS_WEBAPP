@@ -28,10 +28,9 @@ export default function AdminScreen({ children }) {
             >
                 <div className="absolute inset-0 bg-[url('../assets/ctaBg.png')] bg-center bg-cover opacity-10 pointer-events-none" />
 
-                <Header admin />
+                <Header admin/>
 
-                {children}
-                <div className="mt-[50dvh]"></div>
+                    {children}
                 <Footer />
             </div>
         </div>
