@@ -16,33 +16,46 @@ import ReviewRatings from "../../components/reviewRatings";
 import { ReviewDetailModal, GeneralPopupModal } from "../../components/popupModal";
 import { Check, X } from "lucide-react";
 import { useLoading } from "../../context/LoadingContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function HteProfile() {
   const { setLoading: setGlobalLoading } = useLoading();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [hte, setHte] = useState(null);
-  const [hteName, setHteName] = useState("");
-  const [localLoading, setLocalLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [popup, setPopup] = useState(null);
   const hteId = searchParams.get("hteId");
 
   // Redirect if no hteId is provided
   useEffect(() => {
-    if (!hteId && !localLoading) {
+    if (!hteId) {
       navigate("/htedirectory");
     }
-  }, [hteId, localLoading, navigate]);
-  
-  // Update global loading when localLoading changes
+  }, [hteId, navigate]);
+
+  // TanStack Query for HTE Profile
+  const { data: hte, isLoading: isHteLoading } = useQuery({
+    queryKey: ['hteProfile', hteId],
+    queryFn: () => fetchHTEById(hteId),
+    enabled: !!hteId,
+  });
+
+  // TanStack Query for Reviews
+  const { data: reviewsData, isLoading: isReviewsLoading } = useQuery({
+    queryKey: ['hteReviews', hteId],
+    queryFn: () => getHteReviews(hteId),
+    enabled: !!hteId,
+  });
+
+  const allReviews = reviewsData || [];
+  const hteName = hte?.company_name || "";
+
+  // Update global loading
   useEffect(() => {
-    setGlobalLoading(localLoading);
-    return () => setGlobalLoading(false); // Reset on unmount
-  }, [localLoading, setGlobalLoading]);
+    setGlobalLoading(isHteLoading);
+  }, [isHteLoading, setGlobalLoading]);
 
   // REVIEWS STATE
-  const [allReviews, setAllReviews] = useState([]);
-  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewRatingFilter, setReviewRatingFilter] = useState("All");
   const [reviewSort, setReviewSort] = useState("newest");
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,23 +63,28 @@ export default function HteProfile() {
   const [selectedReviewForModal, setSelectedReviewForModal] = useState(null);
   const itemsPerPage = 4;
 
-  const fetchReviews = useCallback(async () => {
-    if (!hteId) return;
-    setReviewsLoading(true);
-    try {
-      const res = await getHteReviews(hteId);
-      setAllReviews(res.data || []);
-    } catch (err) {
-      console.error("Failed to fetch reviews", err);
-      setAllReviews([]);
-    } finally {
-      setReviewsLoading(false);
+  // Mutation for Review Submission
+  const reviewMutation = useMutation({
+    mutationFn: (payload) => submitHteReview(hteId, payload),
+    onSuccess: () => {
+      setPopup({
+        title: "Success",
+        text: "Review submitted. Waiting for admin approval.",
+        icon: <Check size={35}/>,
+        type: "success"
+      });
+      queryClient.invalidateQueries({ queryKey: ['hteReviews', hteId] });
+    },
+    onError: (err) => {
+      console.error(err);
+      setPopup({
+        title: "Error",
+        text: "Failed to submit review.",
+        icon: <X color="#800020" size={35}/>,
+        type: "failed"
+      });
     }
-  }, [hteId]);
-
-  useEffect(() => {
-    fetchReviews();
-  }, [fetchReviews]);
+  });
 
   // CALCULATE STATS
   const stats = useMemo(() => {
@@ -138,21 +156,6 @@ export default function HteProfile() {
     setCurrentPage(1);
   }, [reviewRatingFilter, searchQuery]);
 
-  useEffect(() => {
-    if (!hteId) return;
-
-    fetchHTEById(hteId)
-      .then((data) => {
-        setHte(data);
-        setHteName(data.company_name);
-
-      })
-      .catch((err) => {
-        console.error("Failed to load HTE profile", err);
-      })
-      .finally(() => setLocalLoading(false));
-  }, [hteId]);
-
   const handleDownloadMOA = async () => {
     try {
       const res = await downloadMOA(hte.id);
@@ -175,7 +178,7 @@ export default function HteProfile() {
     }
   };
 
-  if (localLoading) {
+  if (isHteLoading) {
     return null; // Global loader handles this
   }
 
@@ -517,29 +520,11 @@ export default function HteProfile() {
                       });
                       return;
                     }
-                    try {
-                      await submitHteReview(hteId, {
-                        rating: rating,
-                        message: message,
-                        criteria: isAnonymous ? "Anonymous" : "IT Intern",
-                      });
-
-                      setPopup({
-                        title: "Success",
-                        text: "Review submitted. Waiting for admin approval.",
-                        icon: <Check size={35}/>,
-                        type: "success"
-                      });
-
-                    } catch (err) {
-                      console.error(err);
-                      setPopup({
-                        title: "Error",
-                        text: "Failed to submit review.",
-                        icon: <X color="#800020" size={35}/>,
-                        type: "failed"
-                      });
-                    }
+                    reviewMutation.mutate({
+                      rating: rating,
+                      message: message,
+                      criteria: isAnonymous ? "Anonymous" : "IT Intern",
+                    });
                   }}
                 />
 
@@ -549,7 +534,7 @@ export default function HteProfile() {
 
                 {/* REVIEW GRID */}
                 <div className="w-full row-span-2 p-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 justify-items-center">
-                {reviewsLoading ? 
+                {isReviewsLoading ? 
                   <Subtitle text={"Loading Reviews..."}/> 
                   : 
                   <>

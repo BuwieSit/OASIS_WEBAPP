@@ -1,8 +1,10 @@
-import React, { lazy, Suspense, StrictMode } from 'react';
+import React, { lazy, Suspense, StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
-import { AuthProvider } from "./context/authContext";
+import { createBrowserRouter, RouterProvider, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from "./context/authContext";
 import { LoadingProvider, useLoading } from './context/LoadingContext';
+import DisableDevtool from 'disable-devtool';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import 'animate.css';
 import './styles.css';
@@ -41,25 +43,37 @@ const HteDirectory = lazyWithRetry(() => import('./pages/studentPages/hteDirecto
 const Announcements = lazyWithRetry(() => import('./pages/studentPages/announcements'));
 const HteProfile = lazyWithRetry(() => import('./pages/studentPages/hteProfile'));
 const StudentProfile = lazyWithRetry(() => import('./pages/userProfiles/studentProfile'));
-
 // Admin Pages
 const Admin = lazyWithRetry(() => import('./pages/adminPages/admin'));
 const AdmOperations = lazyWithRetry(() => import('./pages/adminPages/admOperations'));
 const DocsUpload = lazyWithRetry(() => import('./pages/adminPages/docsUpload'));
-const MoaOverview = lazyWithRetry(() => import('./pages/adminPages/moaOverview'));
 const RegStudents = lazyWithRetry(() => import('./pages/adminPages/regStudents'));
 const AdmNotifications = lazyWithRetry(() => import('./pages/adminPages/admNotifications'));
-const AdminProfile = lazyWithRetry(() => import('./pages/userProfiles/adminProfile'));
+  
+const DISABLE_BASE =  import.meta.env.VITE_OASIS_PHASE;
+
+if (DISABLE_BASE === 'production') {
+  DisableDevtool({
+    disableMenu: false,
+    ondevtoolopen: (type) => {
+      console.warn(`Devtools opened via: ${type}`);
+      // Navigate to landing page using window.location instead of useNavigate (which is a hook)
+      window.location.href = '/';
+    }
+  });
+}
+
 
 function RootLayout() {
   const { loading } = useLoading();
-
+  
   return (
     <>
       {/* Manual loading state (from context) */}
       {loading && <LoadingScreen />}
       <ScrollToTop />
       <Outlet />
+ 
     </>
   );
 }
@@ -90,12 +104,10 @@ const router = createBrowserRouter([
         element: <AdminRoute />,
         children: [
           { path: 'admin', element: <Admin /> },
-          { path: 'admOperations', element: <AdmOperations /> },
+          { path: 'admHteManagement', element: <AdmOperations /> },
           { path: 'admUploads', element: <DocsUpload /> },
-          { path: 'admMoaOverview', element: <MoaOverview /> },
           { path: 'admStudents', element: <RegStudents /> },
           { path: 'admNotifications', element: <AdmNotifications /> },
-          { path: 'admin-profile', element: <AdminProfile /> },
         ]
       },
 
@@ -104,15 +116,27 @@ const router = createBrowserRouter([
   }
 ]);
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Best practices for modern React apps
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes default stale time
+    },
+  },
+});
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <LoadingProvider>
-      <AuthProvider>
-        {/* Suspense handles the loading state for lazy-loaded components */}
-        <Suspense fallback={<LoadingScreen />}>
-          <RouterProvider router={router} />
-        </Suspense>
-      </AuthProvider>
-    </LoadingProvider>
+    <QueryClientProvider client={queryClient}>
+      <LoadingProvider>
+        <AuthProvider>
+          <Suspense fallback={<LoadingScreen />}>
+            <RouterProvider router={router} />
+          </Suspense>
+        </AuthProvider>
+      </LoadingProvider>
+    </QueryClientProvider>
   </StrictMode>
 );

@@ -14,16 +14,31 @@ import { AdminAPI } from "../../api/admin.api";
 import SvgLoader from '../../components/SvgLoader.jsx';
 import Subtitle from '../../utilities/subtitle.jsx';
 import { OasisPieChart, OasisBarChart } from '../../components/Charts.jsx';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function Admin() {
-    const [dashboard, setDashboard] = useState(null);
-    const [loadingDashboard, setLoadingDashboard] = useState(true);
-    const [dashboardError, setDashboardError] = useState(null);
+    const queryClient = useQueryClient();
+    
+    // TanStack Query for Dashboard Metrics
+    const { data: dashboard, isLoading: loadingDashboard, error: dashboardError } = useQuery({
+        queryKey: ['adminDashboard'],
+        queryFn: AdminAPI.getDashboard,
+    });
 
-    const [announcements, setAnnouncements] = useState([]);
-    const [alerts, setAlerts] = useState([]);
+    // TanStack Query for Announcements
+    const { data: announcements = [] } = useQuery({
+        queryKey: ['adminAnnouncements'],
+        queryFn: AdminAPI.getAnnouncements,
+    });
+
+    // TanStack Query for Alerts
+    const { data: alerts = [] } = useQuery({
+        queryKey: ['adminAlerts'],
+        queryFn: AdminAPI.getAdminAlerts,
+        refetchInterval: 10000, // Refresh every 10 seconds
+    });
+
     const [search, setSearch] = useState("");
-
     const [activeFilter, setActiveFilter] = useState("All");
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
 
@@ -31,8 +46,6 @@ export default function Admin() {
     const [popup, setPopup] = useState(null);
     const [deleteModalShow, setDeleteModalShow] = useState(false);
     const [announcementToDelete, setAnnouncementToDelete] = useState(null);
-    const [lastPostedTitle, setLastPostedTitle] = useState("");
-    const [disableButton, setDisableButton] = useState(false);
     
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
@@ -53,133 +66,91 @@ export default function Admin() {
         "Events and Webinars": "EVENTS_AND_WEBINARS",
         "Others": "OTHERS"
     };
-    // DISABLE after posting announcemnet
-    const handleDisableButton = () => {
-        setDisableButton(true);
-        setTimeout(() => {
-            setDisableButton(false);
-        }, 5000)
-    }
-    useEffect(() => {
-        const loadDashboard = async () => {
-            try {
-                const res = await AdminAPI.getDashboard();
-                setDashboard(res.data);
-                console.log("DASHBOARD DATA LOADED:", res.data); // Log res.data directly
-            } catch (err) {
-                console.error("Dashboard error:", err.response?.data || err.message);
-                setDashboardError(err.message);
-            } finally {
-                setLoadingDashboard(false);
-            }
-        };
 
-        loadDashboard();
-    }, []);
-    
-    useEffect(() => {
-        AdminAPI.getAnnouncements()
-            .then(res => setAnnouncements(res.data))
-            .catch(err => {
-                console.error("Announcements error", err);
-                setAnnouncements([]);
+    // MUTATIONS
+    const postMutation = useMutation({
+        mutationFn: AdminAPI.createAnnouncement,
+        onSuccess: (data, variables) => {
+            setTitle("");
+            setContent("");
+            setCategory("HTE Related");
+            setPopup({
+                title: "Success",
+                text: `Posted announcement: ${variables.title}`,
+                icon: <Check size={50} />,
+                type: "success",
+                time: 2000
             });
-    }, []);
+            queryClient.invalidateQueries({ queryKey: ['adminAnnouncements'] });
+        },
+        onError: (err) => {
+            let errorMsg = "Server error";
+            if (typeof err.response?.data === 'string' && err.response.data.includes("<html")) {
+                const sqlErrorMatch = err.response.data.match(/error: (.*)/i) || err.response.data.match(/column "(.*)"/i);
+                errorMsg = sqlErrorMatch ? `DB Error: ${sqlErrorMatch[0]}` : "Internal Server Error";
+            } else {
+                errorMsg = err.response?.data?.message || err.message;
+            }
+            setPopup({
+                title: "Failed",
+                text: errorMsg,
+                icon: <X size={50} />,
+                type: "failed",
+                time: 5000
+            });
+        }
+    });
 
-    useEffect(() => {
-        AdminAPI.getAdminAlerts()
-            .then(res => setAlerts(res.data))
-            .catch(() => setAlerts([]));
-    }, []);
+    const deleteMutation = useMutation({
+        mutationFn: AdminAPI.deleteAnnouncement,
+        onSuccess: (data, variables) => {
+            setPopup({
+                title: "Deleted Announcement",
+                text: `Successfully deleted announcement`,
+                icon: <Trash size={50} />,
+                type: "failed", 
+                time: 2000
+            });
+            queryClient.invalidateQueries({ queryKey: ['adminAnnouncements'] });
+        },
+        onError: (err) => {
+            setPopup({
+                title: "Error",
+                text: "Failed to delete announcement",
+                icon: <X size={50} />,
+                type: "failed",
+                time: 3000
+            });
+        }
+    });
 
     const handlePost = async (e) => {
         e.preventDefault();
-        const currentTitle = title; // Capture title immediately
-
         if (!title || !content || !category) {
             const emptyFields = [];
             if (!title) emptyFields.push("Title");
             if (!content) emptyFields.push("Content");
             if (!category) emptyFields.push("Category");
 
-            if (emptyFields.length > 0) {
-                setPopup({
-                    title: "Failed",
-                    text: `Please fill the following field(s): ${emptyFields.join(", ")}`,
-                    icon: <X size={50} />,
-                    type: "failed",
-                    time: 2000
-                });
-                return;
-            }
+            setPopup({
+                title: "Failed",
+                text: `Please fill the following field(s): ${emptyFields.join(", ")}`,
+                icon: <X size={50} />,
+                type: "failed",
+                time: 2000
+            });
             return;
         }
 
-        const payload = {
+        postMutation.mutate({
             title,
             content,
             category: CATEGORY_TO_ENUM[category] || category
-        };
-
-        console.log("DEBUG: Sending Payload to Local Backend:", payload);
-
-        try {
-            await AdminAPI.createAnnouncement(payload);
-
-            setTitle("");
-            setContent("");
-            setCategory("HTE Related");
-            setPopup({
-                title: "Success",
-                text: `Posted announcement: ${currentTitle}`,
-                icon: <Check size={50} />,
-                type: "success",
-                time: 2000
-            });
-
-            const res = await AdminAPI.getAnnouncements();
-            setAnnouncements(res.data);
-        } catch (err) {
-            let errorMsg = "Server error";
-            
-            // If the server returns HTML (500 error), try to find the error message in the text
-            if (typeof err.response?.data === 'string' && err.response.data.includes("<html")) {
-                console.error("FULL SERVER HTML ERROR:", err.response.data);
-                // Try to extract a specific SQL error if it exists in the HTML
-                const sqlErrorMatch = err.response.data.match(/error: (.*)/i) || err.response.data.match(/column "(.*)"/i);
-                if (sqlErrorMatch) {
-                    errorMsg = `DB Error: ${sqlErrorMatch[0]}`;
-                } else {
-                    errorMsg = "Internal Server Error (Check Backend Terminal for SQL logs)";
-                }
-            } else {
-                errorMsg = err.response?.data?.message || err.message;
-            }
-
-            console.error("Post Error Details:", errorMsg);
-            setPopup({
-                title: "Failed",
-                text: errorMsg,
-                icon: <X size={50} />,
-                type: "failed",
-                time: 5000 // Give more time to read the error
-            });
-        }
+        });
     };
 
     const handleDelete = async (id) => {
-        await AdminAPI.deleteAnnouncement(id);
-        setAnnouncements(prev => prev.filter(a => a.id !== id));
-
-        const deletedAnnouncement = announcementToDelete?.title || "announcement";
-
-        setPopup({
-            title: "Deleted Announcement",
-            text: `Successfully deleted ${deletedAnnouncement}`,
-            icon: <Trash size={50} />,
-            type: "failed", 
-            time: 2000
-        });
+        deleteMutation.mutate(id);
     };
 
     const matchesFilter = (a) => {
@@ -258,11 +229,11 @@ export default function Admin() {
             {/* METRICS & CHARTS GRID */}
             <section className="w-[90%] p-2 md:p-5 gap-4 md:gap-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
 
-                <Link to={"/admMoaOverview"}>
+                <Link to={"/admHteManagement?tab=hte"}>
                     <AdmCard
                         hasRibbon={true}
                         ribbonColor={"bg-yellow-500"}
-                        cardTitle="Total MOAs"
+                        cardTitle="Total Approved HTEs"
                         cardIcon={<Book color="#377268" />}
                         cardNumber={
                             loadingDashboard ? <SvgLoader size={20} /> :
@@ -278,7 +249,7 @@ export default function Admin() {
                     />
                 </Link>
 
-                <Link to={"/admMoaOverview"}>
+                <Link to={"/admHteManagement?tab=hte"}>
                     <AdmCard
                         hasRibbon={true}
                         ribbonColor={"bg-oasis-header"}
@@ -297,7 +268,7 @@ export default function Admin() {
                     />
                 </Link>
 
-                <Link to={"/admMoaOverview"}>
+                <Link to={"/admHteManagement?tab=reviews"}>
                     <AdmCard
                         hasRibbon={true}
                         ribbonColor={"bg-red-800"}
@@ -335,7 +306,7 @@ export default function Admin() {
                     />
                 </Link>
 
-                <Link to={"/admMoaOverview"}>
+                <Link to={"/admHteManagement?tab=prospects"}>
                     <AdmCard
                         hasRibbon={true}
                         ribbonColor={"bg-purple-700"}
@@ -354,24 +325,6 @@ export default function Admin() {
                     />
                 </Link>
 
-                <Link to={"/admOperations"}>
-                    <AdmCard
-                        hasRibbon={true}
-                        ribbonColor={"bg-oasis-gray"}
-                        cardTitle="Host Training Establishments"
-                        cardIcon={<Building2 color="#377268" />}
-                        cardNumber={
-                            loadingDashboard ? <SvgLoader size={20} /> :
-                            dashboardError ? "-" :
-                            dashboard?.metrics?.total_htes ?? "-"
-                        }
-                        cardDate={
-                            dashboard?.last_updated
-                                ? new Date(dashboard.last_updated).toLocaleDateString()
-                                : "-"
-                        }
-                    />
-                </Link>
 
                 {/* CHARTS SUB-GRID */}
                 <div className='col-span-1 sm:col-span-2 lg:col-span-3 grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 md:p-10 border border-gray-200 rounded-3xl bg-white shadow-sm mt-5'>
@@ -399,7 +352,7 @@ export default function Admin() {
                             <OasisBarChart
                                 data={[
                                     { name: 'Students', value: dashboard?.metrics?.total_students ?? 0, color: '#00D0FF'},
-                                    { name: 'HTEs', value: dashboard?.metrics?.total_htes ?? 0, color: '#333333' },
+                                    { name: 'HTEs', value: dashboard?.metrics?.total_htes ?? 0, color: '#EAB308' },
                                     { name: 'Prospects', value: dashboard?.metrics?.total_moa_prospects ?? 0, color: '#7E22CE' },
                                 ]}
                             />
@@ -527,7 +480,7 @@ export default function Admin() {
                 {/* NOTIFICATIONS SIDEBAR */}
                 <div id='notifications' className='lg:col-span-4 w-full rounded-3xl bg-admin-element flex flex-col h-full max-h-[1000px] shadow-sm border border-gray-100 overflow-hidden'>
                     <div className='sticky top-0 bg-admin-element w-full px-6 lg:px-10 py-5 border-b border-gray-200 z-10'>
-                        <p className='text-[0.9rem] font-black'>System Notifications</p>
+                        <p className='text-[0.9rem] font-black'>Notifications</p>
                     </div>
                     
                     <div className="flex-1 overflow-y-auto px-6 lg:px-10 py-5 flex flex-col gap-4 custom-scrollbar">

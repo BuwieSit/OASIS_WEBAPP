@@ -6,62 +6,101 @@ import { Dropdown, Filter } from '../../components/adminComps.jsx';
 import { Label, RatingLabel } from '../../utilities/label.jsx';
 import { AnnounceButton, CoursesButton } from '../../components/button.jsx';
 import Subtitle from '../../utilities/subtitle.jsx';
-import { Text, HteLocation } from '../../utilities/tableUtil.jsx';
+import { Text, HteLocation, ViewMoaButton } from '../../utilities/tableUtil.jsx';
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { AdminAPI } from "../../api/admin.api";
 import { Check, Download, FileCheck, Save, Upload, X, PlusCircle } from 'lucide-react';
-import { ConfirmModal, GeneralPopupModal, ProgressModal } from '../../components/popupModal.jsx';
+import { ConfirmModal, GeneralPopupModal, ProgressModal, ViewModal } from '../../components/popupModal.jsx';
 import HteDetailModal from '../../components/HteDetailModal.jsx';
 import SearchBar from '../../components/searchBar.jsx';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from "../../api/axios.jsx";
+
+const API_BASE = api.defaults.baseURL;
 
 export default function AdmOperations() {
-    const [data, setData] = useState([]);
-    const [htesLoading, setHtesLoading] = useState(false);
-    const [searchParams] = useSearchParams();
+    const queryClient = useQueryClient();
+    const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
+    
+    // TAB SYSTEM
+    const activeTab = searchParams.get("tab") || "hte";
+    const statusFilter = searchParams.get("status");
 
-    const categories = ["ACTIVE", "EXPIRED", "PENDING"];
-    const hteDropdown = data.map(h => h.company_name);
+    // =============================
+    // FETCH HTEs (TanStack Query)
+    // =============================
+    const { data: htes = [], isLoading: htesLoading } = useQuery({
+        queryKey: ['adminHtes', statusFilter],
+        queryFn: () => AdminAPI.getHTEs(statusFilter),
+    });
 
-    const status = searchParams.get("status");
+    // =============================
+    // FETCH PROSPECTS (TanStack Query)
+    // =============================
+    const { data: prospects = [], isLoading: prospectsLoading } = useQuery({
+        queryKey: ['adminMoaProspects'],
+        queryFn: AdminAPI.getMoaProspects,
+        enabled: activeTab === "prospects",
+    });
+
+    const hteDropdown = htes.map(h => h.company_name);
+
     const uploadRef = useRef(null);
     const [search, setSearch] = useState("");
 
-    const filteredData = useMemo(() => {
-        if (!search) return data;
+    // PDF VIEWING STATE
+    const [openView, setOpenView] = useState(false);
+    const [filePdf, setFilePdf] = useState(null);
+    const [currentFileName, setCurrentFileName] = useState("HTE_MOA.pdf");
+    const [viewingId, setViewingId] = useState(null);
+
+    // =============================
+    // FILTERING LOGIC
+    // =============================
+    const filteredHtes = useMemo(() => {
+        if (!search) return htes;
         const s = search.toLowerCase();
-        return data.filter(h => 
+        return htes.filter(h => 
             h.company_name?.toLowerCase().includes(s) ||
             h.industry?.toLowerCase().includes(s) ||
             h.address?.toLowerCase().includes(s) ||
             h.contact_person?.toLowerCase().includes(s)
         );
-    }, [data, search]);
+    }, [htes, search]);
+
+    const filteredProspects = useMemo(() => {
+        if (!search) return prospects;
+        const s = search.toLowerCase();
+        return prospects.filter(m => 
+            m.company_name?.toLowerCase().includes(s) ||
+            m.industry?.toLowerCase().includes(s) ||
+            m.address?.toLowerCase().includes(s) ||
+            m.contact_person?.toLowerCase().includes(s) ||
+            m.contact_email?.toLowerCase().includes(s) ||
+            m.status?.toLowerCase().includes(s)
+        );
+    }, [prospects, search]);
     
-    const [activeFilter, setActiveFilter] = useState("");
     const [selectedHte, setSelectedHte] = useState(null);
+
     // =============================
-    // ADD HTE FORM STATE
+    // FORM STATE (ADD HTE)
     // =============================
     const [companyName, setCompanyName] = useState("");
     const [companyAbout, setCompanyAbout] = useState("");
     const [companyLoc, setCompanyLoc] = useState("");
     const [statusValue, setStatusValue] = useState("ACTIVE");
-
     const [industry, setIndustry] = useState("");
     const [website, setWebsite] = useState("");
-
     const [contactPerson, setContactPerson] = useState("");
     const [contactPosition, setContactPosition] = useState("");
     const [contactNumber, setContactNumber] = useState("");
     const [contactEmail, setContactEmail] = useState("");
-
     const [signedAt, setSignedAt] = useState("");
-    const [validity, setValidity] = useState(""); // months
-
+    const [validity, setValidity] = useState("");
     const [eligibleCourses, setEligibleCourses] = useState([]);
-
     const [logoFile, setLogoFile] = useState(null);
     const [thumbnailFile, setThumbnailFile] = useState(null);
     const [moaFile, setMoaFile] = useState(null);
@@ -69,7 +108,7 @@ export default function AdmOperations() {
     const [confirmClear, setConfirmClear] = useState(false);
     const [popup, setPopup] = useState(null);
 
-    // Progress and Processing State
+    // Processing State
     const [progress, setProgress] = useState(0);
     const [isProcessing, setIsProcessing] = useState(false);
     const [processingTitle, setProcessingTitle] = useState("");
@@ -77,243 +116,154 @@ export default function AdmOperations() {
     const [isDownloading, setIsDownloading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
 
-    // =============================
     // REVIEWS MODERATION STATE
-    // =============================
-    const REVIEW_CRITERIA = [
-        "Learning Experience",
-        "Skill Acquisition",
-        "Adequate Supervisor Support",
-        "Course related",
-        "Others",
-    ];
-
-    const [reviews, setReviews] = useState([]);
-    const [reviewsLoading, setReviewsLoading] = useState(false);
-
     const [reviewStatus, setReviewStatus] = useState("PENDING");
     const [reviewCriteria, setReviewCriteria] = useState("");
     const [reviewSort, setReviewSort] = useState("newest");
     const [reviewRating, setReviewRating] = useState("");
     const [reviewHteName, setReviewHteName] = useState("");
 
-    const fetchReviews = async () => {
-        setReviewsLoading(true);
-        try {
-            const params = {
-                status: reviewStatus,
-                sort: reviewSort,
-            };
-            if (reviewCriteria) params.criteria = reviewCriteria;
-            if (reviewRating) params.rating = reviewRating;
-            if (reviewHteName) params.hte_name = reviewHteName;
+    const reviewParams = useMemo(() => {
+        const params = { status: reviewStatus, sort: reviewSort };
+        if (reviewCriteria) params.criteria = reviewCriteria;
+        if (reviewRating) params.rating = reviewRating;
+        if (reviewHteName) params.hte_name = reviewHteName;
+        return params;
+    }, [reviewStatus, reviewSort, reviewCriteria, reviewRating, reviewHteName]);
 
-            const res = await AdminAPI.getReviews(params);
-            setReviews(res.data || []);
+    const { data: reviews = [], isLoading: reviewsLoading, refetch: refetchReviews } = useQuery({
+        queryKey: ['adminReviews', reviewParams],
+        queryFn: () => AdminAPI.getReviews(reviewParams),
+        enabled: activeTab === "reviews",
+    });
+
+    // =============================
+    // MUTATIONS
+    // =============================
+    const createHteMutation = useMutation({
+        mutationFn: AdminAPI.createHTE,
+        onSuccess: () => {
+            setPopup({ title: "Success", text: "HTE saved successfully", icon: <Check size={35}/>, type: "success" });
+            queryClient.invalidateQueries({ queryKey: ['adminHtes'] });
+            resetForm();
+            setShowAddHte(false);
+        },
+        onError: () => setPopup({ title: "Error", text: "Failed to save HTE", icon: <X color="#800020" size={35}/>, type: "failed" })
+    });
+
+    const approveReviewMutation = useMutation({
+        mutationFn: AdminAPI.approveReview,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['adminReviews'] }),
+    });
+
+    const rejectReviewMutation = useMutation({
+        mutationFn: AdminAPI.rejectReview,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['adminReviews'] }),
+    });
+
+    const updateProspectStatusMutation = useMutation({
+        mutationFn: ({ id, status }) => AdminAPI.updateMoaProspectStatus(id, status),
+        onSuccess: () => {
+            setPopup({ title: "Status Changed", text: "Prospect status updated.", type: "success" });
+            queryClient.invalidateQueries({ queryKey: ['adminMoaProspects'] });
+            queryClient.invalidateQueries({ queryKey: ['adminHtes'] });
+        },
+        onError: (err) => setPopup({ title: "Error", text: err?.response?.data?.message || "Failed to update prospect.", type: "failed" })
+    });
+
+    // =============================
+    // PDF LOGIC (Centralized)
+    // =============================
+    const fetchMoaBlobUrl = async (id) => {
+        try {
+            const res = await AdminAPI.getMoaFileBlob(id);
+            const blob = res?.data;
+            if (!blob || blob.size === 0) return null;
+            return window.URL.createObjectURL(blob);
         } catch (err) {
-            console.error(err);
-            setReviews([]);
+            console.error("Blob fetch failed", err);
+            return null;
+        }
+    };
+
+    const openPdf = async (id, companyName, filePath = null) => {
+        try {
+            setViewingId(id);
+            let url = null;
+            if (filePath && filePath !== '—' && filePath !== "") {
+                const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+                const separator = API_BASE.endsWith('/') ? '' : '/';
+                url = filePath.startsWith("http") ? filePath : `${API_BASE}${separator}${cleanPath}`;
+            } else if (id) {
+                url = await fetchMoaBlobUrl(id);
+            }
+
+            if (!url) return;
+
+            if (filePdf && filePdf.startsWith("blob:")) {
+                window.URL.revokeObjectURL(filePdf);
+            }
+
+            const safeName = (companyName || "HTE").replace(/\s+/g, "_").replace(/[^\w\-]/g, "");
+            setCurrentFileName(`${safeName}_MOA.pdf`);
+            setFilePdf(url);
+            setOpenView(true);
         } finally {
-            setReviewsLoading(false);
+            setViewingId(null);
         }
     };
 
-    useEffect(() => {
-        fetchReviews();
-    }, [reviewStatus, reviewCriteria, reviewSort, reviewRating, reviewHteName]);
-
-    const formatDateTime = (iso) => {
-        if (!iso) return "—";
+    const downloadMoa = async (id, companyName, filePath = null) => {
         try {
-            return new Date(iso).toLocaleString();
-        } catch {
-            return "—";
-        }
-    };
+            let url = null;
+            let isBlob = false;
+            if (filePath && filePath !== '—' && filePath !== "") {
+                const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+                const separator = API_BASE.endsWith('/') ? '' : '/';
+                url = filePath.startsWith("http") ? filePath : `${API_BASE}${separator}${cleanPath}`;
+            } else if (id) {
+                const res = await AdminAPI.getMoaFileBlob(id);
+                const blob = res?.data;
+                if (!blob || blob.size === 0 || blob.type === "application/json") return;
+                url = window.URL.createObjectURL(blob);
+                isBlob = true;
+            }
 
-    const handleApproveReview = async (id) => {
-        try {
-            await AdminAPI.approveReview(id);
-            fetchReviews();
+            if (!url) return;
+            const safeName = (companyName || "HTE").replace(/\s+/g, "_").replace(/[^\w\-]/g, "");
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `${safeName}_MOA.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            if (isBlob) window.URL.revokeObjectURL(url);
         } catch (err) {
-            console.error(err);
-            setPopup({
-                title: "Error",
-                text: "Failed to approve review.",
-                icon: <X color="#800020" size={35}/>,
-                type: "failed"
-            });
-        }
-    };
-
-    const handleRejectReview = async (id) => {
-        try {
-            await AdminAPI.rejectReview(id);
-            fetchReviews();
-        } catch (err) {
-            console.error(err);
-            setPopup({
-                title: "Error",
-                text: "Failed to reject review.",
-                icon: <X color="#800020" size={35}/>,
-                type: "failed"
-            });
-        }
-    };
-
-    const handleApproveAll = async () => {
-        try {
-            const params = {
-                status: reviewStatus,
-                sort: reviewSort,
-            };
-            if (reviewCriteria) params.criteria = reviewCriteria;
-            if (reviewRating) params.rating = reviewRating;
-            if (reviewHteName) params.hte_name = reviewHteName;
-
-            await AdminAPI.approveAllReviews(params);
-            fetchReviews();
-            setPopup({
-                title: "Success",
-                text: "All reviews approved.",
-                icon: <Check size={35}/>,
-                type: "success"
-            });
-        } catch (err) {
-            console.error(err);
-            setPopup({
-                title: "Error",
-                text: "Approve all failed.",
-                icon: <X color="#800020" size={35}/>,
-                type: "failed"
-            });
-        }
-    };
-
-    const handleClearAll = async () => {
-        try {
-            const params = {
-                status: reviewStatus,
-                sort: reviewSort,
-            };
-            if (reviewCriteria) params.criteria = reviewCriteria;
-            if (reviewRating) params.rating = reviewRating;
-            if (reviewHteName) params.hte_name = reviewHteName;
-
-            await AdminAPI.clearAllPendingReviews(params);
-            fetchReviews();
-            setPopup({
-                title: "Success",
-                text: "All pending reviews cleared.",
-                icon: <Check size={35}/>,
-                type: "success"
-            });
-        } catch (err) {
-            console.error(err);
-            setPopup({
-                title: "Error",
-                text: "Clear all failed.",
-                icon: <X color="#800020" size={35}/>,
-                type: "failed"
-            });
+            console.error("Download failed", err);
         }
     };
 
     // =============================
-    // FETCH HTEs
-    // =============================
-    useEffect(() => {
-        setHtesLoading(true);
-        AdminAPI.getHTEs(status)
-            .then(res => setData(res.data))
-            .catch(console.error)
-            .finally(() => setHtesLoading(false));
-    }, [status]);
-
-    // =============================
-    // HELPERS
+    // TABLE HELPERS
     // =============================
     const getDisplayStatus = (row) => {
         const backendStatus = row?.moa?.status || row?.moa_status || "NO MOA";
         const expiry = row?.moa?.expires_at || row?.moa_expiry_date;
-
         if (!expiry) return backendStatus;
-
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-
         const expiryDate = new Date(expiry);
         if (Number.isNaN(expiryDate.getTime())) return backendStatus;
-
         expiryDate.setHours(0, 0, 0, 0);
-
         if (today > expiryDate) return "EXPIRED";
         return backendStatus;
     };
 
-    const calcValidity = (row) => {
-        const rawValidity =
-            row?.moa?.validity_years ??
-            row?.moa_validity_years ??
-            row?.moa_validity ??
-            null;
-
-        if (rawValidity !== null && rawValidity !== undefined && rawValidity !== "") {
-            const num = Number(rawValidity);
-            if (!Number.isNaN(num)) {
-                return `${num % 1 === 0 ? num.toFixed(0) : num.toFixed(2)} year${num !== 1 ? "s" : ""}`;
-            }
-        }
-
-        const signed = row?.moa?.signed_at || row?.moa_signed_at;
-        const expiry = row?.moa?.expires_at || row?.moa_expiry_date;
-
-        if (!signed || !expiry) return "—";
-
-        const start = new Date(signed);
-        const end = new Date(expiry);
-
-        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "—";
-
-        const months =
-            (end.getFullYear() - start.getFullYear()) * 12 +
-            (end.getMonth() - start.getMonth());
-
-        if (months <= 0) return "—";
-
-        const years = months / 12;
-        return `${years % 1 === 0 ? years.toFixed(0) : years.toFixed(2)} year${years !== 1 ? "s" : ""}`;
-    };
-
-    const toggleCourse = (course) => {
-        setEligibleCourses(prev =>
-            prev.includes(course)
-                ? prev.filter(c => c !== course)
-                : [...prev, course]
-        );
-    };
-
     const resetForm = () => {
-        setCompanyName("");
-        setCompanyAbout("");
-        setCompanyLoc("");
-        setStatusValue("ACTIVE");
-
-        setIndustry("");
-        setWebsite("");
-        setContactPerson("");
-        setContactPosition("");
-        setContactNumber("");
-        setContactEmail("");
-        setSignedAt("");
-        setValidity("");
-
-        setEligibleCourses([]);
-        setLogoFile(null);
-        setThumbnailFile(null);
-        setMoaFile(null);
-
-        setConfirmClear(false);
+        setCompanyName(""); setCompanyAbout(""); setCompanyLoc(""); setStatusValue("ACTIVE");
+        setIndustry(""); setWebsite(""); setContactPerson(""); setContactPosition("");
+        setContactNumber(""); setContactEmail(""); setSignedAt(""); setValidity("");
+        setEligibleCourses([]); setLogoFile(null); setThumbnailFile(null); setMoaFile(null);
     };
 
     const formatDate = (d) => d ? new Date(d).toLocaleDateString() : "—";
@@ -321,727 +271,221 @@ export default function AdmOperations() {
     // =============================
     // TABLE COLUMNS
     // =============================
-    const columns = [
+    const hteColumns = [
         { header: "HTE Name", render: r => <Text text={r.company_name} /> },
         { header: "Industry", render: r => <Text text={r.industry} /> },
+        { header: "Contact Person", render: r => <Text text={r.contact_person || "—"} /> },
         { header: "Location", render: r => <HteLocation address={r.address} /> },
-        { header: "Status", render: r => <Text text={getDisplayStatus(r)} /> },
-        { header: "MOA Validity", render: r => <Text text={calcValidity(r)} /> },
-        { header: "Signed Date", render: r => <Text text={formatDate(r.moa?.signed_at || r.moa_signed_at)} /> },
+        { header: "MOA Status", render: r => <Text text={getDisplayStatus(r)} /> },
         { header: "Expiry Date", render: r => <Text text={formatDate(r.moa?.expires_at || r.moa_expiry_date)} /> },
+        { header: "View MOA", render: r => (
+            <ViewMoaButton 
+                url={(r.moa?.file_path || r.moa_file_path || r.moa?.has_document_blob) ? "#" : null}
+                loading={viewingId === (r.moa?.id || r.id)}
+                onClick={() => openPdf(r.moa?.id || r.id, r.company_name, r.moa?.file_path || r.moa_file_path)}
+                onDownload={() => downloadMoa(r.moa?.id || r.id, r.company_name, r.moa?.file_path || r.moa_file_path)}
+            />
+        )}
     ];
 
-    const handleSaveHTE = async (e) => {
+    const prospectStatusColors = { EMAILED_TO_HTE: "text-oasis-aqua", FOR_SIGNATURE: "text-oasis-gray", ULCO: "text-oasis-header", RETRIEVED_FROM_ULCO: "text-oasis-button-light", APPROVED: "text-green-500", CANCELLED: "text-oasis-red" };
+    const prospectStatusOptions = ["EMAILED_TO_HTE", "FOR_SIGNATURE", "ULCO", "RETRIEVED_FROM_ULCO", "APPROVED", "CANCELLED"];
+
+    const prospectColumns = [
+        { header: "Status", render: r => (
+            <div className='w-40'>
+                <Dropdown 
+                    value={r.status} 
+                    currentValueColor={prospectStatusColors} 
+                    onChange={(val) => updateProspectStatusMutation.mutate({ id: r.id, status: val })}
+                    disabled={r.status === "APPROVED" || r.status === "CANCELLED"}
+                    categories={prospectStatusOptions}
+                />
+            </div>
+        )},
+        { header: "HTE Name", render: r => <Text text={r.company_name} /> },
+        { header: "Industry", render: r => <Text text={r.industry} /> },
+        { header: "Contact Person", render: r => <Text text={r.contact_person} /> },
+        { header: "Email", render: r => <Text text={r.contact_email} /> },
+        { header: "Contact Number", render: r => <Text text={r.contact_number} /> },
+        { header: "MOA File", render: r => (
+            <ViewMoaButton 
+                url={r.moa_file_path ? "#" : null}
+                loading={viewingId === r.id}
+                onClick={() => openPdf(r.id, r.company_name, r.moa_file_path)}
+                onDownload={() => downloadMoa(r.id, r.company_name, r.moa_file_path)}
+            />
+        )}
+    ];
+
+    const handleSaveHTE = (e) => {
         e.preventDefault();
-
-        if (!companyName || !industry || !companyLoc || !contactPerson || !contactPosition || !contactNumber || !contactEmail) {
-            setPopup({
-                title: "Validation Error",
-                text: "Please fill required fields: Company Name, Industry, Location, Contact Person, Position, Contact Number, Email Address.",
-                icon: <X color="#800020" size={35}/>,
-                type: "failed"
-            });
-            return;
-        }
-
         const formData = new FormData();
-        formData.append("company_name", companyName);
-        formData.append("description", companyAbout);
-        formData.append("address", companyLoc);
-        formData.append("status", statusValue);
-
-        formData.append("industry", industry);
-        formData.append("website", website);
-
-        formData.append("contact_person", contactPerson);
-        formData.append("contact_position", contactPosition);
-        formData.append("contact_number", contactNumber);
-        formData.append("contact_email", contactEmail);
-
-        if (signedAt) formData.append("signed_at", signedAt);
-        if (validity) formData.append("validity", validity);
-
+        formData.append("company_name", companyName); formData.append("description", companyAbout); formData.append("address", companyLoc); formData.append("status", statusValue);
+        formData.append("industry", industry); formData.append("website", website); formData.append("contact_person", contactPerson); formData.append("contact_position", contactPosition);
+        formData.append("contact_number", contactNumber); formData.append("contact_email", contactEmail);
+        if (signedAt) formData.append("signed_at", signedAt); if (validity) formData.append("validity", validity);
         formData.append("eligible_courses", JSON.stringify(eligibleCourses));
-
-        if (logoFile) formData.append("logo", logoFile);
-        if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
-        if (moaFile) formData.append("moa_file", moaFile);
-
-        try {
-            await AdminAPI.createHTE(formData);
-
-            setPopup({
-                title: "Success",
-                text: "HTE saved successfully",
-                icon: <Check size={35}/>,
-                type: "success"
-            });
-
-            const res = await AdminAPI.getHTEs(status);
-            setData(res.data);
-
-            resetForm();
-        } catch (err) {
-            console.error(err);
-            setPopup({
-                title: "Error",
-                text: "Failed to save HTE",
-                icon: <X color="#800020" size={35}/>,
-                type: "failed"
-            });
-        }
+        if (logoFile) formData.append("logo", logoFile); if (thumbnailFile) formData.append("thumbnail", thumbnailFile); if (moaFile) formData.append("moa_file", moaFile);
+        createHteMutation.mutate(formData);
     };
 
-    const handleDownload = async () => {
-        const controller = new AbortController();
-        setAbortController(controller);
-        setIsProcessing(true);
-        setIsDownloading(true);
-        setProcessingTitle("Downloading HTEs...");
-        setProgress(0);
-
+    const handleDownloadHTEs = async () => {
+        setIsProcessing(true); setIsDownloading(true); setProcessingTitle("Downloading HTEs...");
         try {
-            const res = await AdminAPI.downloadHTEsExcel(status || "ALL", {
-                signal: controller.signal,
-                onDownloadProgress: (progressEvent) => {
-                    if (progressEvent.total) {
-                        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                        setProgress(percent);
-                    } else {
-                        setProgress(prev => Math.min(prev + 5, 95));
-                    }
-                }
-            });
-
-            setProgress(100);
-            const blob = new Blob([res.data], {
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            });
-
-            await new Promise(r => setTimeout(r, 600));
-
+            const res = await AdminAPI.downloadHTEsExcel(statusFilter || "ALL");
+            const blob = new Blob([res.data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
             const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `hte_overview_${status || "ALL"}.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
-            
-            setIsProcessing(false);
-            setPopup({
-                title: "Download Successful",
-                text: "The HTE list has been downloaded successfully.",
-                icon: <Check size={35} color="#22C55E"/>,
-                type: "success"
-            });
-        } catch (err) {
-            if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') {
-                console.log('Download canceled');
-            } else {
-                console.error(err);
-                setPopup({
-                    title: "Error",
-                    text: "Download failed. Please try again later.",
-                    icon: <X color="#800020" size={35}/>,
-                    type: "failed"
-                });
-            }
-            setIsProcessing(false);
-        } finally {
-            setIsDownloading(false);
-            setAbortController(null);
-            setProgress(0);
-        }
+            const a = document.createElement("a"); a.href = url; a.download = `hte_list_${statusFilter || "ALL"}.xlsx`;
+            document.body.appendChild(a); a.click(); a.remove();
+        } catch { setPopup({ title: "Error", text: "Download failed.", type: "failed" }); }
+        finally { setIsProcessing(false); setIsDownloading(false); }
     };
 
-    const handleUploadPick = () => {
-        if (isProcessing) return;
-        uploadRef.current?.click();
-    };
-
-    const handleUploadFile = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const controller = new AbortController();
-        setAbortController(controller);
-        setIsProcessing(true);
-        setIsUploading(true);
-        setProcessingTitle("Uploading HTEs...");
-        setProgress(0);
-
-        try {
-            const res = await AdminAPI.uploadHTEsExcel(file, {
-                signal: controller.signal,
-                onUploadProgress: (progressEvent) => {
-                    const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                    setProgress(percent);
-                }
-            });
-
-            setProgress(100);
-            await new Promise(r => setTimeout(r, 600));
-
-            setIsProcessing(false);
-            setPopup({
-                title: "Upload Completed",
-                text: `Created: ${res.data.created_htes} | Updated: ${res.data.updated_htes} | Failed: ${res.data.failed_rows.length}`,
-                icon: <FileCheck size={35}/>,
-                type: "success",
-                time: 5000
-            });
-
-            const refreshed = await AdminAPI.getHTEs(status);
-            setData(refreshed.data);
-        } catch (err) {
-            if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') {
-                console.log('Upload canceled');
-            } else {
-                console.error(err);
-                setPopup({
-                    title: "Upload Failed",
-                    text: "The file upload failed. Please check the format and try again.",
-                    icon: <X color="#800020" size={35}/>,
-                    type: "failed"
-                });
-            }
-            setIsProcessing(false);
-        } finally {
-            setIsUploading(false);
-            setAbortController(null);
-            setProgress(0);
-            e.target.value = "";
-        }
+    const handleUploadFile = (e) => {
+        const file = e.target.files?.[0]; if (!file) return;
+        setIsProcessing(true); setIsUploading(true); setProcessingTitle("Uploading HTEs...");
+        AdminAPI.uploadHTEsExcel(file).then((res) => {
+            setPopup({ title: "Upload Completed", text: `Created: ${res.created_htes}`, type: "success" });
+            queryClient.invalidateQueries({ queryKey: ['adminHtes'] });
+        }).catch(() => setPopup({ title: "Upload Failed", type: "failed" }))
+        .finally(() => { setIsProcessing(false); setIsUploading(false); e.target.value = ""; });
     };
 
     const [showAddHte, setShowAddHte] = useState(false);
-    const [viewTab, setViewTab] = useState("hte");
 
     return (
         <AdminScreen>
-            {confirmClear &&
-                <ConfirmModal
-                    confText='clear all?'
-                    onCancel={() => setConfirmClear(false)}
-                    onConfirm={() => {
-                        setPopup({
-                            title: "Action Completed.",
-                            text: "HTE Information Cleared.",
-                            icon: <FileCheck />,
-                            type: "neutral",
-                            time: 3000
-                        });
-                        resetForm();
-                    }}
-                />
-            }
-
-            {popup && (
-                <GeneralPopupModal
-                    icon={popup.icon}
-                    time={popup.time || 3000}
-                    title={popup.title}
-                    text={popup.text}
-                    onClose={() => setPopup(null)}
-                    isSuccess={popup.type === "success"}
-                    isFailed={popup.type === "failed"}
-                    isNeutral={popup.type === "neutral"}
-                />
-            )}
+            <ViewModal visible={openView} onClose={() => { setOpenView(false); setFilePdf(null); }} isDocument file={filePdf} filename={currentFileName} />
+            {popup && <GeneralPopupModal title={popup.title} text={popup.text} onClose={() => setPopup(null)} isSuccess={popup.type === "success"} isFailed={popup.type === "failed"} />}
 
             <div className='w-[90%] flex flex-col gap-3 items-start justify-center border-b border-gray-400 py-5'>
-                <Title text="Operations" size='text-[2rem]'/>
-                <Subtitle text={"Overview and Management of HTEs, upload or export HTE tables, and Moderate Student Reviews."}/>
+                <Title text="HTE Management" size='text-[2rem]'/>
+                <Subtitle text={"Centralized management for HTEs, MOA Overview, and Prospect Submissions."}/>
             </div>
 
             <div className='flex flex-row justify-between items-center gap-3 w-[90%] mt-5'>
                 <div className='flex gap-3'>
-                    <Subtitle
-                        text="HTE Management"
-                        onClick={() => setViewTab("hte")}
-                        isActive={viewTab === "hte"}
-                        isLink
-                        weight={"font-bold"}
-                        size="text-[1rem]"
-                        className={"rounded-2xl"}
-                    />
-                    <Subtitle text="|" size="text-[1rem]" />
-                    <Subtitle
-                        text="Reviews Moderation"
-                        onClick={() => setViewTab("reviews")}
-                        isActive={viewTab === "reviews"}
-                        isLink
-                        weight={"font-bold"}
-                        size="text-[1rem]"
-                        className={"rounded-2xl"}
-                    />
+                    {["hte", "prospects", "reviews"].map(t => (
+                        <Subtitle 
+                            key={t}
+                            text={t === "hte" ? "HTE Management" : t === "prospects" ? "MOA Prospects" : "Reviews Moderation"}
+                            onClick={() => setSearchParams({ tab: t })}
+                            isActive={activeTab === t}
+                            isLink weight="font-bold" size="text-[1rem]" className="rounded-2xl"
+                        />
+                    ))}
                 </div>
-                
+                <SearchBar value={search} onChange={setSearch} />
             </div>
 
-            <input
-                ref={uploadRef}
-                type="file"
-                accept=".xlsx"
-                style={{ display: "none" }}
-                onChange={handleUploadFile}
-            />
+            <input ref={uploadRef} type="file" accept=".xlsx" style={{ display: "none" }} onChange={handleUploadFile} />
 
-            {viewTab === "hte" && (
+            {activeTab === "hte" && (
                 <div className="w-full flex flex-col items-center animate__animated animate__fadeIn">
                     <div className='flex justify-between items-center w-[90%] mb-5 border-b border-gray-200 pb-3'>
-                        <Title text={"HTE Management"} />
-                        <div className='flex flex-row justify-end items-center z-70'>
-                            <SearchBar
-                                value={search}
-                                onChange={setSearch}
-                            />
+                        <Title text={"HTE Management & MOA Overview"} />
+                        <div className='flex gap-3'>
+                            <AnnounceButton icon={<PlusCircle size={20}/>} btnText="Add HTE" onClick={() => setShowAddHte(!showAddHte)} />
+                            <AnnounceButton icon={<Upload />} btnText="Import" onClick={() => uploadRef.current.click()} />
+                            <AnnounceButton icon={<Download />} btnText="Export" onClick={handleDownloadHTEs} />
                         </div>
                     </div>
-                    {htesLoading ? (
-                        
-                        <div className="w-[80%] flex justify-start items-center h-40">
-                            <Subtitle text="Loading HTEs..." />
-                        </div>
-                    ) : (
-                        <OasisTable 
-                            columns={columns} 
-                            data={filteredData}
-                            onRowClick={(row) => setSelectedHte(row)}
-                        >
-                            <div className="w-full flex flex-row justify-between items-center gap-4 mt-4">
-                                <div className='flex flex-row gap-3 items-center justify-start'>
-                                    <Subtitle
-                                        text="All"
-                                        isLink
-                                        isActive={activeFilter === "All"}
-                                        onClick={() => {
-                                            navigate("/admOperations")
-                                            setActiveFilter("All")
-                                        }}
-                                        size="text-[1rem]"
-                                        className={"rounded-2xl"}
-                                        weight={"font-bold"}
-                                    />
-                                    <Subtitle text={"|"} size='text-[1rem]' />
-                                    <Subtitle
-                                        text="ACTIVE"
-                                        isLink
-                                        isActive={activeFilter === "Active"}
-                                        onClick={() => {
-                                            navigate("/admOperations?status=ACTIVE")
-                                            setActiveFilter("Active")
-                                        }}
-                                        size="text-[1rem]"
-                                        className={"rounded-2xl"}
-                                        weight={"font-bold"}
-                                    />
-                                    <Subtitle text={"|"} size='text-[1rem]' />
-                                    <Subtitle
-                                        text="EXPIRED"
-                                        isActive={activeFilter === "Expired"}
-                                        isLink
-                                        onClick={() => {
-                                            navigate("/admOperations?status=EXPIRED")
-                                            setActiveFilter("Expired")
-                                        }}
-                                        size="text-[1rem]"
-                                        className={"rounded-2xl"}
-                                        weight={"font-bold"}
-                                    />
-                                </div>
 
-                                <div className='w-full flex flex-row justify-end items-center gap-3'>
-                                    <AnnounceButton 
-                                        icon={<Upload />} 
-                                        btnText={isUploading ? "Uploading..." : "Upload"} 
-                                        onClick={handleUploadPick} 
-                                        disabled={isProcessing}
-                                    />
-                                    <AnnounceButton 
-                                        icon={<Download />} 
-                                        btnText={isDownloading ? "Downloading..." : "Download"} 
-                                        onClick={handleDownload} 
-                                        disabled={isProcessing}
-                                    />
-                                </div>
+                    {htesLoading ? <Subtitle text="Loading..." /> : (
+                        <OasisTable columns={hteColumns} data={filteredHtes} onRowClick={setSelectedHte}>
+                             <div className="flex gap-3 mb-4">
+                                {["All", "Active", "Expired"].map(s => (
+                                    <Filter key={s} text={s} isActive={(statusFilter || "All").toLowerCase() === s.toLowerCase()} 
+                                        onClick={() => setSearchParams({ tab: "hte", status: s === "All" ? "" : s.toUpperCase() })} />
+                                ))}
                             </div>
                         </OasisTable>
                     )}
 
-                    <ProgressModal
-                        visible={isProcessing}
-                        progress={progress}
-                        title={processingTitle}
-                        onCancel={() => {
-                            if (abortController) {
-                                abortController.abort();
-                                setIsProcessing(false);
-                                setAbortController(null);
-                                setProgress(0);
-                            }
-                        }}
-                    />
-
-                    <HteDetailModal 
-                        visible={!!selectedHte} 
-                        hte={selectedHte} 
-                        onClose={() => setSelectedHte(null)} 
-                    />
-
-                    {/* TOGGLE ADD HTE BUTTON */}
-                    <div className="w-[90%] flex justify-end mt-5">
-                        <AnnounceButton 
-                            icon={showAddHte ? <X size={20} /> : <PlusCircle size={20} />} 
-                            btnText={showAddHte ? "Close Add Form" : "Add Individual HTE"} 
-                            onClick={() => setShowAddHte(!showAddHte)}
-                        />
-                    </div>
-
-                    {/* HTE ADD SECTION */}
                     {showAddHte && (
-                        <div className="w-[90%] flex flex-col items-center animate__animated animate__fadeIn mt-5">
-                            <div className='flex justify-start items-start w-full mb-3'>
-                                <Title text={"Add HTE"} />
-                            </div>
-
-                            <div className="w-full p-8 rounded-3xl bg-admin-element flex flex-col gap-5 shadow-[0px_4px_20px_rgba(0,0,0,0.1)] border border-gray-200">
-                                <form className="w-full flex flex-col gap-5" onSubmit={handleSaveHTE}>
-                                    <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-10 text-oasis-button-dark">
-                                        <div className="w-full flex flex-col gap-6">
-                                            <div className="p-5 bg-white/50 rounded-2xl border border-gray-200 space-y-5">
-                                                <FileUploadField
-                                                    labelText="Upload Logo"
-                                                    fieldId="logoFile"
-                                                    onChange={e => setLogoFile(e.target.files[0])}
-                                                />
-                                                <FileUploadField
-                                                    labelText="Upload HTE Thumbnail"
-                                                    fieldId="thumbnailFile"
-                                                    onChange={e => setThumbnailFile(e.target.files[0])}
-                                                />
-                                                <FileUploadField
-                                                    labelText="MOA File"
-                                                    fieldId="moaFile"
-                                                    onChange={e => setMoaFile(e.target.files[0])}
-                                                />
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <SingleField
-                                                    labelText="Date Notarized"
-                                                    fieldHolder="YYYY-MM-DD"
-                                                    fieldId="signedAt"
-                                                    value={signedAt}
-                                                    onChange={e => setSignedAt(e.target.value)}
-                                                />
-
-                                                <SingleField
-                                                    labelText="Validity (Months/Years)"
-                                                    fieldHolder="e.g., 36 months"
-                                                    fieldId="validity"
-                                                    value={validity}
-                                                    onChange={e => setValidity(e.target.value)}
-                                                />
-                                            </div>
-
-                                            <div className="w-full mt-auto flex justify-start items-center gap-5 pt-5 border-t border-gray-300">
-                                                <AnnounceButton icon={<Save size={20} />} btnText="Save HTE" type="submit" />
-                                                <AnnounceButton
-                                                    btnText="Clear Fields"
-                                                    type="button"
-                                                    onClick={() => setConfirmClear(true)}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="w-full flex flex-col gap-5">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <SingleField
-                                                    labelText="Company Name *"
-                                                    fieldHolder="Enter company name"
-                                                    fieldId="companyName"
-                                                    value={companyName}
-                                                    onChange={e => setCompanyName(e.target.value)}
-                                                />
-
-                                                <SingleField
-                                                    labelText="Industry *"
-                                                    fieldHolder="Enter nature of business"
-                                                    fieldId="industry"
-                                                    value={industry}
-                                                    onChange={e => setIndustry(e.target.value)}
-                                                />
-                                            </div>
-
-                                            <MultiField
-                                                labelText="About Company"
-                                                fieldHolder="Enter company description"
-                                                fieldId="companyAbout"
-                                                value={companyAbout}
-                                                onChange={e => setCompanyAbout(e.target.value)}
-                                            />
-
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <SingleField
-                                                    labelText="Website"
-                                                    fieldHolder="https://example.com"
-                                                    fieldId="website"
-                                                    value={website}
-                                                    onChange={e => setWebsite(e.target.value)}
-                                                />
-
-                                                <SingleField
-                                                    labelText="Location *"
-                                                    fieldHolder="Enter company address"
-                                                    fieldId="companyLoc"
-                                                    value={companyLoc}
-                                                    onChange={e => setCompanyLoc(e.target.value)}
-                                                />
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <SingleField
-                                                    labelText="Contact Person *"
-                                                    fieldHolder="Enter contact person"
-                                                    fieldId="contactPerson"
-                                                    value={contactPerson}
-                                                    onChange={e => setContactPerson(e.target.value)}
-                                                />
-
-                                                <SingleField
-                                                    labelText="Position *"
-                                                    fieldHolder="Enter position"
-                                                    fieldId="contactPosition"
-                                                    value={contactPosition}
-                                                    onChange={e => setContactPosition(e.target.value)}
-                                                />
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <SingleField
-                                                    labelText="Contact Number *"
-                                                    fieldHolder="Enter contact number"
-                                                    fieldId="contactNumber"
-                                                    value={contactNumber}
-                                                    onChange={e => setContactNumber(e.target.value)}
-                                                />
-
-                                                <SingleField
-                                                    labelText="Email Address *"
-                                                    fieldHolder="Enter email address"
-                                                    fieldId="contactEmail"
-                                                    value={contactEmail}
-                                                    onChange={e => setContactEmail(e.target.value)}
-                                                />
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                                                <Dropdown
-                                                    labelText="Operational Status"
-                                                    categories={categories}
-                                                    value={statusValue}
-                                                    onChange={setStatusValue}
-                                                />
-                                                
-                                                <div className="flex flex-col gap-2">
-                                                    <Label labelText="Eligible Courses" />
-                                                    <section className="w-full flex flex-row flex-wrap gap-2">
-                                                        {["DIT", "DLMOT", "DEET", "DMET", "DCvET", "DCpET", "DRET", "DECET"].map(c =>
-                                                            <CoursesButton
-                                                                key={c}
-                                                                text={c}
-                                                                isActive={eligibleCourses.includes(c)}
-                                                                onClick={() => toggleCourse(c)}
-                                                            />
-                                                        )}
-                                                    </section>
-                                                </div>
-                                            </div>
-                                        </div>
+                        <div className="w-[90%] bg-white p-8 rounded-3xl mt-5 shadow-lg border border-gray-200 animate__animated animate__fadeInDown">
+                             <form onSubmit={handleSaveHTE} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                    <FileUploadField labelText="HTE Logo" fieldId="logo" onChange={e => setLogoFile(e.target.files[0])} />
+                                    <FileUploadField labelText="MOA File" fieldId="moa" onChange={e => setMoaFile(e.target.files[0])} />
+                                    <SingleField labelText="Company Name *" value={companyName} onChange={e => setCompanyName(e.target.value)} />
+                                    <SingleField labelText="Industry *" value={industry} onChange={e => setIndustry(e.target.value)} />
+                                    <MultiField labelText="About" value={companyAbout} onChange={e => setCompanyAbout(e.target.value)} />
+                                </div>
+                                <div className="space-y-4">
+                                    <SingleField labelText="Contact Person *" value={contactPerson} onChange={e => setContactPerson(e.target.value)} />
+                                    <SingleField labelText="Contact Email *" value={contactEmail} onChange={e => setContactEmail(e.target.value)} />
+                                    <SingleField labelText="Address *" value={companyLoc} onChange={e => setCompanyLoc(e.target.value)} />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <SingleField labelText="Notarized" fieldHolder="YYYY-MM-DD" value={signedAt} onChange={e => setSignedAt(e.target.value)} />
+                                        <SingleField labelText="Validity" fieldHolder="Years" value={validity} onChange={e => setValidity(e.target.value)} />
                                     </div>
-                                </form>
-                            </div>
+                                    <AnnounceButton type="submit" btnText="Save HTE" className="w-full" />
+                                </div>
+                             </form>
                         </div>
                     )}
                 </div>
             )}
 
-            {/* REVIEWS SECTION */}
-            {viewTab === "reviews" && (
-                <div className='w-[90%] flex flex-col items-center mb-20 animate__animated animate__fadeIn'>
-                    <div className='flex justify-start items-start w-full mb-5 border-b border-gray-200 pb-3'>
+            {activeTab === "prospects" && (
+                <div className="w-full flex flex-col items-center animate__animated animate__fadeIn">
+                    <div className='flex justify-start items-start w-[90%] mb-5 border-b border-gray-200 pb-3'>
+                        <Title text={"MOA Prospect Submissions"} />
+                    </div>
+                    {prospectsLoading ? <Subtitle text="Loading..." /> : (
+                        <OasisTable columns={prospectColumns} data={filteredProspects} onRowClick={setSelectedHte} />
+                    )}
+                </div>
+            )}
+
+            {activeTab === "reviews" && (
+                <div className='w-[90%] flex flex-col items-center animate__animated animate__fadeIn'>
+                     <div className='flex justify-start items-start w-full mb-5 border-b border-gray-200 pb-3'>
                         <Title text={"Reviews Moderation"} />
                     </div>
-
-                    <div className='w-full p-8 rounded-[2.5rem] bg-admin-element flex flex-col gap-6 shadow-[0px_4px_30px_rgba(0,0,0,0.05)] border border-gray-200'>
-                        <div className="w-full flex flex-col gap-1 border-l-4 border-oasis-header pl-4">
-                            <Subtitle
-                                text={"Audit student-submitted HTE reviews. Approved items will be displayed on public establishment profiles."}
-                                size='text-[1rem]'
-                                weight='font-medium'
-                            />
-                            <p className="text-xs font-bold uppercase tracking-widest text-oasis-icons">
-                                {reviewsLoading ? "Fetching Database..." : `${reviews.length}  items found`}
-                            </p>
-                        </div>
-
-                        <section className='w-full flex flex-col lg:flex-row gap-8 items-start'>
-                            {/* LEFT: REVIEWS GRID */}
-                            <div className="flex-1 grid gap-6 grid-cols-1 xl:grid-cols-2 w-full">
-                                {reviews.length === 0 && !reviewsLoading && (
-                                    <div className="col-span-full p-10 bg-white/50 rounded-3xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400">
-                                        <FileCheck size={48} className="mb-2 opacity-20" />
-                                        <p className="font-bold">No reviews match your current filter.</p>
-                                    </div>
-                                )}
-
-                                {reviews.map((r) => (
-                                    <div
-                                        key={r.id}
-                                        className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all flex flex-col gap-4 animate__animated animate__fadeIn"
-                                    >
-                                        <section className='w-full flex flex-row justify-between items-start'>
-                                            <div>
-                                                <Subtitle
-                                                    text={r.criteria === "Anonymous" ? "Anonymous" : (r.reviewer || "Anonymous Student")}
-                                                    color={"text-oasis-header"}
-                                                    size='text-[1.1rem]'
-                                                    weight='font-bold'
-                                                />
-                                                <p className='text-[0.7rem] font-bold text-gray-400 uppercase tracking-tighter'>
-                                                    {r.hte_name}
-                                                </p>
-                                            </div>
-                                            <p className='text-[0.65rem] text-gray-400 italic bg-gray-50 px-2 py-1 rounded-lg'>
-                                                {formatDateTime(r.created_at)}
-                                            </p>
-                                        </section>
-
-                                        <div className="flex flex-col gap-2">
-                                            <div className="flex items-center gap-3">
-                                                <RatingLabel rating={String(r.rating)} />
-                                                <span className="text-[0.7rem] bg-oasis-blue/30 px-2 py-0.5 rounded-full font-bold text-oasis-icons">
-                                                    {r.criteria || "General"}
-                                                </span>
-                                            </div>
-
-                                            <div className='bg-gray-50/50 p-4 rounded-2xl min-h-24 max-h-40 overflow-y-auto custom-scrollbar border border-gray-100'>
-                                                <p className='text-table-text-size text-gray-700 leading-relaxed italic'>
-                                                    "{r.message}"
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className='flex justify-end items-center gap-3 mt-2 pt-4 border-t border-gray-50'>
-                                            <button 
-                                                onClick={() => handleRejectReview(r.id)}
-                                                className="p-3 text-oasis-red hover:bg-red-50 rounded-xl transition-all"
-                                                title="Reject Review"
-                                            >
-                                                <X size={20} />
-                                            </button>
-                                            <button 
-                                                onClick={() => handleApproveReview(r.id)}
-                                                className="px-6 py-2 bg-oasis-header text-white rounded-xl font-bold text-sm shadow-lg shadow-oasis-header/10 hover:bg-oasis-button-dark transition-all flex items-center gap-2"
-                                            >
-                                                <Check size={18} /> Approve
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* RIGHT: FILTERS PANEL (STICKY) */}
-                            <div className='w-full lg:w-[350px] flex flex-col gap-6 sticky top-5'>
-                                <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border border-gray-200 shadow-sm space-y-6">
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-2 text-oasis-header mb-1">
-                                            <Save size={18} />
-                                            <span className="font-bold text-sm uppercase tracking-wider">Quick Filters</span>
-                                        </div>
-
+                    <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">
+                        <div className="grid gap-6 grid-cols-1 xl:grid-cols-2">
+                            {reviewsLoading ? <Subtitle text="Loading..." /> : reviews.length === 0 ? <Subtitle text="No reviews found." /> : reviews.map(r => (
+                                <div key={r.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                                    <div className="flex justify-between items-start">
                                         <div>
-                                            <Subtitle text={"Workflow Status"} size={'text-[0.8rem]'} weight='font-bold' />
-                                            <div className='flex flex-wrap gap-1 mt-2'>
-                                                {['PENDING', 'APPROVED', 'REJECTED'].map(s => (
-                                                    <div key={s} onClick={() => setReviewStatus(s)} className="cursor-pointer">
-                                                        <Filter text={s.charAt(0) + s.slice(1).toLowerCase()} isActive={reviewStatus === s} />
-                                                    </div>
-                                                ))}
-                                            </div>
+                                            <Subtitle text={r.criteria === "Anonymous" ? "Anonymous" : (r.reviewer || "Anonymous Student")} weight="font-bold" color="text-oasis-header" />
+                                            <p className='text-[0.7rem] font-bold text-gray-400 uppercase'>{r.hte_name}</p>
                                         </div>
-
-                                        <div>
-                                            <Subtitle text={"Star Ratings"} size={'text-[0.8rem]'} weight='font-bold' />
-                                            <div className='flex flex-wrap gap-1 mt-2'>
-                                                <div onClick={() => setReviewRating("")} className="cursor-pointer">
-                                                    <Filter text={'All'} isActive={reviewRating === ""} />
-                                                </div>
-                                                {["5", "4", "3", "2", "1"].map(stars => (
-                                                    <div key={stars} onClick={() => setReviewRating(stars)} className="cursor-pointer">
-                                                        <Filter text={`${stars} stars`} isActive={reviewRating === stars} />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div className="pt-2">
-                                            <Subtitle text={"Search by HTE"} size={'text-[0.8rem]'} weight='font-bold' />
-                                            <div className="mt-2">
-                                                <Dropdown
-                                                    labelText=""
-                                                    fieldId="reviewHTE"
-                                                    categories={hteDropdown}
-                                                    value={reviewHteName}
-                                                    onChange={setReviewHteName}
-                                                    hasBorder
-                                                />
-                                            </div>
-                                        </div>
+                                        <RatingLabel rating={String(r.rating)} />
                                     </div>
-
-                                    <div className="space-y-3 pt-4 border-t border-gray-100">
-                                        <div className="flex gap-2">
-                                            <button 
-                                                onClick={handleApproveAll}
-                                                className="flex-1 py-2 border border-oasis-header text-oasis-header rounded-xl font-bold text-xs hover:bg-oasis-header hover:text-white transition-all cursor-pointer"
-                                            >
-                                                Approve All
-                                            </button>
-                                            <button 
-                                                onClick={handleClearAll}
-                                                className="flex-1 py-2 bg-gray-200 text-gray-600 rounded-xl font-bold text-xs hover:bg-gray-300 transition-all cursor-pointer"
-                                            >
-                                                Clear Pending
-                                            </button>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <button 
-                                                onClick={fetchReviews}
-                                                className="flex-1 py-2 border border-oasis-header text-oasis-header rounded-xl font-bold text-xs hover:bg-oasis-header hover:text-white transition-all cursor-pointer"
-                                            >
-                                                Refresh Data
-                                            </button>
-                                            <button 
-                                                onClick={() => {
-                                                    setReviewStatus("PENDING"); setReviewCriteria(""); setReviewSort("newest");
-                                                    setReviewRating(""); setReviewHteName("");
-                                                }}
-                                                className="flex-1 py-2 text-gray-400 hover:text-gray-600 font-bold text-xs transition-all underline underline-offset-4 cursor-pointer"
-                                            >
-                                                Reset All
-                                            </button>
-                                        </div>
+                                    <p className="text-sm text-gray-700 my-4 italic bg-gray-50 p-3 rounded-xl border border-gray-100">"{r.message}"</p>
+                                    <div className="flex justify-end gap-3 mt-4 border-t pt-4">
+                                        <button onClick={() => approveReviewMutation.mutate(r.id)} className="px-6 py-2 bg-oasis-header text-white rounded-xl text-xs font-bold hover:bg-oasis-button-dark transition-all">Approve</button>
+                                        <button onClick={() => rejectReviewMutation.mutate(r.id)} className="px-6 py-2 border border-oasis-red text-oasis-red rounded-xl text-xs font-bold hover:bg-red-50 transition-all">Reject</button>
                                     </div>
                                 </div>
+                            ))}
+                        </div>
+                        <div className="bg-white p-6 rounded-3xl border border-gray-200 h-fit sticky top-5 shadow-sm">
+                            <Subtitle text="Quick Filters" weight="font-bold" color="text-oasis-header" />
+                            <div className="flex flex-col gap-6 mt-6">
+                                <div>
+                                    <Subtitle text="Workflow Status" size="text-xs" weight="font-bold" />
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                        {["PENDING", "APPROVED", "REJECTED"].map(s => (
+                                            <Filter key={s} text={s.charAt(0) + s.slice(1).toLowerCase()} isActive={reviewStatus === s} onClick={() => setReviewStatus(s)} />
+                                        ))}
+                                    </div>
+                                </div>
+                                <Dropdown labelText="Rating Filter" categories={["All", "5", "4", "3", "2", "1"]} value={reviewRating === "" ? "All" : reviewRating} onChange={(val) => setReviewRating(val === "All" ? "" : val)} hasBorder />
+                                <button onClick={() => refetchReviews()} className="w-full py-3 bg-oasis-header text-white rounded-xl font-bold hover:bg-oasis-button-dark transition-all shadow-lg shadow-oasis-header/10">Refresh Data</button>
+                                <button onClick={() => { setReviewStatus("PENDING"); setReviewRating(""); setReviewHteName(""); }} className="w-full text-xs text-gray-400 underline cursor-pointer">Reset All Filters</button>
                             </div>
-                        </section>
+                        </div>
                     </div>
                 </div>
             )}
+
+            <HteDetailModal visible={!!selectedHte} hte={selectedHte} onClose={() => setSelectedHte(null)} />
+            <ProgressModal visible={isProcessing} progress={progress} title={processingTitle} onCancel={() => abortController?.abort()} />
         </AdminScreen>
     );
 }

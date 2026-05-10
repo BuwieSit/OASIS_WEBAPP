@@ -1,29 +1,20 @@
 import AdminScreen from '../../layouts/adminScreen.jsx';
 import Title from "../../utilities/title.jsx";
 import { Bell, Calendar, ChevronRight, FileText, AlertCircle, Clock } from "lucide-react";
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Subtitle from '../../utilities/subtitle.jsx';
 import { AdminAPI } from "../../api/admin.api";
+import { useQuery } from '@tanstack/react-query';
 
 export default function AdmNotifications() {
-    const [alerts, setAlerts] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("ALL");
 
-    useEffect(() => {
-        const fetchAlerts = async () => {
-            try {
-                setLoading(true);
-                const res = await AdminAPI.getAdminAlerts();
-                setAlerts(res.data || []);
-            } catch (err) {
-                console.error("Failed to fetch alerts:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchAlerts();
-    }, []);
+    // TanStack Query for Admin Alerts
+    const { data: alerts = [], isLoading } = useQuery({
+        queryKey: ['adminAlerts'],
+        queryFn: AdminAPI.getAdminAlerts,
+        refetchInterval: 30000, 
+    });
 
     const filteredAlerts = alerts.filter(alert => {
         if (activeTab === "ALL") return true;
@@ -103,7 +94,7 @@ export default function AdmNotifications() {
                 </div>
 
                 <div className="flex flex-col gap-4 mt-5">
-                    {loading ? (
+                    {isLoading ? (
                         <div className="flex flex-col gap-4 animate-pulse">
                             {[1, 2, 3, 4, 5].map((i) => (
                                 <div key={i} className="h-24 bg-gray-100 rounded-2xl w-full" />

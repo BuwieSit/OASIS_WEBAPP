@@ -1,8 +1,9 @@
 import api from "./axios.jsx";
 
 export const NotificationAPI = {
-  getStudentNotifications() {
-    return api.get("/api/student/notifications");
+  async getStudentNotifications() {
+    const res = await api.get("/api/student/notifications");
+    return res.data;
   },
 
   markAsRead(notificationId) {

@@ -4,26 +4,9 @@ import { Container, Dropdown, Filter } from '../../components/adminComps.jsx';
 import { FileUploadField, MultiField, SingleField } from '../../components/fieldComp.jsx';
 import { AnnounceButton } from '../../components/button.jsx';
 import { useEffect, useMemo, useState, useRef } from "react";
+import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import useQueryParam from '../../hooks/useQueryParams.jsx';
-import { 
-    Plus, 
-    PlusCircle, 
-    Pencil, 
-    Save, 
-    Trash, 
-    FileText, 
-    AlignLeft, 
-    X, 
-    Check, 
-    Type, 
-    ListOrdered, 
-    List, 
-    GripVertical, 
-    CopyPlus, 
-    Edit2, 
-    Eye, 
-    Layout 
-} from 'lucide-react';
+import { Plus, PlusCircle, Pencil, Save, Trash, FileText, AlignLeft, X, Check, Type, ListOrdered, List, GripVertical, CopyPlus, Edit2, Eye, Layout } from 'lucide-react';
 import Subtitle from '../../utilities/subtitle.jsx';
 import { AdminAPI } from '../../api/admin.api.js';
 import { ConfirmModal, GeneralPopupModal, ViewModal } from '../../components/popupModal.jsx';
@@ -189,11 +172,10 @@ function normalizeTreeForSave(items) {
 // --- MAIN COMPONENT ---
 
 export default function DocsUpload() {
+    const queryClient = useQueryClient();
     const [activeFilter, setFilter] = useQueryParam("tab", "procedures");
     const [items, setItems] = useState([]);
     const [isEditMode, setIsEditMode] = useState(true);
-    const [loading, setLoading] = useState(false);
-    const [saving, setSaving] = useState(false);
     const [popup, setPopup] = useState(null);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmAction, setConfirmAction] = useState(null); // { text, action }
@@ -216,9 +198,30 @@ export default function DocsUpload() {
 
     const isForms = activeFilter === "forms";
 
+    // =============================
+    // FETCH STRUCTURE (TanStack Query)
+    // =============================
+    const { data: sectionData, isLoading: loading, refetch: refetchStructure } = useQuery({
+        queryKey: ['adminDocuments', activeFilter],
+        queryFn: () => AdminAPI.getDocuments(activeFilter),
+    });
+
+    // Sync fetched data to local state
     useEffect(() => {
-        loadSection(activeFilter);
-    }, [activeFilter]);
+        if (sectionData) {
+            const fetchedItems = sectionData.items || [];
+            backendDataRef.current = JSON.stringify(fetchedItems);
+            
+            if (!restoringDraft) {
+                setItems(fetchedItems);
+                
+                const savedDraft = localStorage.getItem(`docs_upload_draft_${activeFilter}`);
+                setHasDraft(!!savedDraft && savedDraft !== backendDataRef.current);
+            }
+            
+            setTimeout(() => { isInitialLoad.current = false; }, 100);
+        }
+    }, [sectionData, activeFilter, restoringDraft]);
 
     // AUTO-SAVE TO LOCAL STORAGE
     useEffect(() => {
@@ -234,26 +237,52 @@ export default function DocsUpload() {
         }
     }, [items, activeFilter, loading, restoringDraft]);
 
-    async function loadSection(section) {
-        try {
-            setLoading(true);
-            isInitialLoad.current = true;
-            const response = await AdminAPI.getDocuments(section);
-            const fetchedItems = response?.data?.items || [];
-            
-            backendDataRef.current = JSON.stringify(fetchedItems);
-            setItems(fetchedItems);
-            
-            const savedDraft = localStorage.getItem(`docs_upload_draft_${section}`);
-            setHasDraft(!!savedDraft && savedDraft !== backendDataRef.current);
+    // =============================
+    // MUTATIONS
+    // =============================
+    const saveMutation = useMutation({
+        mutationFn: (payload) => AdminAPI.saveDocuments(activeFilter, payload),
+        onSuccess: (data) => {
+            const savedItems = data?.items || items;
+            setItems(savedItems);
+            backendDataRef.current = JSON.stringify(savedItems);
+            localStorage.removeItem(`docs_upload_draft_${activeFilter}`);
+            setHasDraft(false);
+            setPopup({ title: "Success", text: `${SECTION_LABELS[activeFilter]} saved successfully.`, icon: <Check size={50} />, type: "success" });
+            queryClient.invalidateQueries({ queryKey: ['adminDocuments', activeFilter] });
+        },
+        onError: () => setPopup({ title: "Error", text: "Failed to save section.", icon: <X size={50} />, type: "failed" })
+    });
 
-            setTimeout(() => { isInitialLoad.current = false; }, 100);
-        } catch (error) {
-            console.error(`Failed to load ${section}:`, error);
-        } finally {
-            setLoading(false);
+    const clearMutation = useMutation({
+        mutationFn: () => AdminAPI.clearDocuments(activeFilter),
+        onSuccess: () => {
+            setItems([]);
+            backendDataRef.current = "[]";
+            localStorage.removeItem(`docs_upload_draft_${activeFilter}`);
+            setHasDraft(false);
+            setPopup({ title: "Cleared", text: "Section data reset.", icon: <Trash size={50} />, type: "neutral" });
+            queryClient.invalidateQueries({ queryKey: ['adminDocuments', activeFilter] });
         }
-    }
+    });
+
+    const uploadMutation = useMutation({
+        mutationFn: ({ parentId, title, file }) => AdminAPI.uploadDocument(activeFilter, title, file),
+        onSuccess: (data, { parentId, title }) => {
+            const newItem = {
+                id: crypto.randomUUID(),
+                type: "document",
+                title: title,
+                file: data.file,
+                originalFilename: data.originalFilename,
+                children: [],
+                isDraft: true
+            };
+            setItems(insertAt(items, parentId, newItem));
+            setShowDocUploadModal(null);
+        },
+        onError: () => setPopup({ title: "Upload Failed", text: "Could not upload document.", icon: <X size={50} />, type: "failed" })
+    });
 
     const handleRestoreDraft = () => {
         const savedDraft = localStorage.getItem(`docs_upload_draft_${activeFilter}`);
@@ -269,7 +298,7 @@ export default function DocsUpload() {
     const handleDiscardDraft = () => {
         localStorage.removeItem(`docs_upload_draft_${activeFilter}`);
         setHasDraft(false);
-        loadSection(activeFilter);
+        refetchStructure();
     };
 
     const triggerConfirm = (text, action) => {
@@ -277,45 +306,16 @@ export default function DocsUpload() {
         setShowConfirmModal(true);
     };
 
-    async function handleSaveSection() {
-        try {
-            setSaving(true);
-            const normalizedItems = normalizeTreeForSave(items);
-            const response = await AdminAPI.saveDocuments(activeFilter, normalizedItems);
-            
-            const savedItems = response?.data?.items || items;
-            setItems(savedItems);
-            backendDataRef.current = JSON.stringify(savedItems);
+    const handleSaveSection = () => {
+        const normalizedItems = normalizeTreeForSave(items);
+        saveMutation.mutate(normalizedItems);
+        setShowConfirmModal(false);
+    };
 
-            localStorage.removeItem(`docs_upload_draft_${activeFilter}`);
-            setHasDraft(false);
-
-            setPopup({ title: "Success", text: `${SECTION_LABELS[activeFilter]} saved successfully.`, icon: <Check size={50} />, type: "success" });
-        } catch (error) {
-            console.error("Failed to save:", error);
-            setPopup({ title: "Error", text: "Failed to save section.", icon: <X size={50} />, type: "failed" });
-        } finally {
-            setSaving(false);
-            setShowConfirmModal(false);
-        }
-    }
-
-    async function handleClearSection() {
-        try {
-            setSaving(true);
-            await AdminAPI.clearDocuments(activeFilter);
-            setItems([]);
-            backendDataRef.current = "[]";
-            localStorage.removeItem(`docs_upload_draft_${activeFilter}`);
-            setHasDraft(false);
-            setPopup({ title: "Cleared", text: "Section data reset.", icon: <Trash size={50} />, type: "neutral" });
-        } catch (error) {
-            console.error("Failed to clear:", error);
-        } finally {
-            setSaving(false);
-            setShowConfirmModal(false);
-        }
-    }
+    const handleClearSection = () => {
+        clearMutation.mutate();
+        setShowConfirmModal(false);
+    };
 
     const addComponent = () => {
         const newComp = { id: crypto.randomUUID(), type: "header", title: "New Component", children: [], isDraft: true };
@@ -344,7 +344,6 @@ export default function DocsUpload() {
     const handleMove = (draggedId, targetId, position = 'inside') => {
         if (draggedId === targetId) return;
         
-        // Circular check: dragging a parent into its own child
         const checkCircular = (list) => {
             for (let item of list) {
                 if (item.id === draggedId && isChildOf(item, targetId)) return true;
@@ -386,32 +385,15 @@ export default function DocsUpload() {
         setBulkText("");
     };
 
-    const handleDocUpload = async (parentId, title, file) => {
-        try {
-            setSaving(true);
-            const response = await AdminAPI.uploadDocument(activeFilter, title, file);
-            const uploaded = response?.data;
-            const newItem = {
-                id: crypto.randomUUID(),
-                type: "document",
-                title: title,
-                file: uploaded.file,
-                originalFilename: uploaded.originalFilename,
-                children: [],
-                isDraft: true
-            };
-            setItems(insertAt(items, parentId, newItem));
-            setShowDocUploadModal(null);
-        } catch (error) {
-            console.error("Upload failed:", error);
-        } finally {
-            setSaving(false);
-        }
+    const handleDocUpload = (parentId, title, file) => {
+        uploadMutation.mutate({ parentId, title, file });
     };
 
     const handleViewDocument = (item) => {
         if (item.file) setViewDoc({ url: `${API_BASE}${item.file}`, title: item.title, originalFilename: item.originalFilename });
     };
+
+    const saving = saveMutation.isPending || clearMutation.isPending || uploadMutation.isPending;
 
     return (
         <AdminScreen>

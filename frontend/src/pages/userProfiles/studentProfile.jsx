@@ -3,15 +3,16 @@ import Subtitle from "../../utilities/subtitle";
 import { SquarePen, Activity, Eye, EyeClosed, User, Mail, ShieldCheck, GraduationCap, Calendar, X } from "lucide-react";
 import testPfp from "../../assets/testprofile.png";
 import { useEffect, useState } from "react";
-import api from "../../api/axios";
+import { getStudentProfile, updateStudentProfile, updateStudentPhoto } from "../../api/student.service";
 import { SingleField } from "../../components/fieldComp";
 import { GeneralPopupModal, ConfirmModal } from "../../components/popupModal";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "../../api/axios";
 
 const API_BASE = api.defaults.baseURL;
 
 export default function StudentProfile() {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -26,32 +27,62 @@ export default function StudentProfile() {
   const [successMsg, setSuccessMsg] = useState("");
   const [errMsg, setErrMsg] = useState("");
 
-  const fetchProfile = async () => {
-    try {
-      const res = await api.get("/api/student/me");
-      const fetchedProfile = res.data.profile;
+  // TanStack Query for Student Profile
+  const { data: profileData, isLoading } = useQuery({
+    queryKey: ['studentProfile'],
+    queryFn: getStudentProfile,
+  });
 
-      fetchedProfile.photo_url = fetchedProfile.photo_path
-        ? `${API_BASE}${fetchedProfile.photo_path}`
-        : null;
+  const user = profileData?.user;
+  const profile = profileData?.profile;
 
-      setUser(res.data.user);
-      setProfile(fetchedProfile);
-      setFirstName(fetchedProfile.first_name || "");
-      setLastName(fetchedProfile.last_name || "");
-      setMiddleInitial(fetchedProfile.middle_initial || "");
-      setOjtAdviser(fetchedProfile.ojt_adviser || "");
-      setProgram(fetchedProfile.program || "");
-    } catch (err) {
-      console.error("Failed to fetch profile", err);
-    }
-  };
-
+  // Sync profile data to local state for editing
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (profile) {
+      setFirstName(profile.first_name || "");
+      setLastName(profile.last_name || "");
+      setMiddleInitial(profile.middle_initial || "");
+      setOjtAdviser(profile.ojt_adviser || "");
+      setProgram(profile.program || "");
+    }
+  }, [profile]);
 
-  if (!user || !profile) return null;
+  // Mutations
+  const updateProfileMutation = useMutation({
+    mutationFn: updateStudentProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['studentProfile'] });
+      setPassword("");
+      setIsEditing(false);
+      setSuccessMsg("Profile updated successfully!");
+    },
+    onError: (err) => {
+      setErrMsg(err?.response?.data?.error || "Failed to update profile");
+    }
+  });
+
+  const updatePhotoMutation = useMutation({
+    mutationFn: updateStudentPhoto,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['studentProfile'] });
+      setSuccessMsg("Profile picture updated!");
+      setPhotoPreview(null);
+      setSelectedFile(null);
+      setShowPhotoConfirm(false);
+    },
+    onError: () => {
+      setErrMsg("Photo upload failed");
+      setPhotoPreview(null);
+      setSelectedFile(null);
+      setShowPhotoConfirm(false);
+    }
+  });
+
+  if (isLoading || !user || !profile) return null;
+
+  const photoUrl = profile.photo_path
+    ? `${API_BASE}${profile.photo_path}`
+    : null;
 
   const displayFullname = `${profile.first_name || ""} ${profile.middle_initial ? profile.middle_initial + "." : ""} ${profile.last_name || ""}`;
 
@@ -63,34 +94,22 @@ export default function StudentProfile() {
     return "text-3xl sm:text-4xl md:text-5xl";
   };
 
-  const saveProfile = async () => {
-    try {
-      const profileData = {
-        first_name: firstName.trim(),
-        middle_initial: middleInitial.trim().charAt(0).toUpperCase(),
-        last_name: lastName.trim(),
-        ojt_adviser: ojtAdviser,
-        program: program,
-      };
+  const saveProfile = () => {
+    const profileDataPayload = {
+      first_name: firstName.trim(),
+      middle_initial: middleInitial.trim().charAt(0).toUpperCase(),
+      last_name: lastName.trim(),
+      ojt_adviser: ojtAdviser,
+      program: program,
+    };
 
-      if (password && password.trim() !== "") {
-        profileData.password = password;
-      }
-      const response = await api.patch("/api/student/me", profileData);
-
-      setProfile(prev => ({
-        ...prev,
-        ...response.data.profile   
-      }));
-      setPassword("");
-      setIsEditing(false);
-      setSuccessMsg("Profile updated successfully!");
-    } catch (err) {
-      setErrMsg(err?.response?.data?.error || "Failed to update profile");
+    if (password && password.trim() !== "") {
+      profileDataPayload.password = password;
     }
+    updateProfileMutation.mutate(profileDataPayload);
   };
 
-  const handlePhotoChange = async () => {
+  const handlePhotoChange = () => {
     if (!selectedFile) return;
     
     const formData = new FormData();
@@ -98,23 +117,7 @@ export default function StudentProfile() {
     formData.append("program", profile.program || "");
     formData.append("ojt_adviser", profile.ojt_adviser || "");
     
-    try {
-      const res = await api.patch("/api/student/me/photo", formData);
-      setProfile((prev) => ({
-        ...prev,
-        photo_path: res.data.photo_path,
-        photo_url: `${API_BASE}${res.data.photo_path}`,
-      }));
-      setSuccessMsg("Profile picture updated!");
-      setPhotoPreview(null);
-      setSelectedFile(null);
-      setShowPhotoConfirm(false);
-    } catch (err) {
-      setErrMsg("Photo upload failed");
-      setPhotoPreview(null);
-      setSelectedFile(null);
-      setShowPhotoConfirm(false);
-    }
+    updatePhotoMutation.mutate(formData);
   };
 
   return (
@@ -328,8 +331,12 @@ export default function StudentProfile() {
                         <option value="">Select Program</option>
                         <option value="DIT">Diploma in Information Technology</option>
                         <option value="DEET">Diploma in Electrical Engineering</option>
-                        <option value="DLMOT">Diploma in Legal Management Technology</option>
+                        <option value="DLOMT">Diploma in Legal Office Management Technology</option>
                         <option value="DCVET">Diploma in Civil Engineering</option>
+                        <option value="DECET">Diploma in Electronics Engineering</option>
+                        <option value="DRMET">Diploma in Railway Management Engineering</option>
+                        <option value="DCPET">Diploma in Computer Engineering</option>
+                        <option value="DMET">Diploma in Mechanical Engineering</option>
                       </select>
                     </div>
                   ) : (

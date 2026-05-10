@@ -4,15 +4,15 @@ import Subtitle from '../../utilities/subtitle';
 import { Filter } from '../../components/adminComps';
 import { useEffect, useState, useRef } from 'react';
 import { AnnouncementModal } from '../../components/userModal';
-import api from "../../api/axios.jsx";
+import { getStudentAnnouncements } from "../../api/student.service";
 import SearchBar from '../../components/searchBar.jsx';
 import { ArrowRight } from 'lucide-react';
 import pupImage from "../../assets/pupImage.jpg";
 import { useLoading } from '../../context/LoadingContext';
+import { useQuery } from '@tanstack/react-query';
 
 export default function Announcements() {
     const { setLoading } = useLoading();
-    const [announcements, setAnnouncements] = useState([]);
     const [activeFilter, setActiveFilter] = useState("All");
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
     const [search, setSearch] = useState("");
@@ -25,22 +25,16 @@ export default function Announcements() {
         "Others": "OTHERS"
     };
 
-    useEffect(() => {
-        const load = async () => {
-            try {
-                setLoading(true);
-                const res = await api.get("/api/student/announcements");
-                setAnnouncements(res.data || []);
-            } catch (err) {
-                console.error("Student announcements error:", err);
-                setAnnouncements([]);
-            } finally {
-                setLoading(false);
-            }
-        };
+    // TanStack Query for Announcements
+    const { data: announcements = [], isLoading } = useQuery({
+        queryKey: ['studentAnnouncements'],
+        queryFn: getStudentAnnouncements,
+    });
 
-        load();
-    }, [setLoading]);
+    // Global loading state sync
+    useEffect(() => {
+        setLoading(isLoading);
+    }, [isLoading, setLoading]);
 
     const filteredAnnouncements = announcements.filter((a) => {
 

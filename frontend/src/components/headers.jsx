@@ -15,8 +15,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { ConfirmModal } from "./popupModal";
 import { useScrollTop } from "../hooks/useScrollToTop.jsx";
 import { NotificationAPI } from "../api/notification.api";
+import { getStudentProfile } from "../api/student.service";
 import { AnnounceButton } from "./button.jsx";
 import useOutsideClick from "../utilities/OutsideClick";
+import { useQuery } from "@tanstack/react-query";
 
 import { getRole } from "../api/token";
 
@@ -26,9 +28,16 @@ export function Header({ admin, notifications = [], setNotifications = () => {} 
     const userRole = getRole();
     const isStudent = userRole === "student" || userRole === "STUDENT";
     
-    const [user, setUser] = useState(null);
-    const [profile, setProfile] = useState(null);
-    const [hasProfile, setHasProfile] = useState(false);
+    // TanStack Query for Student Profile
+    const { data: profileData } = useQuery({
+        queryKey: ['studentProfile'],
+        queryFn: getStudentProfile,
+        enabled: isStudent,
+    });
+
+    const user = profileData?.user;
+    const profile = profileData?.profile;
+    const photoUrl = profile?.photo_path ? `${API_BASE}${profile.photo_path}` : testPfp;
 
     const [animationClass, setAnimationClass] = useState("");
     const [activeDropdown, setActiveDropdown] = useState(null);
@@ -59,33 +68,6 @@ export function Header({ admin, notifications = [], setNotifications = () => {} 
             }
         });
     };
-
-    useEffect(() => {
-        async function fetchProfile() {
-            if (!isStudent) return;
-            try{
-                const res = await api.get("/api/student/me");
-                const fetchedProfile = res.data.profile;
-                    
-                // ✅ NORMALIZE IMAGE URL ON FETCH
-                if (fetchedProfile?.photo_path) {
-                    fetchedProfile.photo_url = `${API_BASE}${fetchedProfile.photo_path}`;
-                    setHasProfile(true);
-                } else {
-                    setHasProfile(false);
-                }
-                setUser(res.data.user);
-                setProfile(fetchedProfile);
-                setHasProfile(true);
-                    
-                }
-            catch (err) {
-                console.error("Profile fetch failed:", err);
-            }
-            
-        }
-        fetchProfile();
-    }, [isStudent]);
 
     const hasUnread = notifications.some(n => !n.is_read && !n.is_saved);
     const unreadCount = notifications.filter(n => !n.is_read && !n.is_saved).length;
@@ -149,7 +131,7 @@ export function Header({ admin, notifications = [], setNotifications = () => {} 
                         {!admin && (
                             <img
                             className="w-8 rounded-full object-cover aspect-square hidden md:block lg:block cursor-pointer"
-                            src={profile?.photo_url || testPfp}
+                            src={photoUrl}
                             alt="Profile"
                             />
                         )}
@@ -250,7 +232,7 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
 
                 {/* LOGO & TOGGLE */}
                 <div className={`w-full flex items-center mb-10 ${isOpen ? "justify-between" : "justify-center"}`}>
-                    {isOpen && <img src={oasisLogo} className="w-32 object-contain aspect-video animate__animated animate__fadeIn"/>}
+                    {isOpen && <img src={oasisLogo} className="w-32 object-contain animate__animated animate__fadeIn"/>}
                     <div 
                         className="cursor-pointer rounded-xl p-2 transition-all duration-200 ease-in-out flex justify-center items-center hover:bg-oasis-aqua/10 text-oasis-header" 
                         onClick={() => setIsOpen(!isOpen)}
@@ -268,15 +250,9 @@ export function AdminNavigation({ isOpen, setIsOpen}) {
                         isOpen={isOpen} 
                     />
                     <NavItem 
-                        to="/admoperations" 
-                        label="Operations" 
+                        to="/admHteManagement" 
+                        label="HTE Management" 
                         iconLeft={<Cog />} 
-                        isOpen={isOpen} 
-                    />
-                    <NavItem 
-                        to="/admMoaOverview" 
-                        label="MOA Overview" 
-                        iconLeft={<FileText />} 
                         isOpen={isOpen} 
                     />
                     <NavItem 
@@ -319,9 +295,15 @@ export function StudentHeader({ showNavigation = true, notifications = [], setNo
     const userRole = getRole();
     const isStudent = userRole === "student" || userRole === "STUDENT";
 
-    const [user, setUser] = useState(null);
-    const [profile, setProfile] = useState(null);
-    const [hasProfile, setHasProfile] = useState(false);
+    // TanStack Query for Student Profile
+    const { data: profileData } = useQuery({
+        queryKey: ['studentProfile'],
+        queryFn: getStudentProfile,
+        enabled: isStudent,
+    });
+
+    const profile = profileData?.profile;
+    const photoUrl = profile?.photo_path ? `${API_BASE}${profile.photo_path}` : testPfp;
 
     const [animationClass, setAnimationClass] = useState("");
     const [activeDropdown, setActiveDropdown] = useState(null);
@@ -348,31 +330,6 @@ export function StudentHeader({ showNavigation = true, notifications = [], setNo
             }
         });
     };
-
-    useEffect(() => {
-        async function fetchProfile() {
-            if (!isStudent) return;
-            try {
-                const res = await api.get("/api/student/me");
-                const fetchedProfile = res.data.profile;
-                    
-                // ✅ NORMALIZE IMAGE URL ON FETCH
-                if (fetchedProfile?.photo_path) {
-                    fetchedProfile.photo_url = `${API_BASE}${fetchedProfile.photo_path}`;
-                    setHasProfile(true);
-                } else {
-                    setHasProfile(false);
-                }
-                setUser(res.data.user);
-                setProfile(fetchedProfile);
-                setHasProfile(true);
-            } catch (err) {
-                console.warn("Student profile fetch failed (Localhost check):", err.message);
-            }
-        }
-
-        fetchProfile();
-    }, [isStudent]);
 
     const hasUnread = notifications.some(n => !n.is_read && !n.is_saved);
     const unreadCount = notifications.filter(n => !n.is_read && !n.is_saved).length;
@@ -426,7 +383,7 @@ export function StudentHeader({ showNavigation = true, notifications = [], setNo
                     >
                         <img
                         className="w-8 rounded-full object-cover aspect-square hidden md:block lg:block cursor-pointer"
-                        src={profile?.photo_url || testPfp}
+                        src={photoUrl}
                         alt="Profile"
                         />
                     </HoverLift>

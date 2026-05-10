@@ -28,22 +28,40 @@ export function submitMoaProspect(formData) {
   });
 }
 
-export function getHteReviews(hteId, params = {}) {
-  return api.get(`/api/student/htes/${hteId}/reviews`, { params });
+export async function getHteReviews(hteId, params = {}) {
+  const res = await api.get(`/api/student/htes/${hteId}/reviews`, { params });
+  return res.data;
 }
 
 export function submitHteReview(hteId, payload) {
   return api.post(`/api/student/htes/${hteId}/reviews`, payload);
 }
 
-export function getStudentProfile() {
-  return api.get("/api/student/me");
+export async function getStudentProfile() {
+  const res = await api.get("/api/student/me");
+  return res.data;
 }
 
-export function updateStudentProfile(formData) {
-  return api.put("/api/student/me", formData, {
+export async function updateStudentProfile(payload) {
+  const res = await api.patch("/api/student/me", payload);
+  return res.data;
+}
+
+export async function updateStudentPhoto(formData) {
+  const res = await api.patch("/api/student/me/photo", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
   });
+  return res.data;
+}
+
+export async function getOjtHubDocuments() {
+  const res = await api.get("/api/documents/student/all");
+  return res.data;
+}
+
+export async function getStudentAnnouncements() {
+  const res = await api.get("/api/student/announcements");
+  return res.data;
 }
