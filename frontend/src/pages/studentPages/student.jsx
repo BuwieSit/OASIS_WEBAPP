@@ -1,5 +1,7 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { getStudentProfile } from "../../api/student.service";
 import { getStudentDashboardHTEs } from "../../api/studentDashboard.service";
 import MainScreen from '../../layouts/mainScreen';
 import fallbackImg from "../../assets/fallbackImage.jpg";
@@ -19,11 +21,9 @@ const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function Student() {
     const { setLoading } = useLoading();
-    const [tableData, setTableData] = useState([]);
     const [user, setUser] = useState(null); 
     const [profile, setProfile] = useState(null);
     const [search, setSearch] = useState("");
-    const prevSearchRef = useRef("");
     
     const [openView, setOpenView] = useState(false);
     const [modalType, setModalType] = useState("video"); // "video" or "document"
@@ -31,63 +31,62 @@ export default function Student() {
     const [activeFileName, setActiveFileName] = useState("HTE_MOA.pdf");
     const [showSetupModal, setShowSetupModal] = useState(false);
 
-    const filteredHtes = tableData.filter((hte) =>
-        hte.hteName.toLowerCase().includes(search.toLowerCase()) ||
-        hte.industry.toLowerCase().includes(search.toLowerCase())
-    );
-    useEffect(() => {
-        async function fetchUser() {
-            try {
-                const res = await api.get("/api/student/me");
-                const userData = res.data.user;
-                const profileData = res.data.profile;
+    // TanStack Query for Student Profile
+    const { data: profileData, isLoading: isProfileLoading } = useQuery({
+        queryKey: ['studentProfile'],
+        queryFn: getStudentProfile,
+    });
 
-                setUser(userData);
-                setProfile(profileData); 
-                
-                if (!profileData || !profileData.first_name) {
-                    setShowSetupModal(true);
-                }
-            } catch (err) {
-                console.error("Failed to fetch user data", err);
+    // Sync profile data to state (if needed for other logic)
+    useEffect(() => {
+        if (profileData) {
+            setUser(profileData.user);
+            setProfile(profileData.profile);
+            if (!profileData.profile || !profileData.profile.first_name) {
+                setShowSetupModal(true);
             }
         }
-        fetchUser();
-    }, []);
+    }, [profileData]);
 
+    // TanStack Query for Dashboard HTEs
+    const { data: htesData, isLoading: isHtesLoading } = useQuery({
+        queryKey: ['studentDashboardHTEs'],
+        queryFn: getStudentDashboardHTEs,
+    });
+
+    const tableData = useMemo(() => {
+        if (!htesData || !Array.isArray(htesData)) return [];
+        
+        // Deduplicate by ID
+        const seen = new Set();
+        const uniqueHtes = htesData.filter(hte => {
+            if (seen.has(hte.id)) return false;
+            seen.add(hte.id);
+            return true;
+        });
+
+        return uniqueHtes.map(hte => ({
+            id: hte.id,
+            hteName: hte.company_name || hte.name,
+            industry: hte.industry,
+            signedDate: hte.moa_signed_at || "—",
+            expiryDate: hte.moa_expiry_date || "—",
+            moaStatus: !hte.moa_expiry_date ? "Not Available" : hte.moa_status,
+            document_path: hte.moa_file_path
+        }));
+    }, [htesData]);
+
+    const filteredHtes = useMemo(() => {
+        return tableData.filter((hte) =>
+            hte.hteName.toLowerCase().includes(search.toLowerCase()) ||
+            hte.industry.toLowerCase().includes(search.toLowerCase())
+        );
+    }, [tableData, search]);
+
+    // Global loading state sync
     useEffect(() => {
-        // Only show global loading if it's initial load or search changed from empty
-        const isSearchOnlyChange = prevSearchRef.current !== search && 
-                                  prevSearchRef.current !== "" && 
-                                  search !== "";
-        
-        if (!isSearchOnlyChange) {
-            setLoading(true);
-        }
-        
-        prevSearchRef.current = search;
-
-        getStudentDashboardHTEs({ search })
-            .then((htes) => {
-                const mappedData = htes.map(hte => ({
-                    id: hte.id,
-                    hteName: hte.company_name || hte.name,
-                    industry: hte.industry,
-                    signedDate: hte.moa_signed_at || "—",
-                    expiryDate: hte.moa_expiry_date || "—",
-                    moaStatus: !hte.moa_expiry_date ? "Not Available" : hte.moa_status,
-                    document_path: hte.moa_file_path
-                }));
-
-                setTableData(mappedData);
-            })
-            .catch((err) => {
-                console.error("Failed to load HTE dashboard data", err);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, [search, setLoading]);
+        setLoading(isProfileLoading || isHtesLoading);
+    }, [isProfileLoading, isHtesLoading, setLoading]);
 
     useEffect(() => {
         return () => {
@@ -313,19 +312,21 @@ export default function Student() {
                     </section>
 
                     {/* TABLE HERE */}
-                    <StudentTable columns={columns} data={filteredHtes} onRowClick={(id) => setHte(id)}>
-                        <div className='w-full flex flex-row justify-between items-center'>
+                    <section className="w-[90%] flex flex-col gap-5 justify-center items-center">
+                        <div className='w-full flex flex-row justify-end items-center z-70'>
                             <SearchBar
                                 value={search}
                                 onChange={setSearch}
                             />
                         </div>
-                    </StudentTable>
-                    <MobileStudentTable
-                        columns={columns}
-                        data={tableData}
-                        onRowClick={(id) => setHte(id)}
-                    />
+                        <StudentTable columns={columns} data={filteredHtes} onRowClick={(id) => setHte(id)}/>
+                        <MobileStudentTable
+                            columns={columns}
+                            data={filteredHtes}
+                            onRowClick={(id) => setHte(id)}
+                        />
+                    </section>
+                    
 
                     <section className='w-[50%] flex flex-col gap-2 mt-10'>
                         <Title text="What is OASIS?"/>

@@ -2,13 +2,15 @@ import api from "./axios.jsx";
 
 export const AdminAPI = {
     // Dashboard
-    getDashboard() {
-        return api.get("/api/admin/dashboard");
+    async getDashboard() {
+        const res = await api.get("/api/admin/dashboard");
+        return res.data;
     },
 
     // Announcements
-    getAnnouncements() {
-        return api.get("/api/admin/announcements");
+    async getAnnouncements() {
+        const res = await api.get("/api/admin/announcements");
+        return res.data;
     },
 
     createAnnouncement(payload) {
@@ -20,18 +22,21 @@ export const AdminAPI = {
     },
 
     // Admin alerts
-    getAdminAlerts() {
-        return api.get("/api/admin/alerts");
+    async getAdminAlerts() {
+        const res = await api.get("/api/admin/alerts");
+        return res.data;
     },
 
-    getStudents(params = {}) {
-        return api.get("/api/admin/students", { params });
+    async getStudents(params = {}) {
+        const res = await api.get("/api/admin/students", { params });
+        return res.data;
     },
 
-    getHTEs(status) {
-        return api.get("/api/admin/htes", {
-        params: status ? { status } : {}
-    });
+    async getHTEs(status) {
+        const res = await api.get("/api/admin/htes", {
+            params: status ? { status } : {}
+        });
+        return res.data;
     },
 
     createHTE(formData) {
@@ -40,12 +45,14 @@ export const AdminAPI = {
         });
     },
     
-    getMoas() {
-        return api.get("/api/admin/moas");
+    async getMoas() {
+        const res = await api.get("/api/admin/moas");
+        return res.data;
     },
 
-    getMoaProspects() {
-        return api.get("/api/admin/moa-prospects");
+    async getMoaProspects() {
+        const res = await api.get("/api/admin/moa-prospects");
+        return res.data;
     },
 
     updateMoaProspectStatus(id, status) {
@@ -68,17 +75,19 @@ export const AdminAPI = {
         });
     },
 
-    uploadHTEsExcel(file, config = {}) {
+    async uploadHTEsExcel(file, config = {}) {
         const formData = new FormData();
         formData.append("file", file);
-        return api.post("/api/admin/htes/import", formData, {
+        const res = await api.post("/api/admin/htes/import", formData, {
             headers: { "Content-Type": "multipart/form-data" },
             ...config
         });
+        return res.data;
     },
 
-    getReviews(params = {}) {
-        return api.get("/api/admin/reviews", { params });
+    async getReviews(params = {}) {
+        const res = await api.get("/api/admin/reviews", { params });
+        return res.data;
     },
 
     approveReview(id) {
@@ -97,33 +106,37 @@ export const AdminAPI = {
         return api.post("/api/admin/reviews/clear-all", null, { params });
     },
 
-    getDocuments(section) {
-        return api.get(`/api/documents/admin/${section}`);
+    async getDocuments(section) {
+        const res = await api.get(`/api/documents/admin/${section}`);
+        return res.data;
     },
 
-    saveDocuments(section, items) {
-        return api.post("/api/documents/admin/save", {
+    async saveDocuments(section, items) {
+        const res = await api.post("/api/documents/admin/save", {
             section,
             items
         });
+        return res.data;
     },
 
-    clearDocuments(section) {
-        return api.delete(`/api/documents/admin/${section}/clear`);
+    async clearDocuments(section) {
+        const res = await api.delete(`/api/documents/admin/${section}/clear`);
+        return res.data;
     },
 
-    uploadDocument(section, title, file) {
+    async uploadDocument(section, title, file) {
         const formData = new FormData();
 
         formData.append("section", section);
         formData.append("title", title);
         formData.append("file", file);
 
-        return api.post("/api/documents/admin/upload", formData, {
+        const res = await api.post("/api/documents/admin/upload", formData, {
             headers: {
                 "Content-Type": "multipart/form-data"
             }
         });
+        return res.data;
     },
 
     archiveStudent(id) {

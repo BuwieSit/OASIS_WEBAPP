@@ -6,24 +6,24 @@ import {
   Text,
 } from "../../utilities/tableUtil.jsx";
 import Subtitle from '../../utilities/subtitle.jsx';
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { AdminAPI } from "../../api/admin.api";
 import { AnnounceButton } from '../../components/button.jsx';
 import { ConfirmModal, GeneralPopupModal } from '../../components/popupModal.jsx';
 import SearchBar from '../../components/searchBar.jsx';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function RegStudents() {
-  const [registeredStudents, setRegisteredStudents] = useState([]);
-  const [archivedStudents, setArchivedStudents] = useState([]);
+  const queryClient = useQueryClient();
   const [activeFilter, setFilter] = useQueryParam("tab", "All");
   const [activeTable, setActiveTable] = useState("registered");
-  const [loading, setLoading] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [confirmUnarchive, setConfirmUnarchive] = useState(false);
   const [studentToArchive, setStudentToArchive] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [search, setSearch] = useState("");
   const [action, setAction] = useState("");
+  
   const sectionCodes = [
     "DIT",
     "DOMT",
@@ -34,9 +34,46 @@ export default function RegStudents() {
     "DRET",
     "DECET",
   ]
-  useEffect(() => {
-    loadStudents();
-  }, [activeFilter]);
+
+  const normalizedFilter = activeFilter === "All" ? "" : activeFilter.toUpperCase();
+
+  // =============================
+  // FETCH STUDENTS (TanStack Query)
+  // =============================
+  const { data: studentsData, isLoading: loading } = useQuery({
+    queryKey: ['adminStudents', normalizedFilter],
+    queryFn: () => AdminAPI.getStudents({ program: normalizedFilter }),
+  });
+
+  const registeredStudents = studentsData?.registered || [];
+  const archivedStudents = studentsData?.archived || [];
+
+  // =============================
+  // MUTATIONS
+  // =============================
+  const archiveMutation = useMutation({
+    mutationFn: AdminAPI.archiveStudent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminStudents'] });
+      setShowSuccess(true);
+      setAction("archived");
+    },
+    onError: (err) => {
+      console.error("Failed to archive student", err);
+    }
+  });
+
+  const unarchiveMutation = useMutation({
+    mutationFn: AdminAPI.unarchiveStudent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminStudents'] });
+      setShowSuccess(true);
+      setAction("unarchived");
+    },
+    onError: (err) => {
+      console.error("Failed to unarchive student", err);
+    }
+  });
 
   const filteredRegistered = useMemo(() => {
     if (!search) return registeredStudents;
@@ -66,44 +103,13 @@ export default function RegStudents() {
     );
   }, [archivedStudents, search]);
 
-  async function loadStudents() {
-    try {
-      setLoading(true);
+  const handleArchive = (studentId) => {
+    archiveMutation.mutate(studentId);
+  };
 
-      const normalizedFilter = activeFilter === "All" ? "" : activeFilter.toUpperCase();
-
-      const res = await AdminAPI.getStudents({
-        program: normalizedFilter,
-      });
-
-      setRegisteredStudents(res?.data?.registered || []);
-      setArchivedStudents(res?.data?.archived || []);
-    } catch (err) {
-      console.error("Failed to fetch students", err);
-      setRegisteredStudents([]);
-      setArchivedStudents([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleArchive(studentId) {
-    try {
-      await AdminAPI.archiveStudent(studentId);
-      await loadStudents();
-    } catch (err) {
-      console.error("Failed to archive student", err);
-    }
-  }
-
-  async function handleUnarchive(studentId) {
-    try {
-      await AdminAPI.unarchiveStudent(studentId);
-      await loadStudents();
-    } catch (err) {
-      console.error("Failed to unarchive student", err);
-    }
-  }
+  const handleUnarchive = (studentId) => {
+    unarchiveMutation.mutate(studentId);
+  };
 
   const registeredColumns = [
     { header: "Name", render: row => <Text text={row.name || "—"} /> },
@@ -152,8 +158,6 @@ export default function RegStudents() {
               {
                 handleArchive(studentToArchive.id);
                 setConfirmArchive(false);
-                setShowSuccess(true);
-                setAction("archived");
               }
             }
           onCancel={() => setConfirmArchive(false)}
@@ -167,8 +171,6 @@ export default function RegStudents() {
               {
                 handleUnarchive(studentToArchive.id);
                 setConfirmUnarchive(false);
-                setShowSuccess(true);
-                setAction("unarchived");
               }
             }
           onCancel={() => setConfirmUnarchive(false)}

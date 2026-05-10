@@ -190,7 +190,7 @@ export function HteLocation({ address, mapUrl}) {
 
     return(
         <>
-            <div className="relative group w-full max-w-[200px] mx-auto">
+            <div className="relative group w-full max-w-[200px] mx-auto ">
 
                 <p 
                     title={address}
@@ -201,10 +201,10 @@ export function HteLocation({ address, mapUrl}) {
                 </p>
 
                 {/* Black Tooltip with Embedded Map */}
-                <div className="absolute z-50 hidden group-hover:block bottom-full mb-4 left-1/2 -translate-x-1/2 w-[250px] bg-black/90 backdrop-blur-md text-white p-2 rounded-2xl shadow-[0px_10px_30px_rgba(0,0,0,0.5)] border border-gray-800 pointer-events-none animate__animated animate__fadeIn animate__faster">
+                <div className="absolute z-100 hidden group-hover:block bottom-full mb-4 left-1/2 -translate-x-1/2 w-[250px] bg-black/90 backdrop-blur-md text-white p-2 rounded-2xl shadow-[0px_10px_30px_rgba(0,0,0,0.5)] border border-gray-800 pointer-events-none animate__animated animate__fadeIn animate__faster">
                     
                     {/* Map Container */}
-                    <div className="w-full h-[140px] rounded-xl overflow-hidden bg-gray-900 mb-2">
+                    <div className="w-full bg-gray-900 mb-2">
                         <iframe
                             className="w-full h-full border-0 grayscale-20 invert-5 contrast-110"
                             src={googleMapsEmbedUrl}

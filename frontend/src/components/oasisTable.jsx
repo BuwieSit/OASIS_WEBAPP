@@ -27,8 +27,8 @@ export default function OasisTable({ columns = [], data = [], children, onRowCli
         )}
 
         {/* TABLE WRAPPER (SCROLL FIX) */}
-        <div className="w-full max-w-screen overflow-x-auto mt-5 min-h-[420px]">
-            <table className="min-w-[900px] w-full border-collapse rounded-2xl overflow-hidden">
+        <div className="w-full max-w-screen mt-5 min-h-[420px]">
+            <table className="min-w-[900px] w-full border-collapse rounded-2xl">
             
             {/* HEADER */}
             <thead>
@@ -72,7 +72,7 @@ export default function OasisTable({ columns = [], data = [], children, onRowCli
                                 <td key={colIndex} 
                                     className="p-3"
                                 >
-                                    <div className="flex justify-center items-center w-full min-h-10 max-w-[150px] lg:max-w-[200px] mx-auto overflow-hidden">
+                                    <div className="flex justify-center items-center w-full min-h-10 max-w-[150px] lg:max-w-[200px] mx-auto">
                                         {col.render(row)}
                                     </div>
                                 </td>

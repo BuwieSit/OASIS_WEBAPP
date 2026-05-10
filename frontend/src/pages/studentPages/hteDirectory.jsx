@@ -5,9 +5,10 @@ import Subtitle from '../../utilities/subtitle';
 import EmblaCarousel from '../../components/EmblaCarousel';
 import "../../embla.css";
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { MobileStudentTable, StudentTable } from '../../components/oasisTable';
 import { Text, StatusView, ViewMoaButton } from '../../utilities/tableUtil';
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { fetchHTEs } from "../../api/student.service";
 import SearchBar from '../../components/searchBar';
 import { ViewModal } from '../../components/popupModal';
@@ -18,65 +19,57 @@ const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function HteDirectory() {
     const { setLoading } = useLoading();
-    const [htes, setHtes] = useState([]);
-    const [industry] = useState("");
-    const [course] = useState("");
-    const [location] = useState("");
     const [search, setSearch] = useState("");
-    const prevSearchRef = useRef("");
 
     const [openView, setOpenView] = useState(false);
     const [activeFile, setActiveFile] = useState(null);
     const [activeFileName, setActiveFileName] = useState("HTE_MOA.pdf");
 
-    const filteredHtes = htes.filter((hte) =>
-        hte.hteName.toLowerCase().includes(search.toLowerCase()) ||
-        hte.industry.toLowerCase().includes(search.toLowerCase())
-    );
-    
-    useEffect(() => {
-        // Only show global loading if it's initial load or other filters changed
-        const isSearchOnlyChange = prevSearchRef.current !== search && 
-                                  prevSearchRef.current !== "" && 
-                                  search !== "";
-        
-        if (!isSearchOnlyChange) {
-            setLoading(true);
-        }
-        
-        prevSearchRef.current = search;
+    // TanStack Query for HTEs
+    const { data: rawHtes, isLoading: isHtesLoading } = useQuery({
+        queryKey: ['hteDirectory'],
+        queryFn: () => fetchHTEs({}), // Fetch all for local filtering
+    });
 
-        fetchHTEs({
-            search,
-            industry,
-            course,
-            location
-        })
-            .then((data) => {
-                const mapped = data.map(hte => ({
-                    id: hte.id,
-                    hteName: hte.company_name,
-                    industry: hte.industry,
-                    location: hte.address,
-                    description: hte.description,
-                    website: hte.website,
-                    moaStatus: !hte.moa_expiry_date ? "Not Available" : hte.moa_status,
-                    validity: hte.moa_expiry_date || "—",
-                    thumbnail: hte.thumbnail_path
-                        ? `${API_BASE}/${hte.thumbnail_path}`
-                        : fallbackImg,
-                    hasMoa: Boolean(hte.has_moa_file || hte.moa_file_path),
-                    moaUrl: `/api/student/htes/${hte.id}/moa`
-                }));
-                setHtes(mapped);
-            })
-            .catch(err => {
-                console.error("Failed to load HTE directory", err);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, [search, industry, course, location, setLoading]);
+    const htes = useMemo(() => {
+        if (!rawHtes || !Array.isArray(rawHtes)) return [];
+        
+        // Deduplicate by ID
+        const seen = new Set();
+        const uniqueHtes = rawHtes.filter(hte => {
+            if (seen.has(hte.id)) return false;
+            seen.add(hte.id);
+            return true;
+        });
+
+        return uniqueHtes.map(hte => ({
+            id: hte.id,
+            hteName: hte.company_name,
+            industry: hte.industry,
+            location: hte.address,
+            description: hte.description,
+            website: hte.website,
+            moaStatus: !hte.moa_expiry_date ? "Not Available" : hte.moa_status,
+            validity: hte.moa_expiry_date || "—",
+            thumbnail: hte.thumbnail_path
+                ? `${API_BASE}/${hte.thumbnail_path}`
+                : fallbackImg,
+            hasMoa: Boolean(hte.has_moa_file || hte.moa_file_path),
+            moaUrl: `/api/student/htes/${hte.id}/moa`
+        }));
+    }, [rawHtes]);
+
+    const filteredHtes = useMemo(() => {
+        return htes.filter((hte) =>
+            hte.hteName.toLowerCase().includes(search.toLowerCase()) ||
+            hte.industry.toLowerCase().includes(search.toLowerCase())
+        );
+    }, [htes, search]);
+
+    // Global loading state sync
+    useEffect(() => {
+        setLoading(isHtesLoading);
+    }, [isHtesLoading, setLoading]);
 
     const buildFileUrl = (filePath) => {
         if (!filePath) return null;
@@ -198,7 +191,7 @@ export default function HteDirectory() {
     const OPTIONS = { loop: true }
     const slides = htes.map(hte => ({
         id: hte.id,
-        thumbnail: hte.thumbnail || htePlaceholder,
+        thumbnail: hte.thumbnail || fallbackImg,
         hteName: hte.hteName,
         hteAddress: hte.location
     }));

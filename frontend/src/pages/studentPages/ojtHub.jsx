@@ -4,9 +4,11 @@ import Title from '../../utilities/title';
 import Subtitle from '../../utilities/subtitle';
 import useQueryParam from '../../hooks/useQueryParams';
 import FormDownloadable from '../../components/formDownloadable';
-import api from '../../api/axios.jsx';
+import { getOjtHubDocuments } from '../../api/student.service';
 import Accordion from '../../components/accordion.jsx';
 import { useLoading } from '../../context/LoadingContext';
+import { useQuery } from '@tanstack/react-query';
+import api from '../../api/axios.jsx';
 
 const SECTION_KEYS = {
     procedures: "Procedures",
@@ -34,11 +36,10 @@ export default function OjtHub() {
     const [activeFilterParam, setActiveFilter] = useQueryParam("tab", "procedures");
     const activeFilter = normalizeTabKey(activeFilterParam);
 
-    const [sections, setSections] = useState({
-        procedures: [],
-        moa: [],
-        guidelines: [],
-        forms: []
+    // TanStack Query for OJT Hub Documents
+    const { data: sectionsData, isLoading } = useQuery({
+        queryKey: ['ojtHubDocuments'],
+        queryFn: getOjtHubDocuments,
     });
 
     useEffect(() => {
@@ -48,27 +49,17 @@ export default function OjtHub() {
         }
     }, [activeFilterParam, setActiveFilter]);
 
+    // Global loading state sync
     useEffect(() => {
-        loadAllSections();
-    }, []);
+        setLoading(isLoading);
+    }, [isLoading, setLoading]);
 
-    async function loadAllSections() {
-        try {
-            setLoading(true);
-            const response = await api.get("/api/documents/student/all");
-
-            setSections({
-                procedures: response?.data?.procedures || [],
-                moa: response?.data?.moa || [],
-                guidelines: response?.data?.guidelines || [],
-                forms: response?.data?.forms || []
-            });
-        } catch (error) {
-            console.error("Failed to load OJT hub content:", error);
-        } finally {
-            setLoading(false);
-        }
-    }
+    const sections = {
+        procedures: sectionsData?.procedures || [],
+        moa: sectionsData?.moa || [],
+        guidelines: sectionsData?.guidelines || [],
+        forms: sectionsData?.forms || []
+    };
 
     return (
         <MainScreen>

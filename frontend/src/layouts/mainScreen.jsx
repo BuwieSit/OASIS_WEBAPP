@@ -6,11 +6,13 @@ import { AnnouncementModal } from '../components/userModal';
 import { SetupProfileModal } from '../components/popupModal';
 import { useState, useEffect } from 'react';
 import { NotificationAPI } from '../api/notification.api';
+import { getStudentProfile } from '../api/student.service';
 import { getRole } from '../api/token';
 import api from '../api/axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import { useLoading } from '../context/LoadingContext';
+import { useQuery } from '@tanstack/react-query';
 
 export default function MainScreen({ children, showHeader = true, hasTopMargin = true }) {
     const { loading } = useLoading();
@@ -22,59 +24,27 @@ export default function MainScreen({ children, showHeader = true, hasTopMargin =
     const location = useLocation();
 
     const [activeModal, setActiveModal] = useState(null);
-    const [notifications, setNotifications] = useState([]);
-    const [showSetupModal, setShowSetupModal] = useState(false);
 
-    const loadNotifications = async () => {
-        if (!isStudent) return;
-        try {
-            const res = await NotificationAPI.getStudentNotifications();
-            setNotifications(res.data || []);
-        } catch (err) {
-            console.error("Failed to load notifications:", err);
-        }
-    };
+    // TanStack Query for Student Profile (Status Check)
+    const { data: profileData } = useQuery({
+        queryKey: ['studentProfile'],
+        queryFn: getStudentProfile,
+        enabled: isStudent,
+    });
 
-    const checkStudentProfile = async () => {
-        if (!isStudent) return;
-        
-        // Don't show modal if we're already on the profile page
-        if (location.pathname === "/student-profile") {
-            setShowSetupModal(false);
-            return;
-        }
+    // TanStack Query for Notifications
+    const { data: notifications = [] } = useQuery({
+        queryKey: ['studentNotifications'],
+        queryFn: NotificationAPI.getStudentNotifications,
+        enabled: isStudent,
+        refetchInterval: 5000, // Poll every 5 seconds
+    });
 
-        try {
-            const res = await api.get("/api/student/me");
-            const profileData = res.data.profile;
-
-            const hasFirstName = profileData.first_name && profileData.first_name.trim() !== "";
-            const hasLastName = profileData.last_name && profileData.last_name.trim() !== "";
-
-            if (!hasFirstName || !hasLastName) {
-                setShowSetupModal(true);
-            } else {
-                setShowSetupModal(false);
-            }
-        } catch (err) {
-            console.error("Failed to check profile in MainScreen:", err);
-        }
-    };
-
-    useEffect(() => {
-        if (isStudent) {
-            loadNotifications();
-            const interval = setInterval(loadNotifications, 5000);
-            
-            // Check profile status
-            checkStudentProfile();
-
-            return () => clearInterval(interval);
-        } else {
-            // If not a student (admin or logged out), don't show the setup modal
-            setShowSetupModal(false);
-        }
-    }, [isStudent, location.pathname]); // Re-check on navigation or role change
+    const profile = profileData?.profile;
+    const showSetupModal = isStudent && 
+                           location.pathname !== "/student-profile" && 
+                           profile && 
+                           (!profile.first_name?.trim() || !profile.last_name?.trim());
 
     const getModalContent = () => {
         switch (activeModal) {
@@ -188,14 +158,13 @@ export default function MainScreen({ children, showHeader = true, hasTopMargin =
             {!loading && (
                 <>
                     {isAdmin ? (
-                        <Header admin notifications={notifications} setNotifications={setNotifications} />
+                        <Header admin notifications={notifications} />
                     ) : (
-                        <Header notifications={notifications} setNotifications={setNotifications} />
+                        <Header notifications={notifications}  />
                     )}
                     {showHeader ? (
                         <StudentHeader 
                             notifications={notifications} 
-                            setNotifications={setNotifications} 
                         />
                     ) : ""}
                     {hasTopMargin ? <div className='mt-25'></div> : ""}
