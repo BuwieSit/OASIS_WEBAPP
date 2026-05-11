@@ -9,7 +9,7 @@ class MoaProspect(db.Model):
     student_id = db.Column(
         db.Integer,
         db.ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False
+        nullable=True
     )
 
     company_name = db.Column(db.String(255), nullable=False)
