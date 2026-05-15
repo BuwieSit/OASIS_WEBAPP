@@ -15,27 +15,20 @@ import SvgLoader from '../../components/SvgLoader.jsx';
 import Subtitle from '../../utilities/subtitle.jsx';
 import { OasisPieChart, OasisBarChart } from '../../components/Charts.jsx';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAdminStats } from '../../hooks/useAdminStats';
+import { useNotifications } from '../../hooks/useNotifications';
 
 export default function Admin() {
     const queryClient = useQueryClient();
     
-    // TanStack Query for Dashboard Metrics
-    const { data: dashboard, isLoading: loadingDashboard, error: dashboardError } = useQuery({
-        queryKey: ['adminDashboard'],
-        queryFn: AdminAPI.getDashboard,
-    });
+    // Using custom hooks
+    const { dashboard, metrics, lastUpdated, isLoading: loadingDashboard, error: dashboardError } = useAdminStats();
+    const { notifications: alerts } = useNotifications();
 
     // TanStack Query for Announcements
     const { data: announcements = [] } = useQuery({
         queryKey: ['adminAnnouncements'],
         queryFn: AdminAPI.getAnnouncements,
-    });
-
-    // TanStack Query for Alerts
-    const { data: alerts = [] } = useQuery({
-        queryKey: ['adminAlerts'],
-        queryFn: AdminAPI.getAdminAlerts,
-        refetchInterval: 10000, // Refresh every 10 seconds
     });
 
     const [search, setSearch] = useState("");

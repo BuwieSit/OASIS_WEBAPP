@@ -1,6 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState, useRef } from 'react';
-import { AdminAPI } from '../../../api/admin.api';
 import Title from '../../../utilities/title.jsx';
 import Subtitle from '../../../utilities/subtitle.jsx';
 import OasisTable from '../../../components/oasisTable.jsx';
@@ -10,6 +9,7 @@ import { FileUploadField, MultiField, SingleField } from '../../../components/fi
 import { Text, HteLocation, ViewMoaButton } from '../../../utilities/tableUtil.jsx';
 import { Check, Download, PlusCircle, Upload, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import { useHteOperations } from '../../../hooks/useHteOperations';
 
 export default function HteManaging({ 
     search, 
@@ -25,17 +25,18 @@ export default function HteManaging({
 }) {
     const queryClient = useQueryClient();
     const [searchParams, setSearchParams] = useSearchParams();
-    const statusFilter = searchParams.get("status");
+    const statusFilter = searchParams.get("status") || "";
     const [showAddHte, setShowAddHte] = useState(false);
     const uploadRef = useRef(null);
 
-    // =============================
-    // FETCH HTEs (TanStack Query)
-    // =============================
-    const { data: htes = [], isLoading: htesLoading } = useQuery({
-        queryKey: ['adminHtes', statusFilter],
-        queryFn: () => AdminAPI.getHTEs(statusFilter),
-    });
+    // Using custom hook
+    const { 
+        htes, 
+        htesLoading, 
+        createHte, 
+        exportHtes, 
+        importHtes 
+    } = useHteOperations(statusFilter);
 
     // =============================
     // FORM STATE (ADD HTE)
@@ -63,17 +64,6 @@ export default function HteManaging({
         setContactNumber(""); setContactEmail(""); setSignedAt(""); setValidity("");
         setEligibleCourses([]); setLogoFile(null); setThumbnailFile(null); setMoaFile(null);
     };
-
-    const createHteMutation = useMutation({
-        mutationFn: AdminAPI.createHTE,
-        onSuccess: () => {
-            setPopup({ title: "Success", text: "HTE saved successfully", icon: <Check size={35}/>, type: "success" });
-            queryClient.invalidateQueries({ queryKey: ['adminHtes'] });
-            resetForm();
-            setShowAddHte(false);
-        },
-        onError: () => setPopup({ title: "Error", text: "Failed to save HTE", icon: <X color="#800020" size={35}/>, type: "failed" })
-    });
 
     const filteredHtes = useMemo(() => {
         if (!search) return htes;
@@ -118,7 +108,7 @@ export default function HteManaging({
         )}
     ];
 
-    const handleSaveHTE = (e) => {
+    const handleSaveHTE = async (e) => {
         e.preventDefault();
         const formData = new FormData();
         formData.append("company_name", companyName); formData.append("description", companyAbout); formData.append("address", companyLoc); formData.append("status", statusValue);
@@ -127,29 +117,39 @@ export default function HteManaging({
         if (signedAt) formData.append("signed_at", signedAt); if (validity) formData.append("validity", validity);
         formData.append("eligible_courses", JSON.stringify(eligibleCourses));
         if (logoFile) formData.append("logo", logoFile); if (thumbnailFile) formData.append("thumbnail", thumbnailFile); if (moaFile) formData.append("moa_file", moaFile);
-        createHteMutation.mutate(formData);
+        
+        try {
+            await createHte(formData);
+            setPopup({ title: "Success", text: "HTE saved successfully", icon: <Check size={35}/>, type: "success" });
+            resetForm();
+            setShowAddHte(false);
+        } catch (error) {
+            setPopup({ title: "Error", text: "Failed to save HTE", icon: <X color="#800020" size={35}/>, type: "failed" });
+        }
     };
 
     const handleDownloadHTEs = async () => {
         setIsProcessing(true); setIsDownloading(true); setProcessingTitle("Downloading HTEs...");
         try {
-            const res = await AdminAPI.downloadHTEsExcel(statusFilter || "ALL");
-            const blob = new Blob([res.data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a"); a.href = url; a.download = `hte_list_${statusFilter || "ALL"}.xlsx`;
-            document.body.appendChild(a); a.click(); a.remove();
-        } catch { setPopup({ title: "Error", text: "Download failed.", type: "failed" }); }
-        finally { setIsProcessing(false); setIsDownloading(false); }
+            await exportHtes(statusFilter);
+        } catch { 
+            setPopup({ title: "Error", text: "Download failed.", type: "failed" }); 
+        } finally { 
+            setIsProcessing(false); setIsDownloading(false); 
+        }
     };
 
-    const handleUploadFile = (e) => {
+    const handleUploadFile = async (e) => {
         const file = e.target.files?.[0]; if (!file) return;
         setIsProcessing(true); setIsUploading(true); setProcessingTitle("Uploading HTEs...");
-        AdminAPI.uploadHTEsExcel(file).then((res) => {
+        try {
+            const res = await importHtes(file);
             setPopup({ title: "Upload Completed", text: `Created: ${res.created_htes}`, type: "success" });
-            queryClient.invalidateQueries({ queryKey: ['adminHtes'] });
-        }).catch(() => setPopup({ title: "Upload Failed", type: "failed" }))
-        .finally(() => { setIsProcessing(false); setIsUploading(false); e.target.value = ""; });
+        } catch {
+            setPopup({ title: "Upload Failed", type: "failed" });
+        } finally {
+            setIsProcessing(false); setIsUploading(false); e.target.value = "";
+        }
     };
 
     return (

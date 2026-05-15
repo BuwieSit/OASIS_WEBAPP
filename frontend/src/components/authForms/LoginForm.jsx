@@ -1,16 +1,17 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/authContext";
 import useAuthFormLogic from "../../utils/AuthFormLogic";
-import { GeneralPopupModal } from "../popupModal";
 import Title from "../../utilities/title";
 import { Label } from "../../utilities/label";
 import { Button } from "../button";
 import { Eye, EyeClosed, X } from "lucide-react";
 import { ValidatedInputField } from "./ValidatedInputField";
+import { useNotification } from "../../context/NotificationContext";
 
 export default function LoginForm() {
   const navigate = useNavigate();
   const { loginUser } = useAuth();
+  const { showNotification } = useNotification();
 
   const {
     userRef,
@@ -18,8 +19,6 @@ export default function LoginForm() {
     setUser,
     pwd,
     setPwd,
-    errMsg,
-    setErrMsg,
     validName,
     validPwd,
     userTouched,
@@ -36,7 +35,11 @@ export default function LoginForm() {
     e.preventDefault();
 
     if (!validPwd) {
-      setErrMsg("Invalid Password");
+      showNotification({
+        title: "Login Error",
+        text: "Invalid Password format.",
+        type: "failed"
+      });
       return;
     }
 
@@ -46,7 +49,7 @@ export default function LoginForm() {
       const redirectPath = res.role === "ADMIN" ? "/admin" : "/home";
       navigate(redirectPath, { replace: true });
     } catch (err) {
-      setErrMsg(err?.response?.data?.error || err?.response?.data?.message || "Login failed. Please check your credentials.");
+      // Axios interceptor will handle the popup for API errors
     } finally {
       setIsSubmitting(false);
     }
@@ -54,16 +57,6 @@ export default function LoginForm() {
 
   return (
     <>
-      {errMsg && (
-        <GeneralPopupModal
-            title="Login Error"
-            text={errMsg}
-            icon={<X size={35} color="#800020" />}
-            onClose={() => setErrMsg("")}
-            isFailed
-            time={4000}
-        />
-      )}
       <section className="w-full p-1 flex flex-col items-center justify-center gap-1">
         <Title text={"Login"} />
       </section>
@@ -118,7 +111,7 @@ export default function LoginForm() {
                         Must be a valid PUP webmail address
                     </p>
                     <p className={`text-[0.75rem] font-medium transition-all duration-300 ${pwdTouched && !validPwd ? "text-red-500 opacity-100" : "opacity-0 pointer-events-none h-0"}`}>
-                        Password must be at least 8 characters
+                        Password must be at least 8 characters with atleast 1 uppercase letter and special character
                     </p> 
                 </div>
             </div>

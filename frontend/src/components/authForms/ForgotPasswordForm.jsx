@@ -2,16 +2,17 @@ import { useNavigate } from "react-router-dom";
 import { sendResetOtp, verifyResetOtp, resetPassword } from "../../api/auth.service";
 import useRegisterFlow from "../../utils/RegisterFlow";
 import useAuthFormLogic from "../../utils/AuthFormLogic";
-import { GeneralPopupModal } from "../popupModal";
 import Title from "../../utilities/title";
 import { Label } from "../../utilities/label";
 import { Button } from "../button";
 import Subtitle from "../../utilities/subtitle";
-import { Eye, EyeClosed, X } from "lucide-react";
+import { Eye, EyeClosed } from "lucide-react";
 import { ValidatedInputField } from "./ValidatedInputField";
+import { useNotification } from "../../context/NotificationContext";
 
 export default function ForgotPasswordForm() {
   const navigate = useNavigate();
+  const { showNotification } = useNotification();
 
   const {
     userRef,
@@ -19,8 +20,6 @@ export default function ForgotPasswordForm() {
     setUser,
     pwd,
     setPwd,
-    errMsg,
-    setErrMsg,
     validName,
     validPwd,
     userTouched,
@@ -61,7 +60,6 @@ export default function ForgotPasswordForm() {
   } = useRegisterFlow({
     user,
     pwd,
-    setErrMsg,
   });
 
   const handleSubmit = async (e) => {
@@ -82,18 +80,18 @@ export default function ForgotPasswordForm() {
         setStep(STEPS.PASSWORD);
       } else if (step === STEPS.PASSWORD) {
         if (!validPwd || !validMatch) {
-          setErrMsg("Invalid password entry");
+          showNotification({
+            title: "Password Reset Error",
+            text: "Invalid password entry. Please check the requirements.",
+            type: "failed"
+          });
           return;
         }
         await resetPassword(user, pwd, matchPwd);
         navigate("/access?form=login");
       }
     } catch (err) {
-      console.error("Forgot Password Error:", err);
-      setErrMsg(
-        err?.response?.data?.error ||
-        "An error occurred. Please try again."
-      );
+      // Axios interceptor will handle the popup for API errors
     } finally {
       setIsSubmitting(false);
     }
@@ -101,16 +99,6 @@ export default function ForgotPasswordForm() {
 
   return (
     <>
-      {errMsg && (
-        <GeneralPopupModal
-            title="Password Reset Error"
-            text={errMsg}
-            icon={<X size={35} color="#800020" />}
-            onClose={() => setErrMsg("")}
-            isFailed
-            time={4000}
-        />
-      )}
       <section className="w-full p-1 flex flex-col items-center justify-center gap-1">
         <Title text={"Forgot Password"} />
       </section>
@@ -161,7 +149,7 @@ export default function ForgotPasswordForm() {
                   setResendSeconds(0);
                   setCanResend(false);
                 } catch (err) {
-                  setErrMsg(err?.response?.data?.error || "Failed to send reset OTP");
+                  // Handled by Axios interceptor
                 } finally {
                   setIsSendingOtp(false);
                 }
@@ -209,7 +197,7 @@ export default function ForgotPasswordForm() {
                       await verifyResetOtp(user, otp);
                       setStep(STEPS.PASSWORD);
                     } catch (err) {
-                      setErrMsg(err?.response?.data?.error || "Invalid OTP");
+                      // Handled by Axios interceptor
                     }
                 }}
               />
@@ -232,9 +220,8 @@ export default function ForgotPasswordForm() {
                           setSecondsLeft(10 * 60);
                           setResendSeconds(60);
                           setCanResend(false);
-                          setErrMsg("");
                         } catch (err) {
-                          setErrMsg(err?.response?.data?.error || "Failed to send reset OTP");
+                          // Handled by Axios interceptor
                         }
                       }}
                     >

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from "./context/authContext";
 import { LoadingProvider, useLoading } from './context/LoadingContext';
+import { NotificationProvider } from './context/NotificationContext';
 import DisableDevtool from 'disable-devtool';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -12,8 +13,7 @@ import './styles.css';
 
 import ScrollToTop from './components/scrollToTop';
 import LoadingScreen from './components/LoadingScreen';
-import StudentRoute from "./routes/StudentRoute";
-import AdminRoute from "./routes/AdminRoute";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 /**
  * Utility to handle "Failed to fetch dynamically imported module" error.
@@ -87,7 +87,7 @@ const router = createBrowserRouter([
 
 
       {
-        element: <StudentRoute />,
+        element: <ProtectedRoute allowedRoles={['STUDENT']} />,
         children: [
           { path: 'home', element: <Student /> },
           { path: 'htedirectory', element: <HteDirectory /> },
@@ -100,7 +100,7 @@ const router = createBrowserRouter([
 
 
       {
-        element: <AdminRoute />,
+        element: <ProtectedRoute allowedRoles={['ADMIN']} />,
         children: [
           { path: 'admin', element: <Admin /> },
           { path: 'admHteManagement', element: <HteManagement /> },
@@ -130,11 +130,13 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <LoadingProvider>
-        <AuthProvider>
-          <Suspense fallback={<LoadingScreen />}>
-            <RouterProvider router={router} />
-          </Suspense>
-        </AuthProvider>
+        <NotificationProvider>
+          <AuthProvider>
+            <Suspense fallback={<LoadingScreen />}>
+              <RouterProvider router={router} />
+            </Suspense>
+          </AuthProvider>
+        </NotificationProvider>
       </LoadingProvider>
     </QueryClientProvider>
   </StrictMode>

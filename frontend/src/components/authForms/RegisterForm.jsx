@@ -3,16 +3,17 @@ import { clearToken } from "../../api/token";
 import { sendOtp, verifyOtp, completeRegistration } from "../../api/auth.service";
 import useRegisterFlow from "../../utils/RegisterFlow";
 import useAuthFormLogic from "../../utils/AuthFormLogic";
-import { GeneralPopupModal } from "../popupModal";
 import Title from "../../utilities/title";
 import { Label } from "../../utilities/label";
 import { Button } from "../button";
 import Subtitle from "../../utilities/subtitle";
 import { Eye, EyeClosed, X } from "lucide-react";
 import { ValidatedInputField } from "./ValidatedInputField";
+import { useNotification } from "../../context/NotificationContext";
 
 export default function RegisterForm() {
   const navigate = useNavigate();
+  const { showNotification } = useNotification();
 
   const {
     userRef,
@@ -20,8 +21,6 @@ export default function RegisterForm() {
     setUser,
     pwd,
     setPwd,
-    errMsg,
-    setErrMsg,
     validName,
     validPwd,
     userTouched,
@@ -62,7 +61,6 @@ export default function RegisterForm() {
   } = useRegisterFlow({
     user,
     pwd,
-    setErrMsg,
   });
 
   const handleSubmit = async (e) => {
@@ -71,7 +69,11 @@ export default function RegisterForm() {
     if (step !== STEPS.PASSWORD) return;
   
     if (!validName || !validPwd || !validMatch) {
-      setErrMsg("Invalid Entry");
+      showNotification({
+        title: "Registration Error",
+        text: "Please check your entries and try again.",
+        type: "failed"
+      });
       return;
     }
 
@@ -81,11 +83,7 @@ export default function RegisterForm() {
       await completeRegistration(user, pwd, matchPwd);
       navigate("/access?form=login");
     } catch (err) {
-      setErrMsg(
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        "Registration failed."
-      );
+      // Axios interceptor will handle the popup for API errors
     } finally {
       setIsSubmitting(false);
     }
@@ -93,16 +91,6 @@ export default function RegisterForm() {
 
   return (
     <>
-        {errMsg && (
-            <GeneralPopupModal
-                title="Authentication Error"
-                text={errMsg}
-                icon={<X size={35} color="#800020" />}
-                onClose={() => setErrMsg("")}
-                isFailed
-                time={4000}
-            />
-        )}
         <section className="w-full p-1 flex flex-col items-center justify-center gap-1">
           <Title text={"Register"} />
         </section>
@@ -146,7 +134,7 @@ export default function RegisterForm() {
                                 setResendSeconds(0);
                                 setCanResend(false);
                             } catch (err) {
-                                setErrMsg(err?.response?.data?.error || err?.response?.data?.message || "Failed to send OTP");
+                                // Axios interceptor handles the popup
                             } finally {
                                 setIsSendingOtp(false);
                             }
@@ -193,7 +181,7 @@ export default function RegisterForm() {
                                 await verifyOtp(user, otp);
                                 setStep(STEPS.PASSWORD);
                             } catch {
-                                setErrMsg("Invalid OTP");
+                                // Handled by interceptor
                             }
                         }}
                     />
@@ -216,9 +204,8 @@ export default function RegisterForm() {
                                 setSecondsLeft(10 * 60);
                                 setResendSeconds(60);
                                 setCanResend(false);
-                                setErrMsg("");
                               } catch {
-                                setErrMsg("Failed to send OTP");
+                                // Axios interceptor handles the popup
                               }
                             }}
                           >
