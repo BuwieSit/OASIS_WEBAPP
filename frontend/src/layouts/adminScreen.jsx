@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { AdminNavigation, Header } from '../components/headers'
+import { AdminSidebar, AdminHeader } from '../components/navigation'
 import Footer from '../components/footer'
 
 export default function AdminScreen({ children }) {
@@ -9,7 +9,7 @@ export default function AdminScreen({ children }) {
         <div className="relative w-full min-h-screen flex bg-page-white overflow-x-hidden">
 
             {/* SIDEBAR */}
-            <AdminNavigation isOpen={isOpen} setIsOpen={setIsOpen} />
+            <AdminSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
             {isOpen && (
             <div
                 className="fixed inset-0 bg-black/40 z-95 "
@@ -28,7 +28,7 @@ export default function AdminScreen({ children }) {
             >
                 <div className="absolute inset-0 bg-[url('../assets/ctaBg.png')] bg-center bg-cover opacity-10 pointer-events-none" />
 
-                <Header admin/>
+                <AdminHeader />
 
                     {children}
                 <Footer />

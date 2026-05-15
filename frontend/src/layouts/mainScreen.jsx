@@ -1,4 +1,4 @@
-import { Header, StudentHeader } from '../components/headers'
+import { AdminHeader, StudentHeader, StudentNavBar } from '../components/navigation'
 import Footer from '../components/footer'   
 import OrbiChatbot from '../components/OrbiChatbot';
 import ProspectMoaForm from '../components/prospectMoaForm';
@@ -158,12 +158,12 @@ export default function MainScreen({ children, showHeader = true, hasTopMargin =
             {!loading && (
                 <>
                     {isAdmin ? (
-                        <Header admin notifications={notifications} />
+                        <AdminHeader />
                     ) : (
-                        <Header notifications={notifications}  />
+                        <StudentHeader notifications={notifications} />
                     )}
                     {showHeader ? (
-                        <StudentHeader 
+                        <StudentNavBar 
                             notifications={notifications} 
                         />
                     ) : ""}

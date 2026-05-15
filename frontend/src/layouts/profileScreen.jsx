@@ -1,12 +1,11 @@
-
-import { AdminNavigation, Header, StudentHeader } from "../components/headers";
+import { AdminSidebar, AdminHeader, StudentHeader, StudentNavBar } from "../components/navigation";
 import { useState } from "react";
 
 export function StudentProfileScreen({ children }) {
     return(
         <>
-            <Header/>
             <StudentHeader/>
+            <StudentNavBar/>
             <div className="w-full h-auto min-h-dvh flex flex-col items-center overflow-x-hidden p-10 bg-linear-to-l from-white via-oasis-blue to-white pt-30">
                 {children}
             </div>
@@ -20,7 +19,7 @@ export function AdminProfileScreen({ children, className, }) {
         <>
             <div className="relative w-full min-h-screen flex bg-page-white overflow-x-hidden">
                 
-                <AdminNavigation isOpen={isOpen} setIsOpen={setIsOpen} />
+                <AdminSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
                 {isOpen && (
                 <div
                     className="fixed inset-0 bg-black/40 z-95 "
@@ -35,7 +34,7 @@ export function AdminProfileScreen({ children, className, }) {
                         ${isOpen ? "lg:ml-[260px]" : "lg:ml-[70px]"}
                     `}
                 >
-                    <Header admin={true}/>
+                    <AdminHeader />
                     <div className={`w-full h-auto min-h-dvh flex flex-col overflow-x-hidden p-10 bg-linear-to-l from-white via-oasis-blue to-white pt-30 ${className}`}>
                         {children}
                     </div>

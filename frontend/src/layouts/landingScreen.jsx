@@ -1,5 +1,4 @@
-import { AnnounceButton } from "../components/button";
-import { LandingHeader } from "../components/headers";
+import { LandingHeader } from "../components/navigation";
 
 export default function LandingScreen( { children }) {
 
