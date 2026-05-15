@@ -1,4 +1,4 @@
-import api from "./axios.jsx";
+import api from "./axios.js";
 
 export const AdminAPI = {
     // Dashboard

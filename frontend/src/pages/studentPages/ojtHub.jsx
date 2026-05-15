@@ -8,7 +8,7 @@ import { getOjtHubDocuments } from '../../api/student.service';
 import Accordion from '../../components/accordion.jsx';
 import { useLoading } from '../../context/LoadingContext';
 import { useQuery } from '@tanstack/react-query';
-import api from '../../api/axios.jsx';
+import api from '../../api/axios';
 
 const SECTION_KEYS = {
     procedures: "Procedures",

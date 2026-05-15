@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import { Bell, BellDot, LayoutDashboard, ChevronLeft, Cog, FileText, Upload, Users, LogOut, Menu, UserRoundCog, ChevronUp } from "lucide-react";
 import Notifications from "../utilities/notifications";
 import { UserRound, BellIcon } from "lucide-react";
-import api from "../api/axios.jsx";
+import api from "../api/axios.js";
 import Subtitle from "../utilities/subtitle";
 import UserDropdownSettings from "../utilities/userDropdownSettings";
 import { useAuth } from "../context/authContext";

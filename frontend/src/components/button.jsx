@@ -76,7 +76,7 @@ export function AnnounceButton({
         </span>
       )}
 
-      <span className="break-words text-center leading-tight">
+      <span className="wrap-break-word text-center leading-tight">
         {btnText}
       </span>
     </button>
