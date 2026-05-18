@@ -1,5 +1,5 @@
-import api from "./axios.jsx";
-import { setToken, clearToken } from "./token";
+import api from "./axios.js";
+import { setToken, clearToken } from "./token.js";
 
 /* ================= OTP ================= */
 

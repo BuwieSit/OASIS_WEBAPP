@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { login, me, logout as apiLogout } from "../api/auth.service";
+import { login, me, logout as apiLogout } from "../api/auth.service"
 import { InactivityModal } from "../components/popupModal";
 
 const AuthContext = createContext(null);

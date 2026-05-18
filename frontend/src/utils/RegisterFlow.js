@@ -4,7 +4,6 @@ import { OTP_REGEX, USER_REGEX, PWD_REGEX } from "./config/regex";
 export default function useRegisterFlow({
   user,
   pwd,
-  setErrMsg,
 }) {
   // ---- STEPS ----
   const STEPS = {
@@ -82,11 +81,6 @@ export default function useRegisterFlow({
   useEffect(() => {
     setValidMatch(pwd === matchPwd);
   }, [pwd, matchPwd]);
-
-  // ---- CLEAR ERRORS ----
-  useEffect(() => {
-    setErrMsg("");
-  }, [otp, matchPwd, pwd, user]);
 
   // ---- REFRESH ----
   useEffect(() => {

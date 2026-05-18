@@ -1,7 +1,7 @@
 import 'animate.css';
 import { useState } from 'react';
 import LogregScreen from '../layouts/logregScreen';
-import { UpdatedLogin, UpdatedReg, ForgotPassword } from '../components/forms';
+import { LoginForm, RegisterForm, ForgotPasswordForm } from '../components/authForms';
 import { Navigate } from "react-router-dom";
 import { useAuth } from '../context/authContext';
 import useQueryParam from '../hooks/useQueryParams';
@@ -28,7 +28,7 @@ export default function UserAccess() {
 
           {accessType === ACCESS.LOGIN && (
             <>
-              <UpdatedLogin />
+              <LoginForm />
               <section className="w-full flex flex-row items-center justify-between">
                 <p
                   className="cursor-pointer hover:underline underline-offset-2 font-oasis-text text-[0.8rem]"
@@ -48,7 +48,7 @@ export default function UserAccess() {
 
           {accessType === ACCESS.REGISTER && (
             <>
-              <UpdatedReg />
+              <RegisterForm />
               <section className="flex flex-row items-center justify-center">
                 <p
                   className="cursor-pointer hover:underline underline-offset-2 font-oasis-text text-[0.8rem]"
@@ -62,7 +62,7 @@ export default function UserAccess() {
 
           {accessType === ACCESS.FORGOTPASS && (
             <>
-              <ForgotPassword/>
+              <ForgotPasswordForm/>
                 <p
                   className="cursor-pointer hover:underline underline-offset-2 font-oasis-text text-[0.8rem]"
                   onClick={() => setAccessType(ACCESS.LOGIN)}

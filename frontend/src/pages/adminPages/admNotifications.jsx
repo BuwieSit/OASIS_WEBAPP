@@ -3,18 +3,13 @@ import Title from "../../utilities/title.jsx";
 import { Bell, Calendar, ChevronRight, FileText, AlertCircle, Clock } from "lucide-react";
 import { useState } from 'react';
 import Subtitle from '../../utilities/subtitle.jsx';
-import { AdminAPI } from "../../api/admin.api";
-import { useQuery } from '@tanstack/react-query';
+import { useNotifications } from '../../hooks/useNotifications';
 
 export default function AdmNotifications() {
     const [activeTab, setActiveTab] = useState("ALL");
 
-    // TanStack Query for Admin Alerts
-    const { data: alerts = [], isLoading } = useQuery({
-        queryKey: ['adminAlerts'],
-        queryFn: AdminAPI.getAdminAlerts,
-        refetchInterval: 30000, 
-    });
+    // Using custom hook
+    const { notifications: alerts, isLoading } = useNotifications();
 
     const filteredAlerts = alerts.filter(alert => {
         if (activeTab === "ALL") return true;

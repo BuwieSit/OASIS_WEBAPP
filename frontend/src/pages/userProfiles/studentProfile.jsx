@@ -7,7 +7,7 @@ import { getStudentProfile, updateStudentProfile, updateStudentPhoto } from "../
 import { SingleField } from "../../components/fieldComp";
 import { GeneralPopupModal, ConfirmModal } from "../../components/popupModal";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "../../api/axios";
+import api from "../../api/axios.js";
 
 const API_BASE = api.defaults.baseURL;
 
@@ -189,7 +189,7 @@ export default function StudentProfile() {
 
             {/* Name & Badge */}
             <div className="flex-1 text-center md:text-left mb-2 min-w-0">
-              <h1 className={`${getFontSizeClass(displayFullname)} font-black text-gray-800 font-oasis-text break-words leading-tight`}>
+              <h1 className={`${getFontSizeClass(displayFullname)} font-black text-gray-800 font-oasis-text wrap-break-word leading-tight`}>
                 {displayFullname}
               </h1>
               <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">

@@ -7,7 +7,6 @@ export default function useAuthFormLogic({ allowAdmin = false } = {}) {
 
   const [user, setUser] = useState("");
   const [pwd, setPwd] = useState("");
-  const [errMsg, setErrMsg] = useState("");
 
   const [validName, setValidName] = useState(false);
   const [validPwd, setValidPwd] = useState(false);
@@ -43,11 +42,6 @@ export default function useAuthFormLogic({ allowAdmin = false } = {}) {
     setValidPwd(PWD_REGEX.test(pwd));
   }, [pwd]);
 
-  // Clear error on input change
-  useEffect(() => {
-    setErrMsg("");
-  }, [user, pwd]);
-
   return {
     userRef,
     errRef,
@@ -55,8 +49,6 @@ export default function useAuthFormLogic({ allowAdmin = false } = {}) {
     setUser,
     pwd,
     setPwd,
-    errMsg,
-    setErrMsg,
     validName,
     validPwd,
     userFocus,

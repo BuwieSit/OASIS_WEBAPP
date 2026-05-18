@@ -1,4 +1,4 @@
-import { Header, StudentHeader } from '../components/headers'
+import { AdminHeader, StudentHeader, StudentNavBar } from '../components/navigation'
 import Footer from '../components/footer'   
 import OrbiChatbot from '../components/OrbiChatbot';
 import ProspectMoaForm from '../components/prospectMoaForm';
@@ -13,6 +13,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import { useLoading } from '../context/LoadingContext';
 import { useQuery } from '@tanstack/react-query';
+import { useNotifications } from '../hooks/useNotifications';
 
 export default function MainScreen({ children, showHeader = true, hasTopMargin = true }) {
     const { loading } = useLoading();
@@ -32,13 +33,8 @@ export default function MainScreen({ children, showHeader = true, hasTopMargin =
         enabled: isStudent,
     });
 
-    // TanStack Query for Notifications
-    const { data: notifications = [] } = useQuery({
-        queryKey: ['studentNotifications'],
-        queryFn: NotificationAPI.getStudentNotifications,
-        enabled: isStudent,
-        refetchInterval: 5000, // Poll every 5 seconds
-    });
+    // Using custom hook
+    const { notifications } = useNotifications();
 
     const profile = profileData?.profile;
     const showSetupModal = isStudent && 
@@ -158,12 +154,12 @@ export default function MainScreen({ children, showHeader = true, hasTopMargin =
             {!loading && (
                 <>
                     {isAdmin ? (
-                        <Header admin notifications={notifications} />
+                        <AdminHeader />
                     ) : (
-                        <Header notifications={notifications}  />
+                        <StudentHeader notifications={notifications} />
                     )}
                     {showHeader ? (
-                        <StudentHeader 
+                        <StudentNavBar 
                             notifications={notifications} 
                         />
                     ) : ""}
