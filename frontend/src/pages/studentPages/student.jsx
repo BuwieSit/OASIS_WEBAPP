@@ -16,6 +16,7 @@ import { ViewModal, SetupProfileModal } from '../../components/popupModal';
 import filePdf from "../../assets/resume.pdf";
 import api from "../../api/axios";
 import { useLoading } from '../../context/LoadingContext';
+import { getYouTubeThumbnail } from "../../utils/media";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -30,6 +31,43 @@ export default function Student() {
     const [activeFile, setActiveFile] = useState(null);
     const [activeFileName, setActiveFileName] = useState("HTE_MOA.pdf");
     const [showSetupModal, setShowSetupModal] = useState(false);
+
+    // Tutorial vids
+    const [videoLink, setVideoLink] = useState();
+    const [videoTitle, setVideoTitle] = useState("What is OASIS?");
+
+    const tutorials = [
+        {
+            title: "Setting up profile",
+            link: "https://www.youtube.com/embed/_tr-IpOOz00",
+            desc: "Keep your student information up-to-date to ensure seamless communication and tracking."
+        },
+        {
+            title: "Submitting MOA Prospects",
+            link: "https://www.youtube.com/embed/Nna3i4K7aA8",
+            desc: "Learn the step-by-step process of submitting your host establishment prospects for approval."
+        },
+        {
+            title: "Navigating the HTE Directory",
+            link: "https://www.youtube.com/embed/uCMeqEuT0R0",
+            desc: "Explore and filter through our extensive list of partnered host training establishments."
+        },
+        {
+            title: "Submitting an HTE Review",
+            link: "https://www.youtube.com/embed/eEemHCKVMV0",
+            desc: "Submit an HTE Review and rating to be approved by the administrator. You can also submit anonymously, your name will not be shown."
+        },
+        {
+            title: "Browsing notifications",
+            link: "https://www.youtube.com/embed/MmJHKMoEXUM",
+            desc: "Receive notifications about MOA Submission updates, or announcements. Filter through notifications or save important ones."
+        },
+        {
+            title: "Consulting with ORBI",
+            link: "https://www.youtube.com/embed/HBVqo1p9Uv4",
+            desc: "Get instant answers to your OJT-related questions using our intelligent AI assistant, ORBI."
+        }
+    ];
 
     // TanStack Query for Student Profile
     const { data: profileData, isLoading: isProfileLoading } = useQuery({
@@ -256,7 +294,8 @@ export default function Student() {
                     isDocument={modalType === "document"}
                     file={modalType === "video" ? filePdf : activeFile}
                     filename={activeFileName}
-                    resourceTitle={modalType === "video" ? "What is OASIS?" : "MOA File"}
+                    videoLink={videoLink}
+                    resourceTitle={modalType === "video" ? videoTitle : (activeFileName || "MOA File")}
                 />
 
                 <SetupProfileModal 
@@ -335,13 +374,20 @@ export default function Student() {
                    
 
                     <div className="w-[80%] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 pt-10 pb-10 justify-center place-items-center">
-            
-                        <TutorialCard onClick={() => { setModalType("video"); setOpenView(true); }}/>
-                        <TutorialCard onClick={() => { setModalType("video"); setOpenView(true); }}/>
-                        <TutorialCard onClick={() => { setModalType("video"); setOpenView(true); }}/>
-                        <TutorialCard onClick={() => { setModalType("video"); setOpenView(true); }}/>
-                        <TutorialCard onClick={() => { setModalType("video"); setOpenView(true); }}/>
-                        <TutorialCard onClick={() => { setModalType("video"); setOpenView(true); }}/>
+                        {tutorials.map((tutorial, index) => (
+                            <TutorialCard 
+                                key={index}
+                                title={tutorial.title}
+                                desc={tutorial.desc}
+                                thumbnail={getYouTubeThumbnail(tutorial.link)}
+                                onClick={() => { 
+                                    setVideoTitle(tutorial.title);
+                                    setVideoLink(tutorial.link);
+                                    setModalType("video"); 
+                                    setOpenView(true); 
+                                }}
+                            />
+                        ))}
                     </div>
 
                 </div>
