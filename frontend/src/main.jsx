@@ -64,12 +64,10 @@ if (DISABLE_BASE === 'production') {
 
 
 function RootLayout() {
-  const { loading } = useLoading();
-  
   return (
     <>
 
-      {loading && <LoadingScreen />}
+      <LoadingScreen />
       <ScrollToTop />
       <Outlet />
  
